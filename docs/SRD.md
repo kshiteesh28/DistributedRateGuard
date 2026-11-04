@@ -1,6 +1,6 @@
 # RateGuard — Software Requirements Document
 
-**Revision:** 2 · **Status:** Draft for review · **Date:** 2026-11-03 · **Source:** [PRD revision 5](PRD.md)  
+**Revision:** 3 · **Status:** Draft for review · **Date:** 2026-11-03 · **Source:** [PRD revision 6](PRD.md)  
 **Releases:** A — strict core; B — evaluation; C — distributed credits  
 **Purpose:** Define observable software behavior and verification obligations. No feature or metric in this document is claimed as implemented.
 
@@ -26,7 +26,7 @@ Only a registered, authenticated adapter principal may invoke admission. The ada
 
 ## 2. Normative interface semantics
 
-The API is specified here at field/meaning level; the final `.proto` encoding and status mapping are blocking decisions D1–D2. Do not infer a successful admission from a transport status alone. Every completed application response has an explicit outcome.
+The API is specified here at field/meaning level; §8 fixes D1–D2 semantics. Final protobuf encoding and compatibility are implementation gates. Do not infer a successful admission from a transport status alone. Every completed application response has an explicit outcome.
 
 | Operation | Required fields | Result |
 | --- | --- | --- |
@@ -38,7 +38,7 @@ The public adapter translates a received `LIMITED` into HTTP 429 and `UNAVAILABL
 
 An attempt begins when `CheckAdmission` is invoked. A service observing an expired deadline before commit must not commit. Expiry racing with an atomic commit may leave the result uncertain to the caller; any committed spend remains recorded, including committed-but-unforwarded work. In strict mode its **commit** is the atomic authoritative spend. In credit mode its commit is atomic local consumption of a previously confirmed grant; authority allocation is a separate commit. A caller may time out after either commit. The adapter forwards at most once only after receiving `ALLOW` before its own deadline and while the epoch remains active. A late response is ignored. It never refunds because of timeout or downstream failure. An application-level repeat is a new, chargeable attempt; the correlation ID is not a deduplication key.
 
-A valid credit grant sequence is consumed by every known authority result, including `LIMITED`; replaying it returns that same result after refill. The next sequence is allowed only after the previous result is known. Invalid or unauthenticated calls do not consume a sequence. A lost result is resolved by retrying the same sequence. The service must bound pending requests, authority waits, and response payloads. The concrete byte, queue, and time limits are D6. Unauthenticated/unknown-tenant/unknown-operation calls must not create quota state. Client-provided cost, tenant override, or time cannot reduce the configured charge or increase allowance.
+A valid credit grant sequence is consumed by every known authority result, including `LIMITED`; replaying it returns that same result after refill. The next sequence is allowed only after the previous result is known. Invalid or unauthenticated calls do not consume a sequence. A lost result is resolved by retrying the same sequence. The service must bound pending requests, authority waits, and response payloads. Concrete byte, queue, and time limits are fixed by D6. Unauthenticated/unknown-tenant/unknown-operation calls must not create quota state. Client-provided cost, tenant override, or time cannot reduce the configured charge or increase allowance.
 
 ## 3. State and mathematical contracts
 
@@ -128,13 +128,14 @@ Each row states **trigger/input → required result/error → verification**. Ac
 | FR-018 | C · 019 | On crash/disconnect or authority loss, only confirmed local units may be consumed and no timeout reclamation occurs; report exact stranded units only with complete durable spend evidence, otherwise a conservative interval from the grant ledger and last verified checkpoint. | AT-18 |
 | FR-019 | C · 020 | For identical offered traces, collect authority calls/bytes, admitted cost, latency, errors, and stranded/retired units separately by mode. | AT-19 |
 | FR-020 | A–C · 021 | Before generating a module, require a resolved source requirement, interface contract, invariants, and independent acceptance method; otherwise block that module as a specification decision. | AT-20 |
-| FR-021 | C · 021 plus user-directed revision 2 | Before claiming credit safety, provide an executable independent state-machine model and trace-to-model checker covering grants, local spends, retries, partitions, crashes, and epoch changes; seeded unsafe variants yield reproducible counterexample schedules. | AT-26 |
+| FR-021 | C · 021,023 | Before claiming credit safety, provide an executable independent state-machine model and trace-to-model checker covering grants, local spends, retries, partitions, crashes, and epoch changes; seeded unsafe variants yield reproducible counterexample schedules. | AT-27 | Recompute timely ALLOW + LIMITED divided by delivered attempts for each run; fail below 99%. Seed fast UNAVAILABLE/OVERLOADED responses and verify they cannot improve the numerator. | 
+| AT-26 |
 
 **Deferred:** PRD-013 live policy changes and PRD-014 permits for long-running work have no v1 FRs. They require new contracts before code generation.
 
 ## 5. Quality and operational requirements
 
-These are proposed product gates from the PRD, not measured results. Freeze D8 before evaluating them and publish misses. Latency percentiles use completed responses; every offered attempt also appears in the terminal/timeout/error denominator. A latency-only pass must never be reported as overall acceptance when service or correctness gates fail. An added terminal-response validity threshold remains D11, requiring PRD alignment.
+These are proposed product gates from the PRD, not measured results. Freeze D8 before evaluating them and publish misses. Latency percentiles use completed responses; every offered attempt also appears in the terminal/timeout/error denominator. A latency-only pass must never be reported as overall acceptance when service or correctness gates fail. PRD-022 and NFR-009 now make timely non-error responses a binding release gate.
 
 | ID | Release · PRD | Measurable obligation | Evidence |
 | --- | --- | --- | --- |
@@ -145,6 +146,7 @@ These are proposed product gates from the PRD, not measured results. Freeze D8 b
 | NFR-005 | C · 020 | Under NFR-004 conditions, credit mode preserves ≥95% of strict-mode admitted cost and also meets NFR-002/003. Stranded/retired units are reported. | AT-24 |
 | NFR-006 | B/C · 010–012 | Two fresh setup-and-run reproductions with pinned inputs produce machine-readable results from which gate outcomes can be recalculated. | AT-13 |
 | NFR-007 | B/C · 011 | Open-loop generator delivers ≥99.5% of scheduled arrivals; otherwise mark run invalid. Five measured 60-second runs follow a separate 30-second warmup; publish individual values and dispersion. | AT-25 |
+| NFR-009 | B/C · 022 | In each NFR-003 run, ≥99% of delivered attempts receive ALLOW or LIMITED within 50 ms. All errors/timeouts fail the numerator; publish counts and also pass NFR-007. | AT-27 |
 | NFR-008 | A/C · 009,015 | Request queues, storage waits, state cardinality, and diagnostic data have documented finite limits; exceeding any bound returns an explicit error rather than growing without bound. Limits are D6. | AT-11 |
 
 ## 6. Data, observability, and retention
@@ -159,7 +161,7 @@ These are proposed product gates from the PRD, not measured results. Freeze D8 b
 
 **Replay input/output:** include schema version, immutable policy hashes, trace digest, seed, relative times and tie-break order, per-attempt tenant/operation, full initial state, model version, evaluated row count, and per-tenant comparison. Historical admissions alone are not a complete offered trace. Malformed rows fail the run; no silent omission. Published examples must use synthetic or pseudonymized identities.
 
-**Retention decision:** D7 must define exact local log/trace retention and deletion before implementation. Until then, only bounded in-memory aggregate metrics and explicit user-invoked synthetic export are assumed. No production personal-data retention claim is authorized.
+**Retention:** D7 fixes local retention and deletion. Only synthetic exports are allowed in v1; no production personal-data retention claim is authorized.
 
 ## 7. Verification plan and traceability
 
@@ -189,30 +191,31 @@ Test names below are evidence IDs, not claims that tests exist. Keep the referen
 | 015 | FR-008, FR-010; NFR-008 | AT-09, AT-11 | A |
 | 016–019 | FR-014–018; NFR-001 | AT-14–18, AT-21 | C |
 | 020 | FR-019; NFR-003–005 | AT-19, AT-23–24 | C |
-| 021 plus user-directed revision 2 | FR-020–021 | AT-20, AT-26 | A–C |
+| 021,023 | FR-020–021 | AT-20, AT-26 | A–C |
+| 022 | NFR-009 | AT-27 | B/C |
+| 024 | FR-001/003/008/017 | AT-01/04/09/17/18 | A/C |
 
-## 8. Decisions required before code generation
+## 8. Accepted v1 decisions and implementation gates
 
-These defaults are proposals, not approved or implemented design facts. Resolve each before generating the affected module, or explicitly exclude that module from the release. A small prototype or documented measurement may justify changing a default.
+These decisions supersede the open defaults in revisions 1–2. HLD/LLD must preserve them; tests and implementation remain outstanding.
 
-| ID | Proposed default and rationale | Affected code |
+| ID | Accepted decision | Verification |
 | --- | --- | --- |
-| D1 — gRPC schema | Versioned `CheckAdmission` and `AcquireCredit` messages with explicit outcome enums and optional retry estimate. Avoid conflating transport failure with quota denial. Fix exact fields/compatibility policy. | Adapter, service, clients |
-| D2 — status mapping | Application outcomes in successful gRPC responses; transport failure means unknown commitment. Define gRPC status for invalid/auth, deadline, and unavailable, plus HTTP mapping. | Adapter, clients |
-| D3 — numeric model | Fixed-point integer balances, rates, and integer microsecond time; checked wide intermediates and explicit maximums. Avoid floating-point cross-language drift and overflow. Fix rounding and sequence widths. | Authority, replay, checker |
-| D4 — time model | Authority-controlled monotonic time while the epoch runs; restart stops epoch. Define how credit local event times are related to the authority timeline so the interval bound can be tested. No trust in caller clocks. | Authority, credit replica, checker |
-| D5 — identity/fencing | One externally detectable authority incarnation; credit slot/incarnation cannot be reused inside epoch; operator-driven drain/fence before new epoch. Specify positive evidence, including isolated old replicas. | Startup, recovery, operations |
-| D6 — resource caps | Explicit finite per-replica outstanding-request limit, authority timeout, tenant-state count, diagnostics/history limit, and overload response. Choose values from measured host capacity. | Service, telemetry |
-| D7 — retention/privacy | Synthetic benchmark artifacts retained under project control; bounded correctness histories disabled by default. Decide exact duration, size cap, deletion behavior, and pseudonymization before publishing data. | Replay, telemetry |
-| D8 — benchmark policies | Proposed baseline: `B=100`, `r=100` cost units/s, cost-1/cost-5 operations, fixed three-replica uniform routing for performance and the NFR-002 hot-tenant trace; seed, machine-readable arrival schedule, host/container budget and below-knee method must be frozen before code or runs. No post-result tuning. | Workload generator, report |
-| D9 — trusted adapter binding | Require registered authenticated adapter principals and server-side tenant/operation binding. Select credential and transport mechanism (for example mTLS), rotation, and rejection mapping before adapter code generation. | Adapter, service |
-| D11 — terminal-response validity | Proposed additional benchmark validity gate: ≥99% of delivered checks receive a terminal application outcome within 50 ms, with `LIMITED` counted terminal. This strengthens NFR-003 but changes the PRD acceptance contract; align PRD before treating it as binding. | Benchmark, PRD change control |
+| D1/D2 — interface | Versioned gRPC messages carry explicit application outcomes. Successful transport never implies ALLOW. Invalid input maps to INVALID_ARGUMENT, unauthenticated calls to UNAUTHENTICATED, unauthorized principals to PERMISSION_DENIED; these never charge. Transport loss/deadline can conceal commitment and never authorizes forwarding. Exact protobuf field numbers and compatibility checks are required before interface code generation. | AT-04/06/07 |
+| D3 — arithmetic | Cost and capacity are integer units; balance uses 10^9 subunits/unit, time uses integer nanoseconds, and r is integer units/s. Bounds: 1≤B≤10^9, 1≤r≤10^9, 1≤c≤B; Q is integer with max_cost≤Q≤B. Refill adds r×elapsed_ns subunits, capped at B×10^9. Checked 128-bit intermediates prevent overflow. Use uint64 sequence starting at 1; exhaustion ends grant issuance for that slot/tenant, never wraps. | AT-02/03/15 |
+| D4 — time | All authority and replicas run in one Linux kernel and the same verified time namespace; use CLOCK_MONOTONIC at linearization points. Record kernel boot identity, namespace identity and clock ID in the manifest. Reject mismatches before readiness. Host restart starts a new epoch. The tight bound uses this clock and applies only within one epoch. Multi-host or missing provenance produces UNKNOWN and cannot pass safety. | AT-01/17/26 |
+| D5 — fencing | Supervisor owns fixed process/container inventory; automatic restart is disabled. Authority crash/identity/state-integrity failure terminates the epoch. Before reset, stop ingress and confirm exit of every old adapter and replica, close old channels, then initialize new authority identity and epoch. Unknown process state blocks activation. Stopping only forwarding is insufficient: old local spending must cease. | AT-08/09/18 |
+| D6 — caps | Maximum 10,000 configured tenants, 8 replica slots, 1,024 pending checks per replica, 16 KiB request payload, and 20 ms authority wait capped by remaining caller deadline. Reject excess requests explicitly; unknown identities allocate no state. Correctness-history exports cap at 1 GiB/run; reaching the cap stops the correctness run as incomplete, never silently drops evidence. | AT-04/11 |
+| D7 — retention | Use synthetic identities only for published v1 artifacts. Correctness history is disabled by default; explicit exports are capped, retained locally for 7 days and deleted by cleanup on next tool startup/run. Published synthetic benchmark artifacts remain versioned; manifests document that distinction. | AT-10/13 |
+| D8 — workloads | Policies in NFR-002/003 are fixed. Generate arrivals deterministically, with no retries: service workload uses 20 ms spacing for each conforming tenant and 1 ms for the hot tenant; performance workload uses 200 μs spacing, tenant index j mod 1000, replica floor(j/1000) mod N, and cost 5 when (floor(j/1000)+j) mod 10=0, otherwise 1. Start each independent run from a full bucket, warm up 30 seconds, then measure 60 seconds. Freeze host, image/tool versions and schedule hash before running. | AT-22–25 |
+| D9 — identity | gRPC mTLS authenticates registered adapter URI SAN principals. Immutable epoch policy maps each principal to authorized synthetic tenant/operation pairs. Adapter resolves upstream identity from trusted test configuration, ignoring override headers; unknown/expired credentials and unauthorized pairs are rejected without state creation. | AT-04 |
+| D11 — response gate | Adopt PRD-022: ≥99% of delivered checks receive timely ALLOW or LIMITED in each capacity run. All error outcomes and timeouts fail this numerator; the 99.5% generator-delivery gate remains mandatory. | AT-27 |
 
-**Blocking status:** D3/D4/D5/D6/D8/D9 remain decisions required before affected code generation; D7 is required before data export. D11 requires PRD alignment if adopted. The real-time credit bound is `UNKNOWN` until D4 is resolved, and a new epoch cannot activate without D5's positive fencing mechanism. Thresholds are product gates, not implementation evidence. No availability SLA or external production readiness is inferred.
+**Remaining implementation gates:** finalize protobuf encoding/compatibility, atomic authority transaction and persistent manifest integrity mechanism, supervisor termination evidence, and model/trace schema in HLD/LLD before generating the affected modules. These are required design artifacts, not achieved capabilities. If the selected authority cannot use the declared common clock at its atomic commit point, D4 must be redesigned before implementation; client-supplied precomputed time is insufficient.
 
 ## 9. Source and document status
 
-This SRD is derived from [PRD revision 5](PRD.md). The PRD's [research and existing-system references](PRD.md#how-research-improved-the-decisions) explain why the strict/credit comparison, skew tests, and fault boundaries were chosen. This document adds proposed interface and verification defaults only where required for an implementable contract. HLD will choose components and persistence; LLD will define internal state transitions and concurrency mechanisms. Neither may silently weaken this SRD's release gates.
+This SRD is derived from [PRD revision 6](PRD.md). The PRD's [research and existing-system references](PRD.md#how-research-improved-the-decisions) explain why the strict/credit comparison, skew tests, and fault boundaries were chosen. This document adds proposed interface and verification defaults only where required for an implementable contract. HLD will choose components and persistence; LLD will define internal state transitions and concurrency mechanisms. Neither may silently weaken this SRD's release gates.
 
 
 ## 10. Research-grade verification requirement
@@ -242,3 +245,10 @@ Each comment below was independently raised by the named review role. “Address
 | Research review RS-01 | Ordinary throughput tests would not distinguish the project from existing implementations. | **Addressed as requirement:** FR-021/AT-26 mandate a trace-checked state machine; novelty is unclaimed. |
 
 **Revision summary:** Added the formal verification deliverable and role review log; tightened grant, deadline, identity, failure, accounting, and benchmark contracts. Remaining blockers are listed in §8. This is a revised specification, not implementation evidence.
+
+
+## 12. Revision 3 — decision closure
+
+PRD revision 6 now includes PRD-022–024. D4 adopts a shared Linux clock with startup provenance checks; D5 requires verified termination of every old process; D9 adopts mTLS and immutable principal authorization; D11 is a binding response gate. D3/D6/D7/D8 now specify numeric representation, bounded resources, retention and deterministic workloads. FR-021 is traced to PRD-023.
+
+The revision-2 review table is retained as historical review evidence. Its open dispositions are superseded as follows: PE-02 → D4 accepted; PE-03 → D5 accepted; PE-04/QA-03 → D8 accepted; DEV-01 → D9 accepted; QA-02 → D11/NFR-009 accepted. Contract decisions are closed; implementation and verification evidence are pending. The PRD and SRD make no claim of achieved throughput, proven production safety, or a novel algorithm.
