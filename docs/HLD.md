@@ -37,26 +37,18 @@ flowchart LR
 ```
 
 ```mermaid
-flowchart TB
- subgraph VM["One Docker Linux VM: shared verified kernel time namespace"]
-  subgraph AD["Adapter process / trusted integration"]
-   I[Identity and policy binding] --> F[Forwarding gate]
-  end
-  subgraph RP["Admission replica processes, N fixed per epoch"]
-   G[gRPC handler] --> L[Local credit store C]
-   G --> C[Authority client]
-  end
-  subgraph AU["Authority process"]
-   X[Atomic tenant decision and grant journal]
-  end
-  subgraph SU["Supervisor process"]
-   M[Epoch manifest and process inventory]
-  end
- end
- F -->|authenticated mTLS| G
- C -->|internal gRPC; authenticated service identity| X
- M -. controls and verifies .-> RP
- M -. controls and verifies .-> AU
+flowchart LR
+  I[Trusted identity and policy mapping] --> F[Adapter forwarding gate]
+  F -->|mTLS gRPC| G[Admission replica handler]
+  G --> C[Authority client]
+  G --> L[Local credit store]
+  C -->|authenticated gRPC| X[Single authority: atomic bucket and grant state]
+  M[Epoch supervisor: manifest and process inventory] -. controls lifecycle .-> G
+  M -. controls lifecycle .-> X
+  M -. controls lifecycle .-> F
+  VM[One Docker Linux VM with shared verified time namespace] --- G
+  VM --- X
+  VM --- F
 ```
 
 The adapter is the trust boundary: untrusted client values never determine tenant, operation or cost. The adapter is separate to model a real integration. Replicas are separate processes to exercise concurrency and partition behavior. One authority owns all quota state and is deliberately a single point of failure. The supervisor controls lifecycle; generator, backend, offline replay and checker are independent processes, outside the quota path. No Redis, database, message queue or consensus service is selected.
