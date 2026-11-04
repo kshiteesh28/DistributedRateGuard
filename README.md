@@ -4,7 +4,7 @@ A proposed C++ distributed rate limiter comparing exact per-request coordination
 
 ## Specification
 
-Read the [Product Requirements Document — revision 4](docs/PRD.md) for the product contract, research references, failure model, experiment plan, and specification-to-code readiness gates.
+Read the [Product Requirements Document — revision 5](docs/PRD.md) for the product contract, numerical release goals, research references, failure model, experiment plan, and specification-to-code readiness gates.
 
 ## Planned capabilities
 
