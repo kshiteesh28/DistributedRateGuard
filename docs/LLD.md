@@ -1,9 +1,9 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 3 · **Date:** 2026-11-04 · **Status:** Proposed design; implementation/evidence pending  
-**Review branch:** `docs/principal-design-review-v1`, created from `main`  
-**Binding sources:** [PRD revision 6](PRD.md), [SRD revision 3](SRD.md)  
-**Architecture input:** [proposed HLD revision 2](HLD.md), delivered with this LLD.  
+**Revision:** 4 · **Date:** 2026-11-04 · **Status:** Proposed design; implementation/evidence pending  
+**Review branch:** `docs/spec-contract-closure-v1`, created from `main`  
+**Binding sources:** [PRD revision 7](PRD.md), [SRD revision 4](SRD.md)  
+**Architecture input:** [proposed HLD revision 3](HLD.md), delivered with this LLD.  
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
 
 ## 1. Scope and implementation status
@@ -130,7 +130,7 @@ Binding D1/D2 from SRD §8: invalid→INVALID_ARGUMENT, unauthenticated→UNAUTH
 
 **A-05 — wire and canonical identity decisions:** Keep ALLOW/LIMITED/UNAVAILABLE/OVERLOADED as explicit application outcomes over gRPC OK when a structured response is available. Invalid fields use INVALID_ARGUMENT, missing identity UNAUTHENTICATED, wrong role/permission PERMISSION_DENIED. Transport RESOURCE_EXHAUSTED is reserved for rejection before application decoding (e.g. message size); raw transport loss after dispatch always leaves commitment uncertain. Enum zero is UNSPECIFIED and never permits forwarding. Disable automatic retry/hedging for strict calls; a new application call is a fresh chargeable attempt. Retrying AcquireCredit always retains the same sequence and fingerprint.
 
-Proposed v1 wire field allocation: CheckAdmission tenant=1, operation=2, attempt_id=3, epoch=4, policy_digest=5; no client cost/time/mode field. Decision outcome=1, epoch=2, digest=3, mode=4, attempt_id=5, optional retry_delay_ns=6. AcquireCredit tenant=1, slot=2, incarnation=3, epoch=4, digest=5, sequence=6, trigger_cost_units=7; role is derived from transport. GrantResult grant_outcome=1, sequence=2, composite_grant_id=3, grant_units=4, epoch=5, digest=6. GrantOutcome is a separate enum: UNSPECIFIED, GRANTED, LIMITED, INVALID, UNAVAILABLE, OVERLOADED. GRANTED allocates credits and is never a forwarding ALLOW. Zero-valued grant amount is valid only for a known non-grant result; distinguish field presence. Preserve retired field numbers, reject unknown enum values, never reinterpret field units. Deadline comes from the gRPC deadline context, converted once to local monotonic remaining budget; no caller wall timestamp enters refill. Delay after conversion can only shorten eligibility.
+Proposed v1 wire field allocation: CheckAdmission tenant=1, operation=2, attempt_id=3, epoch=4, policy_digest=5; no client cost/time/mode field. Decision outcome=1, epoch=2, digest=3, mode=4, attempt_id=5, optional retry_delay_ns=6. AcquireCredit tenant=1, slot=2, incarnation=3, epoch=4, digest=5, sequence=6, trigger_cost_units=7, trigger_operation_id=8; authority derives cost from immutable policy and rejects a mismatched cost or unauthorized operation; role is derived from transport. GrantResult grant_outcome=1, sequence=2, composite_grant_id=3, grant_units=4, epoch=5, digest=6. GrantOutcome is a separate enum: UNSPECIFIED, GRANTED, LIMITED, INVALID, UNAVAILABLE, OVERLOADED. GRANTED allocates credits and is never a forwarding ALLOW. Zero-valued grant amount is valid only for a known non-grant result; distinguish field presence. Preserve retired field numbers, reject unknown enum values, never reinterpret field units. Deadline comes from the gRPC deadline context, converted once to local monotonic remaining budget; no caller wall timestamp enters refill. Delay after conversion can only shorten eligibility.
 
 Configured identifiers use nonempty ASCII [A-Za-z0-9_.-], at most 128 bytes; fixed binary digests/IDs have explicit versioned lengths. Canonical policy encoding v1 uses sorted tenant/principal/operation records, fixed-width big-endian integers and length-prefixed UTF-8/ASCII bytes, includes mode/Q/slots and every authorization field, and hashes with SHA-256. Reject duplicate names/keys. Human JSON is parsed to this typed form; object iteration order is never hashed. Artifact schemas retain explicit versions, units, order and completeness; uint64 JSON values are decimal strings to avoid floating-point loss. Golden encoding and compatibility vectors are acceptance evidence, not generated code.
 
@@ -155,7 +155,7 @@ lock tenant
   commit balance, last_refill=now, transition_order++, event slot
 unlock tenant
 journal/witness the exact transition; await matching durable acknowledgment
-on failure: mark epoch terminal, preserve uncertainty, never roll back and resume
+on failure: mark epoch DRAINING, preserve uncertainty, never roll back and resume
 release logical tenant reservation
 return decision only after acknowledgment; receipt may still time out
 ```
@@ -234,7 +234,7 @@ Stop/reset: persist quiescing intent, stop ingress, stop adapters and every old 
 
 **Reviewed architecture decision A-01:** The authority keeps its hot state in memory, with an independently owned supervisor witness. Before every tenant transition or cached grant response, a bounded witness exchange compares the complete current tenant state/version and all fixed-slot grant records with the supervisor-owned expected image. Missing, older, or mismatched records fail closed. The authority reserves the tenant, commits a transition at the shared monotonic timestamp, and sends a versioned before/after record to the witness. It returns a usable result only after the witness records and acknowledges that exact transition. Until acknowledgment, that tenant admits no later transition. A lost acknowledgment retries the identical transition ID; an unavailable witness stops new authority work. Local confirmed credits remain governed by the partition contract.
 
-The witness appends an ordered hash-chained journal, with flush before acknowledgment, and retains an independent expected-state image. A complete checkpoint contains policy, epoch and every tenant/slot state; no eviction or reconstruction of missing live state is allowed. Checkpoint creation is an offline stopped-epoch operation. Journal cap is a proposed 2 GiB per epoch; reaching it stops new authority transitions and triggers fenced shutdown. This is separate from the 1 GiB correctness-history cap. A single writer may batch flushes without acknowledging an unflushed transition. No same-epoch recovery or automatic replay is introduced.
+The witness appends an ordered hash-chained journal, with flush before acknowledgment, and retains an independent expected-state image. A complete checkpoint contains policy, epoch and every tenant/slot state; no eviction or reconstruction of missing live state is allowed. Checkpoints are audit exports at CLOSED, never an input to restart an old epoch. Journal cap is a proposed 2 GiB per epoch; reaching it stops new authority transitions and triggers fenced shutdown. This is separate from the 1 GiB correctness-history cap. A single writer may batch flushes without acknowledging an unflushed transition. No same-epoch recovery or automatic replay is introduced.
 
 The witness detects declared single-record deletion, version rollback and inconsistent grant results before subsequent authority use. It is not a claim to detect coordinated corruption of both independent images or malicious rollback of the whole host; such evidence is UNKNOWN. Witness/supervisor loss terminates the authority incarnation and blocks reset until all old processes are confirmed stopped. Crash-window, acknowledgment-loss, journal corruption and record-rollback checks are mandatory evidence before this mechanism can satisfy FR-008/AT-09. Added coordination and flush cost may miss performance gates; thresholds must not be reduced to conceal it.
 
@@ -309,7 +309,7 @@ All rows require no forwarding without timely received ALLOW. Evidence IDs refer
 | History cap/write failure | Before or after commit | Stop correctness run as incomplete; no refund for past commits | Truncated/incomplete flag; AT-10/11 |
 | Supervisor failure during reset | Old processes uncertain | New epoch blocked until complete positive inventory/fence recovery | Control operation state; AT-09 |
 
-**Lifecycle ambiguity LLD-08:** PRD/SRD permit isolated replicas to spend confirmed units during authority disconnect, while accepted D5 calls authority failure terminal. Instant stop of an isolated replica cannot be inferred from authority death. No new epoch starts until it is stopped, and old-epoch events remain accounted. Product/architecture owners must confirm the exact closure/notification semantics before claiming no post-terminal local commits.
+**Resolved LLD-08:** Authority failure stops new authority transitions and moves the epoch to DRAINING. Participants that observe DRAINING stop new local spends and forwarding. Isolated replicas/adapters may still act on confirmed old-epoch credits under their last observed ACTIVE state; these events remain part of the old epoch. CLOSED means every registered old adapter, replica and authority has been positively confirmed exited. A fresh epoch may activate only after CLOSED. Guarantees cover the entire old epoch through its final commit, including partitioned spending during DRAINING; no instantaneous remote-stop guarantee or cross-epoch envelope is claimed.
 
 ## 13. Test seams and requirement traceability
 
@@ -336,6 +336,8 @@ Inject internal ClockSource/ProvenanceProvider, authority port, fault-capable RP
 | 022 | NFR-009 | Delivered terminal ALLOW/LIMITED numerator | AT-27 |
 | 023 | FR-021 | Independent model/history checker and mutants | AT-26 |
 | 024 | FR-001/003/008/017 | Clock identity, authentication, positive fencing | AT-01/04/09/17/18 |
+| 025 | FR-022 | Supervisor/participants, ACTIVE/DRAINING/CLOSED | AT-28 |
+| 026 | FR-023 | Generator, exact uniform and labeled skew traces | AT-29 |
 
 Numerical acceptance remains unchanged: zero observed model/bound violations in ≥1 million attempts per mode with defect detection; noisy-tenant ≥99% timely ALLOW in each of five runs; p99≤5 ms at 5,000 offered checks/s, 1,000 tenants, N=3, 50 ms deadline; ≥99% delivered checks receive timely ALLOW/LIMITED; generator delivery≥99.5%. Credit efficiency requires ≥50% fewer authority operations/1,000 admitted units, ≥95% strict admitted cost, same policy/trace/budget and other gates; compare five-run medians, publish each sample and zero-denominator failure. Two clean pinned reproductions must recalculate results. N=1/3/8 and clamped Q sensitivity are not alternate pass configurations. Correctness/fault histories and performance runs remain separate. No gate is claimed passed.
 
@@ -351,32 +353,187 @@ Replay is O(M) decision work for M sorted offered rows, plus per-tenant aggregat
 | --- | --- | --- |
 | 1 Contract/build: proto, policy, toolchain manifest | LLD-04 mapping/schema; PRD-005/008/021 | Versioned encoding and config golden vectors; missing contracts block network code |
 | 2 Pure arithmetic/clock: policy, platform, independent model | D3/D4, PRD-001–003/024 | Boundary/refill/overflow tests AT-01–04; clock provenance prototype LLD-07; arithmetic/model disagreement blocks |
-| 3 Lifecycle/identity: supervisor/security/manifest | LLD-01/02/06/08; PRD-007/008/015/024 | Positive fencing and state-fault checks AT-04/08/09/11; unresolved witness blocks serving |
+| 3 Lifecycle/identity: supervisor/security/manifest | LLD-01/02/06/08; PRD-007/008/015/024 | Positive fencing and state-fault checks AT-04/08/09/11; witness evidence failure blocks serving |
 | 4 Strict A: authority/admission/adapter/events | Independent serial oracle, lifecycle/auth and record completeness | AT-01–11/21 and ≥1m attempts; no release A completion on integrity/accounting miss |
-| 5 Evaluation B: replay/loadgen/report | Strict baseline, LLD-03 routing resolution and frozen manifest | AT-12/13/22/23/25/27, five runs and two clean reproductions; missed gate remains incomplete |
+| 5 Evaluation B: replay/loadgen/report | Strict baseline, PRD-026 trace validation and frozen manifest | AT-12/13/22/23/25/27, five runs and two clean reproductions; missed gate remains incomplete |
 | 6 Credits C: credits/grant service | Strict correctness, LLD-05/07 event/clock design | AT-14–19/21/24; ≥1m credit attempts, no duplication/refund/unsafe slot reset |
 | 7 Formal assurance: model/checker | Stable schema, independently implemented oracle | AT-20/26 seeded mutants and reproducible counterexamples; incomplete search cannot PASS |
 | 8 Release evidence review | All applicable source gates | Link requirements→contracts→design→checks→observed results; no threshold adjustment after results |
 
 ## 15. Principal review disposition and implementation gates
 
-This revision incorporates HLD revision 2 as its co-delivered architecture. The previous list of open implementation choices is superseded by A-01 through A-05; source wording conflicts remain gated.
+This revision incorporates HLD revision 3 as its co-delivered architecture. The previous list of open implementation choices is superseded by A-01 through A-05; source wording conflicts are resolved by PRD-025/026.
 
 | Finding | Principal review disposition |
 | --- | --- |
 | HLD-01 / LLD-01: state integrity | Design mechanism selected in A-01: independent supervisor witness, pre-state validation, versioned journal and acknowledgment barrier. Missing/corrupt witness fails closed; implementation/fault evidence pending. |
 | HLD-02 / LLD-02: internal identity | A-02 fixes roles, endpoint SAN checks, local provisioning, per-RPC expiry and fenced epoch rotation. Negative certificate evidence pending. |
-| HLD-03 / LLD-03: routing | Source clarification remains required: preserve exact D8 batched trace, report per-window skew, do not relabel it short-window uniform or certify disputed NFR-003. Requirements owner chooses source wording; no threshold is changed here. |
+| HLD-03 / LLD-03: routing | Resolved by PRD-026/FR-023/AT-29; exact uniform trace and distinct block-skew sensitivity trace. |
 | HLD-04 / LLD-07: time | A-04 locates logical timestamps within reserved serialized transitions, separates durability acknowledgment, and preserves unknown results. Kernel/protocol validation pending. |
 | HLD-05 / LLD-06: supervisor recovery | A-03 requires exact inventory/OS exit evidence, prohibits adopting a running epoch after supervisor loss, and blocks unknown processes. Crash-recovery evidence pending. |
 | HLD-06 / LLD-04/05: wire/events/forwarding | A-04/A-05 define bounded precommit event reservations, incomplete-history verdicts, forwarding CAS, explicit outcomes and versioned fields/encoding. No exact host-crash accounting claim. |
-| LLD-08: epoch-terminal wording | Source clarification remains required: distinguish authority-terminal notification from fully fenced epoch closure. Isolated confirmed credits may still spend in the old epoch until stopped; no fresh epoch can overlap. Product owner must resolve any stronger immediate-stop interpretation. |
+| LLD-08: epoch lifecycle | Resolved by PRD-025/FR-022/AT-28: ACTIVE, DRAINING and positively fenced CLOSED. |
 | HLD-07: operating targets | All gates retained. Witness RPC/journal flush cost is measured, not assumed to fit 5 ms. No optional cheaper path may bypass integrity to pass benchmarks. |
 
 A-01 is deliberately conservative: per-tenant reservations prevent later work until witness acknowledgment; a witness/journal error ends service rather than replaying uncertain spend. Journal cap is proposed 2 GiB/epoch, separate from correctness histories. Add witness expected-state/journal memory O(TN) and journal bytes to capacity reporting; prototypes must include this overhead. No durability acknowledgment permits mutation of clock timestamps after the fact.
 
 Review invariants: every spend has one owner/provenance; no unknown result authorizes forward/refund; each active grant has one activation; all old replica processes stop before new epoch; no lock spans RPC/I/O, although logical reservations span witness work. Volatile histories require incomplete/UNKNOWN after missing publications; exact accounting needs durable complete evidence. Every gate in §13 remains binding.
 
-Before affected code generation: write schema/canonicalization golden vectors; implement independently checked witness-state transition fixtures; validate clock/commit mapping and syscall failures; validate stop inventory, supervisor recovery and mTLS expiry/revocation fixtures; specify pinned build/tool versions. Resolve HLD-03/LLD-03 and LLD-08 wording in source contracts before claiming the affected benchmark or instantaneous epoch-stop behavior. The documents remain proposed; executable evidence and measured performance are outstanding.
+Before affected code generation: write schema/canonicalization golden vectors; implement independently checked witness-state transition fixtures; validate clock/commit mapping and syscall failures; validate stop inventory, supervisor recovery and mTLS expiry/revocation fixtures; specify pinned build/tool versions. Validate PRD-025/026 with AT-28/29; no immediate remote-stop behavior is promised. The documents remain proposed; executable evidence and measured performance are outstanding.
 
-See [principal review record](reviews/principal-design-review-2026-11-04.md). PRD and SRD input content is preserved.
+See [principal review record](reviews/principal-design-review-2026-11-04.md). This revision aligns with PRD 7 and SRD 4, whose changes are included in this review.
+
+## 16. Principal contract closure: executable design rules
+
+These rules complete A-01–A-05 and supersede earlier descriptions where a sequencing detail was unspecified. They are design contracts with pending executable evidence.
+
+### 16.1 Witness protocol and failure boundaries
+
+One logical reservation per tenant serializes all strict decisions, grant allocation and cached-grant replies. No C++ mutex remains held across witness IPC or I/O. Transaction identity is (epoch, tenant, next_transition_version); transition versions and journal indices are uint64 starting at 1, never wrap, and exhaustion stops new authority work and initiates DRAINING; request fingerprint covers mode, operation, cost, sequence/slot/incarnation if applicable, previous-state hash and policy digest. Transport request deadlines are not part of an idempotency fingerprint.
+
+1. Reserve tenant, snapshot full bucket plus all ≤8 grant records under mutex, release mutex. Witness Validate compares complete snapshot/version with its independently owned image. Missing/rollback/mismatch ends new authority work; do not recreate state.
+2. Reacquire mutex and compare full snapshot again. Check epoch phase and caller deadline, sample CLOCK_MONOTONIC, compute candidate and record event/order in a reserved slot. This is the logical commit instant. Record the candidate as pending visibility; block every successor on this tenant.
+3. Send Commit(transaction ID, exact fingerprint, old/new state, commit timestamp). Witness independently recomputes refill/debit/sequence transition from its prior image and immutable policy, rejecting invalid transitions. Do not merely trust the authority's new-state hash.
+4. Witness validates expected version, appends a length-delimited record with schema/version, prior-chain hash, payload hash and monotonically increasing journal index, then flushes before publishing new expected state and acknowledgment. Single writer serializes records; batching may combine records from different reserved tenants without acknowledging before flush.
+5. On acknowledgment, expose completed result and release reservation. Retry of the same pending transaction must match full fingerprint; witness returns the same acknowledgment for an already committed transaction, with no new append/debit. Older version/different fingerprint rejects. Keep the current transaction result per tenant until a successor completes.
+6. Caller cancellation before step 2 releases the reservation without mutation or consuming a grant sequence. After step 2, cancellation only abandons the response; finish internal persistence or fail closed. Caller expiry never rolls back the candidate. Hard witness completion timeout is 20 ms from commit submission; a client can time out sooner. Timeout/failure after possible write enters DRAINING; no successor/reconstruction is allowed.
+7. Witness or supervisor crash, torn journal, missing/invalid checksum/index, disk-full, fsync failure, or 2 GiB epoch-journal exhaustion blocks acknowledgments/new work and triggers fencing. Startup never resumes this journal as an ACTIVE epoch. Common-mode rollback of the entire VM and both images is outside the detectable single-record failure model; evidence is UNKNOWN, never a safe pass.
+
+The cached-grant response path performs witness state validation but creates no new debit/transaction. It returns only a previously acknowledged result. Pre-reserve response/event memory to avoid allocation failure halfway through a state mutation. Any postcommit allocation/publication failure follows the uncertain-result/fence rule. Record every witness message, disk write/flush and byte for coordination reports.
+
+### 16.2 Grant concurrency and retry completion
+
+The first eligible waiting request becomes coordinator. Store its exact operation/cost and sequence fingerprint until a known result; changing caller, deadline or operation cannot change an unresolved grant's semantic tuple. Other callers remain bounded by their own deadlines, at most the configured total pending checks; no polling loop spins indefinitely. Same-sequence resolution uses a new transport deadline, exactly the original semantic fingerprint, at most one resolution RPC at a time, and no detached retry worker after epoch shutdown.
+
+Upon a known grant, activate once and atomically reserve/spend the initiating caller's cost before waking unrelated waiters if that caller is still eligible. If the initiating caller has expired, preserve the confirmed batch and return no ALLOW for that caller. A known LIMITED completes the sequence; future attempts may use the next sequence. If UINT64_MAX is consumed, mark EXHAUSTED; it never wraps, while existing confirmed units can still be spent. Return UNAVAILABLE for attempts needing an impossible new sequence and require fenced reset to regain grant issuance.
+
+A grant ID is the canonical composite (epoch UUID16, tenant ID, slot uint32, incarnation UUID16, sequence uint64). It is never used as an admission response. Verify complete tuple, actual granted amount and policy digest before activation. Strict and credit mode are immutable and cannot share one tenant bucket in an epoch.
+
+### 16.3 Timing and response rules
+
+Only trusted internal code converts a gRPC remaining deadline into local monotonic duration on receipt. Clamp internal authority waits to min(20 ms, caller remaining budget); do not propagate an absolute client-supplied clock. After queueing or witness validation, recheck expiry under state protection at the commit instant. A late reply is discarded by the adapter even if server-side work completed.
+
+CLOCK_MONOTONIC provenance is kernel boot ID, identical time-namespace inode/offset and clock ID across authority, replicas and witness. A sampled backwards value or failed syscall fails closed. Wall time is used only for TLS validity; it never determines quota refill. Historical UNKNOWN real-time verdicts cannot be turned into PASS by sorting incomparable clocks.
+
+### 16.4 Wire, values and canonical bytes
+
+Package rateguard.v1. Check strings tenant/operation are configured ASCII identifiers ≤128 bytes. Epoch/incarnation/attempt IDs are exactly 16 bytes; policy digest exactly 32 bytes. Slot is uint32 with configured range, costs/rates/capacity/sequence/retry delay are uint64 with D3 validation. No uint64 JSON number is decoded through floating point. Reply epoch/digest/mode must match the request's active configuration before an adapter considers ALLOW.
+
+Enum numbers: DecisionOutcome {UNSPECIFIED=0, ALLOW=1, LIMITED=2, INVALID=3, UNAUTHENTICATED=4, UNAVAILABLE=5, OVERLOADED=6}; GrantOutcome {UNSPECIFIED=0, GRANTED=1, LIMITED=2, INVALID=3, UNAVAILABLE=4, OVERLOADED=5}; Mode {UNSPECIFIED=0, STRICT=1, CREDIT=2}. Invalid/auth failures use settled transport statuses; reserved application enum values are never mistaken for success. Duplicate scalar protobuf fields and unknown fields follow protobuf parsing rules, but cannot override any trusted transport identity/cost; decoded values still undergo validation. Reuse of removed field numbers is forbidden.
+
+The earlier A-05 field numbering is retained. AcquireCredit operation ID=8 resolves the gap between a trusted operation policy and an unverified numeric trigger cost. No independent requested-batch field is needed: Q comes from policy. SRD §2 reflects this fixed-Q contract. Retry estimate is optional uint64 nanoseconds; absent means unavailable, zero is valid only for immediately eligible/advisory conditions.
+
+Canonical policy bytes begin with schema version u32 big endian. Encode all integral policy fields in their explicit fixed widths, sorted identifier tables using bytewise ASCII order, arrays as u32 count plus records, strings as u32 length plus bytes. Bind tenant B/r/operation costs/Q, mode, slot/incarnation/role/authorization tables and epoch identity. Hash these bytes with SHA-256. Reject duplicate IDs/authorization keys and unknown mandatory fields. Artifact JSON uses named units, decimal-string uint64 values and versioned completeness/count/hash fields. Identifier count limits and 16 KiB decoded protobuf-message limit are checked before new quota state or large dynamic allocation; message framing/compression is outside the 16 KiB protobuf payload but decompression must enforce that bound.
+
+### 16.5 Event completeness and scalable interval checking
+
+Correctness event slots carry Reserved, Published or Incomplete status and a monotonically increasing producer index. Reserve before commit; publish after filling immutable event bytes with checksum. A missing sequence, Reserved slot at crash, truncation, checksum failure or missing producer termination marker prevents an exact complete-history claim. Counters alone never prove that no local spend occurred. Durable acknowledged authority journal supplies grant/strict state evidence; exact local spending requires complete local evidence. Partial histories may establish a concrete violation, but absence of one is UNKNOWN.
+
+Efficient interval check for complete histories: group committed costs at each distinct monotonic integer-nanosecond time t_i, in epoch-relative time. Let P_i be cumulative committed cost in subunits after group i, P_0=0, and K=B*S (strict) or (B+NQ)*S (credit). For all representable half-open integer-nanosecond intervals, maintain m=min over starts i≤j of (P_(i-1)−r*t_i). At each end group j verify P_j−r*(t_j+1)≤K+m. The endpoint t_j+1 includes the entire group; empty intervals contain no events. Use signed checked 128-bit intermediates and reject time+1 overflow. This checks every relevant interval without O(M²) enumeration after sorting; sorting costs O(M log M), scanning O(M), state O(tenants). Compare against independently enumerated small histories and boundary fixtures before using it on million-attempt evidence. The sequential bucket/reference-model check remains separately required: interval bounds alone do not detect reject-all or every illegal state transition.
+
+### 16.6 Frozen workloads and release evidence
+
+PRD-026 defines uniform routing, cost and time exactly; start attempt index j=0 at epoch traffic start, preserve it through 30-second warmup and 60-second measurement, and classify by scheduled arrival time. Wait at most the 50 ms caller deadline after measurement end to settle outcomes; the extra wait creates no new measured arrivals. For three-tenant service load, schedule the two conforming streams every 20 ms and the hot stream every 1 ms; at ties use tenant-ID order, and route each tenant's consecutive attempts round robin. All use cost 1, B=r=100. Each conforming tenant schedules 3,000 measured attempts; hot schedules 60,000.
+
+Performance schedules 450,000 attempts including warmup, 300,000 measured. Every measured block of ten costs is nine unit-1 and one unit-5 overall. Define nearest-rank p99 on completed measured attempts, sorted ascending, index ceil(0.99*n); n=0 fails. Report outcome-specific distributions and all missed/error counts. Timely means adapter receives ALLOW/LIMITED strictly before its 50 ms deadline; errors/timeouts are failures. Required service ≥99% ALLOW uses offered conforming attempts, not only delivered ones. Generator gate uses delivered/scheduled≥99.5%; terminal gate uses timely valid responses/delivered≥99%. A delivered check is one the generator submitted to the adapter at the scheduled service boundary; mere scheduling is not delivery.
+
+Efficiency uses median of each mode's five per-run operations-per-1000-admitted-cost values; reduction=1−median_credit/median_strict, preserve=median_credit_admitted/median_strict_admitted. Zero baseline or zero admitted cost invalidates comparison. Count every attempted authority RPC including failed/duplicate retries; disclose witness messages/flushes and total coordination separately. All paired runs use identical trace and host/resource limits. No hardware value or capacity-knee evidence is invented: record actual CPU/RAM/container limits before the first benchmark; if delivery or below-knee conditions fail, the run is invalid rather than a reason to relax thresholds.
+
+### 16.7 Generation checklist
+
+Before each module is generated, its inputs, validation, failure path, ownership, algorithm and acceptance evidence must point to these contracts. Generate pure policy/arithmetic plus independent fixtures first; then lifecycle/security/witness, strict A, replay B, credits C and independent model/checker. Pin compiler/CMake/gRPC/protobuf/crypto/model-tool versions in a machine-readable build lock using versions available on the actual build host before compiling; this records environment evidence and never changes runtime semantics. Any discovered inconsistency becomes a failing review gate, not an implicit implementation choice.
+
+The recorded semantic findings are resolved in this revision. Conformance tests, fault experiments, model exploration and performance measurement are still required; neither this checklist nor a zero-findings review can guarantee bug-free generated code.
+
+## 17. Class design and construction contracts
+
+All classes/files below are **planned**. C++20 is the implementation language baseline; use std::variant<T,Error> as Result<T>, not an undeclared exception convention or C++23-only std::expected. Error has category, stable code, retry disposition, commitment (NotCommitted/Possible/Committed) and optional bounded diagnostics; no credential values. Constructors return validated factories when validation can fail. Runtime dependencies outlive services and are injected by reference; no hidden global mutable state.
+
+### 17.1 Class ownership and interfaces
+
+Signatures are contract sketches; strong domain types and cancellation/deadline arguments refer to §§3–4/16.
+
+| Class / planned file | Owned state and dependencies | Public operations and invariant |
+| --- | --- | --- |
+| PolicySnapshot / src/policy/policy_snapshot.h | Immutable tenants, operations, role permissions, mode/Q/slots; shared_ptr<const PolicySnapshot> | FindTenant, ResolveOperation, Authorize; lookup never inserts, returns immutable view with snapshot lifetime |
+| PolicyLoader / src/policy/policy_loader.h | No runtime state; bounded parser + CanonicalPolicyCodec | Load(ConfigBytes)→Result<PolicySnapshot>; reject duplicate/malformed/out-of-range config before readiness |
+| CanonicalPolicyCodec / src/policy/canonical_codec.h | Stateless | Encode, Digest; §16.4 fixed canonical order/widths, independent golden vectors |
+| IClock / src/platform/clock.h | Abstract dependency | Now→Result<MonoNanos>, Provenance→ClockIdentity; fake clock internal only |
+| LinuxMonotonicClock / src/platform/clock_linux.h | Verified boot/namespace/clock identity | Implements IClock; syscall/provenance/backwards failures return typed integrity error |
+| PeerAuthenticator / src/security/peer_authenticator.h | Immutable trust registry + trusted wall-time provider | Authenticate(TransportPeer)→Result<AuthenticatedPeer>; role/SAN/EKU/expiry checked every RPC |
+| AuthorizationResolver / src/security/authorization.h | PolicySnapshot reference | Resolve(peer,tenant,operation)→Result<AuthorizedOperation>; sole constructor of trusted operation/cost |
+| EpochGate / src/supervisor/epoch_gate.h | Atomic observed phase + epoch identity | ObserveDrain, PermitCommit(expectedEpoch), Phase; transitions monotonic ACTIVE→DRAINING→CLOSED |
+| TenantLedger / src/authority/tenant_ledger.h | Mutex, immutable identity, bucket, fixed grant-result array, version, reservation state | BeginReservation→Result<TenantReservation>; ReadSnapshot; no public balance setter |
+| TenantReservation / src/authority/tenant_reservation.h | Move-only reservation token, original version/snapshot, phase | ValidateSnapshot, CommitCandidate, CompleteAck, Fail; only this token can change the reserved tenant |
+| BucketMath / src/authority/bucket_math.h | Stateless production arithmetic | Refill, Decide, RetryDelay; checked 128-bit D3 arithmetic, never accesses clock or global state |
+| IStateWitness / src/authority/witness_port.h | Abstract authority boundary | Validate, Commit, QueryAck; exact identity/fingerprint/version per §16.1 |
+| LocalStateWitnessClient / src/authority/local_witness_client.h | Unix-socket client bound to supervisor identity; implements IStateWitness | Validate, Commit, QueryAck; authenticates expected server and keeps exact transaction fingerprint |
+| WitnessServer / src/supervisor/witness_server.h | Supervisor-owned local socket; refs peer identity, WitnessStateMachine and JournalWriter | Dispatch validated authority requests; reject unrelated process identity before touching witness state |
+| DockerProcessController / src/supervisor/docker_process_controller.h | Implements IProcessController using local runtime API and recorded identities | Start, InspectIdentity, Stop, ConfirmExited; never infer exit from missing network reply |
+| WitnessStateMachine / src/supervisor/witness_state.h | Independent expected tenant images and last acknowledgments; own arithmetic validator | ValidateSnapshot, ValidateTransition, PublishAck; cannot import BucketMath as its validator |
+| JournalWriter / src/supervisor/journal_writer.h | Single joined worker, append fd, chain/index, fixed queue and 2 GiB budget | AppendAndFlush→Result<DurableAck>; ack only after flush; no active-epoch recovery |
+| AuthorityEngine / src/authority/authority_engine.h | Preloaded TenantLedger objects; refs clock, witness, policy, gate, recorder | StrictCheck, AllocateCredit, ReplayGrant; private shared ExecuteTransition follows reservation/ack protocol |
+| IAuthorityClient / src/admission/authority_client.h | Abstract replica dependency | Check, Acquire, ResolveGrant; deadline/cancel propagation; automatic transport retry disabled |
+| GrpcAuthorityClient / src/admission/grpc_authority_client.h | RAII channel/stub + registered identity | Implements client; maps raw transport loss to Possible commitment |
+| ReplicaTenantCredits / src/credits/tenant_credits.h | Mutex/CV, active batch, seq/fingerprint, pending coordinator, remainder counters | TrySpend, BeginAcquire, Resolve, Stop; state transitions exactly §6/16.2 |
+| CreditManager / src/credits/credit_manager.h | Fixed map of ReplicaTenantCredits, slot/incarnation; refs client/policy/clock/gate | Check; one coordinator and one grant RPC at a time per tenant; no prefetch or cross-slot reuse |
+| AdmissionService / src/admission/admission_service.h | gRPC handler, bounded pending-slot pool; refs auth/authority/credits/events | CheckAdmission; mode routing immutable, decodes/validates before state allocation |
+| AuthorityService / src/authority/authority_service.h | Internal gRPC facade; refs auth and AuthorityEngine | StrictCheck and AcquireCredit RPCs; only registered replica identity can call |
+| ForwardAttempt / adapter/forward_attempt.h | Attempt ID, deadline, atomic Pending/ForwardStarted/Expired/Failed | TryForwardTransition; exactly one CAS winner; does not retry backend automatically |
+| SampleAdapter / adapter/sample_adapter.h | Trusted fixture mapping and bounded active ForwardAttempt objects | Handle; derive authorized context, call admission, enforce receipt/epoch/deadline, never replay after crash |
+| ManifestStore / src/supervisor/manifest_store.h | Supervisor-owned directory/lock fd; immutable validated manifest snapshots | Load, AtomicReplace; fsync/rename/dir-fsync failures prevent activation; no anti-rollback claim from rename |
+| IProcessController / src/supervisor/process_controller.h | Abstract local runtime boundary | Start, InspectIdentity, Stop, ConfirmExited; identity includes boot/container/PID-start values |
+| EpochSupervisor / src/supervisor/epoch_supervisor.h | Exclusive control thread, inventory/operation state, WitnessStateMachine, JournalWriter | StartEpoch, Drain, FenceAndClose, RecoverAfterCrash; never adopts old ACTIVE epoch |
+| EventRecorder / src/events/event_recorder.h | Fixed run-wide budget, producer sequences and reserved slots | Reserve→Result<EventReservation>, Publish, SealIncomplete; no identifiers as metric labels |
+| HistoryExporter / src/events/history_exporter.h | Bounded streaming file writer | Export with count/hash/complete markers; cleanup follows D7; missing producer seal yields incomplete |
+| TraceGenerator / tools/loadgen/trace_generator.h | Immutable workload spec and integer index | Next; exact PRD-026 schedule, no output-dependent retry/routing |
+| BenchmarkRunner / tools/loadgen/runner.h | Open-loop scheduler and pinned manifest | RunPair; scheduled membership, 50 ms settlement, counts and invalid-run reasons |
+| ReplayModel / tools/replay/reference_model.h | Independent pure model state | ApplyOffered, ComparePolicies; no production BucketMath/AuthorityEngine imports |
+| HistoryChecker / tools/history_checker/checker.h | Independent parser/model/config | Check, ExplainCounterexample; prefix interval check plus serial/provenance validation; UNKNOWN on missing evidence/resource limit |
+| ModelHarness / model/runner | Pinned external model-check tool/config | EnumerateDeclaredBounds, Mutate, ExportCounterexample; tool output cannot self-certify production code |
+
+### 17.2 Construction, lifetime and threading
+
+ServiceRuntime owns instances in dependency order: validated policy/trust/clock → gate/recorder → ledger/witness/client → engines/services → servers. Stop reverses admission: reject new RPCs, mark DRAINING, wake CV waiters, cancel bounded transport waits, join workers, seal/export available histories, destroy services, then dependencies. A crash bypassing graceful shutdown triggers incomplete evidence and supervisor fencing. No detached task may retain raw pointers to destroyed services; pending operations hold owned request buffers and validated snapshot shared_ptrs.
+
+TenantReservation is move-only. Destruction before CommitCandidate cancels reservation without mutating state. Destruction after CommitCandidate without durable acknowledgment calls Fail, enters DRAINING and preserves Possible commitment; it must never undo the debit or release the ledger for successors. CompleteAck checks exact tenant/version/fingerprint, then clears reservation and wakes waiters. No recursive calls into the ledger while its mutex is held. Only one reservation is active per tenant across strict/grant/read-replay paths.
+
+JournalWriter owns its descriptor and joined worker exclusively. Queue capacity is fixed at 1,024 transition records, each bounded to 16 KiB; reservation/queue acquisition occurs before commit so overload cannot silently strand a postcommit append. Per-tenant ordering and durable indices are maintained; batching never changes commit timestamps. Grant result snapshots contain ≤8 fixed-slot records, so encoding must be size-validated at startup; configuration whose transition record cannot fit is rejected before traffic. Existing in-flight records finish or become uncertain when the 2 GiB cap/IO failure occurs. Supervisor continues to account old credit holders until CLOSED.
+
+AuthorityService exposes both the strict internal check and credit grant port. AdmissionService never exposes the witness socket or a balance-reset endpoint. Only Supervisor constructs a new epoch and authority identity; local mutexes cannot authorize a second authority instance. IProcessController positively verifies identity/exit; container names alone cannot prove fencing.
+
+### 17.3 Class collaboration
+
+```mermaid
+classDiagram
+  AdmissionService --> AuthorizationResolver
+  AdmissionService --> IAuthorityClient
+  AdmissionService --> CreditManager
+  CreditManager *-- ReplicaTenantCredits
+  AuthorityService --> AuthorityEngine
+  AuthorityEngine *-- TenantLedger
+  TenantLedger --> TenantReservation
+  AuthorityEngine --> IStateWitness
+  IStateWitness <|.. LocalStateWitnessClient
+  LocalStateWitnessClient --> WitnessServer
+  WitnessServer --> WitnessStateMachine
+  IAuthorityClient <|.. GrpcAuthorityClient
+  IProcessController <|.. DockerProcessController
+  EpochSupervisor *-- WitnessStateMachine
+  EpochSupervisor *-- JournalWriter
+  EpochSupervisor --> ManifestStore
+  EpochSupervisor --> IProcessController
+  AuthorityEngine --> IClock
+  CreditManager --> IClock
+  SampleAdapter *-- ForwardAttempt
+  AuthorityEngine --> EventRecorder
+  CreditManager --> EventRecorder
+```
+
+Class-level seam acceptance: substitute IClock, IAuthorityClient, IStateWitness and IProcessController through constructors only. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; all stop/fencing outcomes against EpochSupervisor. Independent ReplayModel/HistoryChecker use only versioned artifacts and policy input, not production decision functions. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
+
+### 17.4 Per-process composition
+
+SupervisorRuntime owns ManifestStore, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime refers to this per-process construction pattern; it is not one address space for all components. All cross-process transitions use the explicit authenticated ports.
+
+Witness Validate pre-reserves a bounded journal queue slot and maximum record byte budget before returning permission to prepare a transition; no automatic eviction/lease expiry can remove it while the authority may commit. It is released only on explicit precommit abort, committed acknowledgment, or fenced epoch shutdown. This prevents postcommit capacity rejection from becoming an unrecorded ordinary overload. Duplicate Validate with identical transaction identity returns its existing reservation. Only crashes/I/O/integrity failures can invalidate a postcommit reservation, and those follow DRAINING/uncertainty rules.

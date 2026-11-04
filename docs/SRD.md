@@ -1,6 +1,6 @@
 # RateGuard — Software Requirements Document
 
-**Revision:** 3 · **Status:** Draft for review · **Date:** 2026-11-03 · **Source:** [PRD revision 6](PRD.md)  
+**Revision:** 4 · **Status:** Draft for review · **Date:** 2026-11-03 · **Source:** [PRD revision 7](PRD.md)  
 **Releases:** A — strict core; B — evaluation; C — distributed credits  
 **Purpose:** Define observable software behavior and verification obligations. No feature or metric in this document is claimed as implemented.
 
@@ -31,7 +31,7 @@ The API is specified here at field/meaning level; §8 fixes D1–D2 semantics. F
 | Operation | Required fields | Result |
 | --- | --- | --- |
 | `CheckAdmission` | trusted tenant context; configured operation ID; correlation ID; caller deadline | `ALLOW`, `LIMITED`, `INVALID`, `UNAUTHENTICATED`, `UNAVAILABLE`, or `OVERLOADED`; policy digest, mode, epoch, and diagnostic correlation ID where known |
-| `AcquireCredit` (C) | tenant, registered replica slot/incarnation, epoch, policy digest, grant sequence, requested units, triggering operation cost, deadline | grant ID, granted units and sequence; or `LIMITED`, `INVALID`, `UNAVAILABLE`, `OVERLOADED` |
+| `AcquireCredit` (C) | tenant, registered replica slot/incarnation, epoch, policy digest, grant sequence, triggering operation ID and derived cost, deadline | grant ID, granted units and sequence; or `LIMITED`, `INVALID`, `UNAVAILABLE`, `OVERLOADED` |
 | `ReplayPolicies` (B, offline) | complete versioned offered trace, initial state, policies A/B | deterministic per-policy decisions, per-tenant comparison, provenance hashes, and validation errors |
 
 The public adapter translates a received `LIMITED` into HTTP 429 and `UNAVAILABLE`/`OVERLOADED` into HTTP 503 in the sample integration. Other transport mappings, including gRPC status versus application outcome, are fixed by D2. No limit response is returned as 429 when the authority is unreachable. An estimated retry delay means earliest eligibility if no one else consumes the tenant's units under the same policy; it is not a reservation.
@@ -98,7 +98,7 @@ At most `NQ_i` previously allocated units can be carried into the interval; new 
 
 A replica becomes ready only after verifying matching mode, policy digest, epoch, and authority identity. A restarted strict replica joins the existing state. A restarted credit replica cannot resume or replace an old slot's units unless a separately designed durable local-state protocol exists; v1 requires a new quiesced epoch. No tenant bucket is lazily initialized after loss, eviction, or unknown identity. The only allowed initialization is explicit epoch creation before traffic.
 
-Authority readiness validates an independently preserved epoch identity, expected tenant-state manifest, and grant-result journal consistency. Missing tenant state or a rolled-back sequence stops admission rather than recreating state. Storage and validation mechanisms belong in HLD. When authority connectivity is lost, strict checks without a committed result do not authorize forwarding. A credit replica may spend already confirmed local units but cannot obtain new grants. If authority state disappears, its identity changes, rollback is suspected, or a policy mismatch is observed, new authority commits stop. Already isolated old credit replicas may still have confirmed units. A new epoch requires an activation record identifying every old slot and positive evidence that it stopped or was fenced from admission; an unreachable slot cannot be presumed stopped from a timeout. Without that evidence, the new epoch stays unavailable. D5 selects the mechanism and remains blocking. The exact mechanism is D5 and belongs in HLD.
+Authority readiness validates an independently preserved epoch identity, expected tenant-state manifest, and grant-result journal consistency. Missing tenant state or a rolled-back sequence stops admission rather than recreating state. Storage and validation mechanisms belong in HLD. When authority connectivity is lost, strict checks without a committed result do not authorize forwarding. A credit replica may spend already confirmed local units but cannot obtain new grants. If authority state disappears, its identity changes, rollback is suspected, or a policy mismatch is observed, new authority commits stop. Already isolated old credit replicas may still have confirmed units. A new epoch requires an activation record identifying every old slot and positive evidence that it stopped or was fenced from admission; an unreachable slot cannot be presumed stopped from a timeout. Without that evidence, the new epoch stays unavailable. D5 and PRD-025 fix lifecycle semantics; HLD specifies the positive-fencing mechanism.
 
 The PRD deliberately excludes transparent authority promotion. Atomic server-side operations and durable distributed history are distinct properties. No test or documentation may claim strong failover from atomic operations alone.
 
@@ -128,8 +128,10 @@ Each row states **trigger/input → required result/error → verification**. Ac
 | FR-018 | C · 019 | On crash/disconnect or authority loss, only confirmed local units may be consumed and no timeout reclamation occurs; report exact stranded units only with complete durable spend evidence, otherwise a conservative interval from the grant ledger and last verified checkpoint. | AT-18 |
 | FR-019 | C · 020 | For identical offered traces, collect authority calls/bytes, admitted cost, latency, errors, and stranded/retired units separately by mode. | AT-19 |
 | FR-020 | A–C · 021 | Before generating a module, require a resolved source requirement, interface contract, invariants, and independent acceptance method; otherwise block that module as a specification decision. | AT-20 |
-| FR-021 | C · 021,023 | Before claiming credit safety, provide an executable independent state-machine model and trace-to-model checker covering grants, local spends, retries, partitions, crashes, and epoch changes; seeded unsafe variants yield reproducible counterexample schedules. | AT-27 | Recompute timely ALLOW + LIMITED divided by delivered attempts for each run; fail below 99%. Seed fast UNAVAILABLE/OVERLOADED responses and verify they cannot improve the numerator. | 
-| AT-26 |
+| FR-021 | C · 021,023 | Before claiming credit safety, provide an executable independent state-machine model and trace-to-model checker covering grants, local spends, retries, partitions, crashes, and epoch changes; seeded unsafe variants yield reproducible counterexample schedules. | AT-26 |
+
+| FR-022 | A/C · 025 | On authority failure, enter DRAINING, stop participants that observe it, account for isolated old-epoch spending, and require all old process exits before CLOSED and next activation. Unknown process status blocks activation. | AT-28 |
+| FR-023 | B/C · 026 | Generate exactly the PRD-026 uniform routing trace for the performance gate; retain former block-skew routing only as separately labeled sensitivity evidence. Invalid/mismatched trace hash invalidates the run. | AT-29 |
 
 **Deferred:** PRD-013 live policy changes and PRD-014 permits for long-running work have no v1 FRs. They require new contracts before code generation.
 
@@ -178,6 +180,9 @@ Test names below are evidence IDs, not claims that tests exist. Keep the referen
 | AT-21 | Inject double-spend, reject-all, duplicate grant, and bound-break defects; independent checker fails for each intended violation. Record the shortest reproducible counterexample found. |
 | AT-22–25 | Use NFR-002/003 policies and the D8 manifest: five paired 60-second runs after 30-second warmup, same trace/seed/routing/host budget/deadline/instrumentation, no retries. Report per-run ratios and counts, stranded ranges, and N=1/3/8 plus Q-sweep sensitivity; pass configuration remains N=3, clamped B/8. Per run, scheduled/delivered/missed arrivals are reported; <99.5% delivery invalidates the run. |
 | AT-26 | Model-check bounded configurations with at least two replicas, two tenants, and valid combinations drawn from `B∈{2,3}`, `Q∈{1,2}`, costs in `{1,2}` (respecting `max_cost≤Q≤B`), and grant/spend/loss/crash/partition/retry/epoch actions. Check conservation, one-result-per-sequence, no cross-epoch spend, and the virtual-time interval bound. Independently validate implementation histories; seeded double-spend, duplicate grant, and stale-epoch mutants must produce reproducible counterexamples. Publish model, checker version, configuration, state count, and traces. |
+| AT-27 | For each run, compute timely ALLOW+LIMITED divided by delivered attempts; require ≥99%. Fast UNAVAILABLE/OVERLOADED never improve the numerator. |
+| AT-28 | Isolate a confirmed-credit replica, fail authority, observe DRAINING spending in old epoch, block new activation until exact process exits, then activate next epoch with no overlap. |
+| AT-29 | Enumerate PRD-026 schedule for N=1/3/8, check exact tenant/slot/cost counts, distinguish uniform and block-skew hashes, and reject a mislabeled trace. |
 
 | PRD source | SRD requirement(s) | Evidence | Release |
 | --- | --- | --- | --- |
@@ -194,6 +199,8 @@ Test names below are evidence IDs, not claims that tests exist. Keep the referen
 | 021,023 | FR-020–021 | AT-20, AT-26 | A–C |
 | 022 | NFR-009 | AT-27 | B/C |
 | 024 | FR-001/003/008/017 | AT-01/04/09/17/18 | A/C |
+| 025 | FR-022 | AT-28 | A/C |
+| 026 | FR-023 | AT-29 | B/C |
 
 ## 8. Accepted v1 decisions and implementation gates
 
@@ -204,10 +211,10 @@ These decisions supersede the open defaults in revisions 1–2. HLD/LLD must pre
 | D1/D2 — interface | Versioned gRPC messages carry explicit application outcomes. Successful transport never implies ALLOW. Invalid input maps to INVALID_ARGUMENT, unauthenticated calls to UNAUTHENTICATED, unauthorized principals to PERMISSION_DENIED; these never charge. Transport loss/deadline can conceal commitment and never authorizes forwarding. Exact protobuf field numbers and compatibility checks are required before interface code generation. | AT-04/06/07 |
 | D3 — arithmetic | Cost and capacity are integer units; balance uses 10^9 subunits/unit, time uses integer nanoseconds, and r is integer units/s. Bounds: 1≤B≤10^9, 1≤r≤10^9, 1≤c≤B; Q is integer with max_cost≤Q≤B. Refill adds r×elapsed_ns subunits, capped at B×10^9. Checked 128-bit intermediates prevent overflow. Use uint64 sequence starting at 1; exhaustion ends grant issuance for that slot/tenant, never wraps. | AT-02/03/15 |
 | D4 — time | All authority and replicas run in one Linux kernel and the same verified time namespace; use CLOCK_MONOTONIC at linearization points. Record kernel boot identity, namespace identity and clock ID in the manifest. Reject mismatches before readiness. Host restart starts a new epoch. The tight bound uses this clock and applies only within one epoch. Multi-host or missing provenance produces UNKNOWN and cannot pass safety. | AT-01/17/26 |
-| D5 — fencing | Supervisor owns fixed process/container inventory; automatic restart is disabled. Authority crash/identity/state-integrity failure terminates the epoch. Before reset, stop ingress and confirm exit of every old adapter and replica, close old channels, then initialize new authority identity and epoch. Unknown process state blocks activation. Stopping only forwarding is insufficient: old local spending must cease. | AT-08/09/18 |
+| D5 — fencing | Supervisor owns fixed process/container inventory; automatic restart is disabled. Authority crash/identity/state-integrity failure enters DRAINING; CLOSED requires confirmed exit of every old participant. Before reset, stop ingress and confirm exit of every old adapter and replica, close old channels, then initialize new authority identity and epoch. Unknown process state blocks activation. Stopping only forwarding is insufficient: old local spending must cease. | AT-08/09/18 |
 | D6 — caps | Maximum 10,000 configured tenants, 8 replica slots, 1,024 pending checks per replica, 16 KiB request payload, and 20 ms authority wait capped by remaining caller deadline. Reject excess requests explicitly; unknown identities allocate no state. Correctness-history exports cap at 1 GiB/run; reaching the cap stops the correctness run as incomplete, never silently drops evidence. | AT-04/11 |
 | D7 — retention | Use synthetic identities only for published v1 artifacts. Correctness history is disabled by default; explicit exports are capped, retained locally for 7 days and deleted by cleanup on next tool startup/run. Published synthetic benchmark artifacts remain versioned; manifests document that distinction. | AT-10/13 |
-| D8 — workloads | Policies in NFR-002/003 are fixed. Generate arrivals deterministically, with no retries: service workload uses 20 ms spacing for each conforming tenant and 1 ms for the hot tenant; performance workload uses 200 μs spacing, tenant index j mod 1000, replica floor(j/1000) mod N, and cost 5 when (floor(j/1000)+j) mod 10=0, otherwise 1. Start each independent run from a full bucket, warm up 30 seconds, then measure 60 seconds. Freeze host, image/tool versions and schedule hash before running. | AT-22–25 |
+| D8 — workloads | Policies in NFR-002/003 are fixed. Generate arrivals deterministically, with no retries: service workload uses 20 ms spacing for each conforming tenant and 1 ms for the hot tenant; performance workload uses 200 μs spacing, tenant index j mod 1000, replica ((j mod 1000)+floor(j/1000)) mod N, and cost 5 when (floor(j/1000)+j) mod 10=0, otherwise 1. Start each independent run from a full bucket, warm up 30 seconds, then measure 60 seconds. Freeze host, image/tool versions and schedule hash before running. | AT-22–25 |
 | D9 — identity | gRPC mTLS authenticates registered adapter URI SAN principals. Immutable epoch policy maps each principal to authorized synthetic tenant/operation pairs. Adapter resolves upstream identity from trusted test configuration, ignoring override headers; unknown/expired credentials and unauthorized pairs are rejected without state creation. | AT-04 |
 | D11 — response gate | Adopt PRD-022: ≥99% of delivered checks receive timely ALLOW or LIMITED in each capacity run. All error outcomes and timeouts fail this numerator; the 99.5% generator-delivery gate remains mandatory. | AT-27 |
 
@@ -215,7 +222,7 @@ These decisions supersede the open defaults in revisions 1–2. HLD/LLD must pre
 
 ## 9. Source and document status
 
-This SRD is derived from [PRD revision 6](PRD.md). The PRD's [research and existing-system references](PRD.md#how-research-improved-the-decisions) explain why the strict/credit comparison, skew tests, and fault boundaries were chosen. This document adds proposed interface and verification defaults only where required for an implementable contract. HLD will choose components and persistence; LLD will define internal state transitions and concurrency mechanisms. Neither may silently weaken this SRD's release gates.
+This SRD is derived from [PRD revision 7](PRD.md). The PRD's [research and existing-system references](PRD.md#how-research-improved-the-decisions) explain why the strict/credit comparison, skew tests, and fault boundaries were chosen. This document adds proposed interface and verification defaults only where required for an implementable contract. HLD will choose components and persistence; LLD will define internal state transitions and concurrency mechanisms. Neither may silently weaken this SRD's release gates.
 
 
 ## 10. Research-grade verification requirement
@@ -249,6 +256,15 @@ Each comment below was independently raised by the named review role. “Address
 
 ## 12. Revision 3 — decision closure
 
-PRD revision 6 now includes PRD-022–024. D4 adopts a shared Linux clock with startup provenance checks; D5 requires verified termination of every old process; D9 adopts mTLS and immutable principal authorization; D11 is a binding response gate. D3/D6/D7/D8 now specify numeric representation, bounded resources, retention and deterministic workloads. FR-021 is traced to PRD-023.
+PRD revision 7 now includes PRD-022–024. D4 adopts a shared Linux clock with startup provenance checks; D5 requires verified termination of every old process; D9 adopts mTLS and immutable principal authorization; D11 is a binding response gate. D3/D6/D7/D8 now specify numeric representation, bounded resources, retention and deterministic workloads. FR-021 is traced to PRD-023.
 
 The revision-2 review table is retained as historical review evidence. Its open dispositions are superseded as follows: PE-02 → D4 accepted; PE-03 → D5 accepted; PE-04/QA-03 → D8 accepted; DEV-01 → D9 accepted; QA-02 → D11/NFR-009 accepted. Contract decisions are closed; implementation and verification evidence are pending. The PRD and SRD make no claim of achieved throughput, proven production safety, or a novel algorithm.
+
+
+## 13. Revision 4 — source conflict closure
+
+Authority failure stops new authority transitions and moves the epoch to DRAINING. Participants that observe DRAINING stop new local spends and forwarding. Isolated replicas/adapters may still act on confirmed old-epoch credits under their last observed ACTIVE state; these events remain part of the old epoch. CLOSED means every registered old adapter, replica and authority has been positively confirmed exited. A fresh epoch may activate only after CLOSED. Guarantees cover the entire old epoch through its final commit, including partitioned spending during DRAINING; no instantaneous remote-stop guarantee or cross-epoch envelope is claimed.
+
+For the uniform performance gate, zero-based attempt j has tenant=j mod 1000, block=floor(j/1000), replica=(tenant+block) mod N, arrival=j×200000 ns, and cost=5 when (block+j) mod 10=0, else 1. Each block spreads attempts across slots with counts differing by at most one and rotates each tenant's slot across blocks. Use N=3 for the pass gate. The previous replica=block mod N trace is a separately named block-skew sensitivity trace and cannot substitute for the uniform gate.
+
+FR-021 correctly maps to AT-26. AT-27 is restored as its own evidence row for NFR-009. FR-022/023 and AT-28/29 make lifecycle and routing independently verifiable. Historical review dispositions are superseded by these requirements; numerical thresholds are unchanged.
