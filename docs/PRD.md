@@ -1,6 +1,6 @@
 # RateGuard — Product Requirements Document
 
-**Revision:** 4 · **Status:** Proposed · **Date:** 2026-11-03  
+**Revision:** 5 · **Status:** Proposed · **Date:** 2026-11-03  
 **Owner:** Kshiteesh · **Target:** Backend and infrastructure engineers operating multi-tenant APIs
 
 ## Decision in one minute
@@ -77,13 +77,20 @@ Use a correct strict implementation as the engineering baseline. Instance-local 
 
 Freeze a benchmark manifest: source revision, build mode, dependency versions, hardware, container limits, policies, operation mix, trace/seed, deadline, and time resolution. Use open-loop arrivals, 30-second warmup, five 60-second runs, and no automatic retries. Report generator delay, offered and achieved rate, p50/p95/p99, timeout and error rates, CPU/memory, authority operations and bytes per admitted cost unit, unused/stranded credits, and observed burst deviation. Report individual runs and raw data. Instrumented correctness runs are separate from performance runs.
 
-**Correctness gates:** zero observed model violations across boundary cases and at least one million decision attempts in declared concurrency tests; a seeded double-spend and reject-all defect must be detected. Credit-mode tests additionally detect duplicate grant application and a violated burst bound. This is test evidence, not a mathematical proof of every execution.
+## Numerical release goals
 
-**Service objective:** in a healthy test below the measured limiter knee, at least 99% of attempts from two tenants offering 50% of their reserved rates receive timely `ALLOW` while a third offers 10× its rate. Count timeouts and unavailability as failures. Report synchronized bursts separately.
+These are **requirements to achieve**, not measured results. Release A/B cannot be marked complete until its applicable gates pass. Release C adds the credit-mode gates. Use the frozen benchmark manifest above, publish all five runs, and report any miss without lowering the threshold after the run. A test is invalid if the load generator delivers less than 99.5% of scheduled arrivals. For the credit-efficiency gate, use three replicas and `Q = clamp(ceil(B/8), max_cost, B)` for each tenant, fixed before any measured run; other batch sizes are sensitivity experiments, not alternative pass configurations.
 
-**Proposed performance objective:** p99 decision latency ≤5 ms at 5,000 offered checks/s, 1,000 tenants, three replicas, and a 50 ms caller deadline on one documented host, using a disclosed 90% cost-1/10% cost-5 mix. It is not a release gate or measured result. A miss is reported, not hidden by changing the workload.
+| Gate | Required result | Applies to |
+| --- | --- | --- |
+| Quota correctness | **Zero observed model violations in at least 1,000,000 decision attempts per mode**, including declared concurrent boundary cases. Tests must detect seeded double-spend and reject-all defects; credit-mode tests must also detect duplicate grants and an intentionally violated burst bound. | A and C |
+| Tenant service | **≥99% of conforming attempts receive timely `ALLOW` in each of five runs** while two tenants each offer 50% of their reserved rate and a third offers 10× its rate. Count timeouts and unavailable responses as failures; run below the measured limiter capacity knee. | B and C |
+| Decision latency and capacity | **p99 ≤5 ms in each of five runs at 5,000 offered checks/s**, 1,000 tenants, three replicas, and a 50 ms caller deadline on one documented host. Use the stated 90% cost-1/10% cost-5 mix and report errors separately. | B and C |
+| Credit efficiency | At the same offered trace, policy, host budget, and deadline, credit mode must use **≥50% fewer authority operations per 1,000 admitted cost units** than strict mode. It must preserve **≥95% of strict-mode admitted cost** and meet the latency and service gates above. Compare the five-run medians; publish every run and stranded-credit cost. | C |
+| Credit safety | **Zero observed conservation or `B + rΔt + NQ` bound violations** across the required credit-mode attempts and fault cases. No new grant after an unresolved allocation outcome. | C |
+| Reproducibility | **Two clean setup-and-run reproductions** using the published instructions and pinned inputs; each produces machine-readable results that recalculate the reported gates. | B and C |
 
-A speedup claim needs the correct baseline and must include changes in allowed work, burst precision, and stranded credits. Correctly throttled requests are not product failures.
+The threshold for authority operations measures coordination efficiency. It is not an equivalent-semantics speedup: the burst allowance and possible lost admissions remain part of the result. Correctly throttled requests are not product failures. These thresholds are proposed engineering targets; if a mode misses one, retain the measured result and mark that release incomplete.
 
 ## How research improved the decisions
 
