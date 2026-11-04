@@ -1,21 +1,22 @@
 # RateGuard
 
-RateGuard is a distributed rate limiter project focused on enforcing API quotas reliably under concurrent load.
+A proposed C++ distributed rate limiter comparing exact per-request coordination with distributed credits and an explicit bounded burst allowance.
 
-## Overview
+## Specification
 
-The design uses a C++ service with gRPC and Protocol Buffers, Redis Cluster for distributed quota state, and etcd for coordination. Prometheus metrics and Docker support observability and local development.
+Read the [Product Requirements Document — revision 3](docs/PRD.md) for the product contract, research references, failure model, experiment plan, and specification-to-code readiness gates.
 
-## Engineering focus
+## Planned capabilities
 
-- Enforce request quotas across multiple service instances.
-- Address race conditions that can allow concurrent requests to exceed a quota, using atomic compare-and-swap.
-- Evaluate the trade-off between fair request admission and throughput.
+- **Strict mode:** authoritative quota decisions for each request.
+- **Distributed-credit mode:** local admission from allocated batches, with credit conservation and a documented burst bound.
+- **Policy replay:** explain how policies change admissions for a fixed traffic trace.
+- **Reproducible evaluation:** measure coordination overhead, latency, burst deviation, wasted credits, and failure behavior.
 
-## Reported outcome
+## Research foundation
 
-The project reports 58% fewer API rejections and no quota violations after the atomicity fix. These are project-reported results; a reproducible benchmark is not included in this repository yet.
+The design draws on [Cloud Control with Distributed Rate Limiting (SIGCOMM 2007)](https://cseweb.ucsd.edu/~kvishwanath/papers/fp076-raghavan.pdf) and studies existing implementations such as [Envoy ratelimit](https://github.com/envoyproxy/ratelimit) and [Gubernator](https://github.com/gubernator-io/gubernator).
 
-## Repository status
+## Status
 
-This repository currently contains the project overview only. Implementation source code is not included.
+Specification stage. Implementation source and reproducible benchmark results are not included yet. Performance targets and design improvements in the PRD are proposals, not measured results.
