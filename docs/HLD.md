@@ -1,7 +1,7 @@
 # DistributedRateGuard — High-Level Design
 
-**Revision:** 2 · **Date:** 2026-11-04 · **Status:** Proposed; not implemented or verified  
-**Sources:** [PRD revision 6](PRD.md) and [SRD revision 3](SRD.md), read from main.
+**Revision:** 3 · **Date:** 2026-11-04 · **Status:** Proposed; not implemented or verified  
+**Sources:** [PRD revision 7](PRD.md) and [SRD revision 4](SRD.md), read from main.
 
 ## 1. Purpose, scope, and decision status
 
@@ -103,7 +103,7 @@ sequenceDiagram
 
 | State | Owner and consistency | Lifetime / failure |
 | --- | --- | --- |
-| Bucket balance, refill time | Authority; atomic serialized tenant transition, D3 fixed-point units and checked intermediates | Volatile for a single epoch; authority crash ends epoch. |
+| Bucket balance, refill time | Authority; atomic serialized tenant transition, D3 fixed-point units and checked intermediates | Volatile for a single epoch; authority crash enters DRAINING. |
 | Grant sequence and last result | Authority; debit and result written in one tenant/slot atomic transition | Volatile epoch state; duplicate replay only while epoch is active. Sequence never wraps. |
 | Confirmed grant, local remaining, pending sequence | Replica; atomic per-tenant local spend | Bounded one batch/tenant/slot; crash strands balance. |
 | Identity mapping, policy and digest | Immutable epoch configuration; adapter and authority validate digest | Fixed within epoch; unknown identities allocate no state. |
@@ -123,7 +123,7 @@ The strict envelope is B+rΔt. Credit spends obey the conservative B+rΔt+NQ bou
 
 The supervisor owns a fixed inventory of containers and slots, disables automatic restart, and records epoch ID, authority incarnation, boot ID, time namespace, clock ID and policy digest. Startup validates common clock provenance, config, mTLS identities, complete tenant state, slot registrations and authority identity before replicas or adapter become ready. An untrusted client cannot create tenant state.
 
-On authority crash, state-integrity failure or identity change, the epoch becomes terminal. Stop ingress, stop every adapter and replica including isolated credit holders, and obtain positive exit/fencing evidence for every inventory entry. Close old channels, persist a fresh epoch identity and initialize fresh authority state, then start authority, replicas and adapter in order. If any participant cannot be proven stopped, new activation remains unavailable. Stopping only the adapter does not prevent an isolated replica from committing local spends.
+On authority crash, state-integrity failure or identity change, the epoch enters DRAINING. Stop ingress, stop every adapter and replica including isolated credit holders, and obtain positive exit/fencing evidence for every inventory entry. Close old channels, persist a fresh epoch identity and initialize fresh authority state, then start authority, replicas and adapter in order. If any participant cannot be proven stopped, new activation remains unavailable. Stopping only the adapter does not prevent an isolated replica from committing local spends.
 
 A strict replica restart may rejoin only if SRD restart conditions and intact authority state are verified; a credit replica cannot reuse its old slot in the epoch. Adapter restart must not introduce a second forward for an attempt; exact idempotence evidence is an LLD decision. Clock mismatch blocks readiness. Transparent promotion or restoration of an old epoch is unsupported.
 
@@ -149,7 +149,7 @@ Run open-loop with no retries: five 60 s measurements after 30 s warmup, three r
 
 For tenant service, two tenants each offer 50 cost-1 attempts/s and a third offers 1,000/s, each r=B=100. Both conforming tenants require ≥99% timely ALLOW per run below the measured capacity knee. For credit efficiency compare identical offered traces, policy, routing, resources, deadlines and instrumentation; five-run median authority operations per 1,000 admitted cost units must fall ≥50%, preserve ≥95% of strict admitted cost and meet latency/service gates. Report bytes, unused/retired/stranded ranges, per-run results and burst deviation. N=1/3/8 and clamped Q sweep are sensitivity experiments; N=3 and Q=clamp(ceil(B/8),max_cost,B) is the fixed pass configuration. At least 1 million decision attempts per mode are required for correctness with seeded-defect detection, separate from performance runs. Two clean pinned reproductions must recalculate results.
 
-**Conflict HLD-03:** SRD D8's deterministic replica routing assigns batches of 1,000 consecutive requests to one replica, while NFR-003 describes uniform routing. Aggregate equality does not ensure uniform short-window traffic. Freeze a corrected or explicitly interpreted trace only after PRD/SRD clarification; do not silently change the contract or certify the gate. Prototype clock-at-commit feasibility, throughput, p99, memory at caps, capacity knee, scheduler delivery and trace recording overhead before freezing the host manifest.
+**Resolved HLD-03:** PRD-026/SRD FR-023 define the uniform performance trace. For the uniform performance gate, zero-based attempt j has tenant=j mod 1000, block=floor(j/1000), replica=(tenant+block) mod N, arrival=j×200000 ns, and cost=5 when (block+j) mod 10=0, else 1. Each block spreads attempts across slots with counts differing by at most one and rotates each tenant's slot across blocks. Use N=3 for the pass gate. The previous replica=block mod N trace is a separately named block-skew sensitivity trace and cannot substitute for the uniform gate.
 
 Measure every attempted authority check/grant RPC, including retries and failures, not just unique successful grants. Report witness calls, journal records/bytes, flushes and wait time separately plus total coordination traffic, so batching cannot hide work moved to the supervisor. Freeze exact metric definitions in the manifest before comparison; never exclude retries from the efficiency accounting.
 
@@ -195,6 +195,8 @@ Publish aggregate outcome counts, pending/overload, latency, authority calls and
 | 021/023 | FR-020–021 / model and checker | Independent state machine and implementation-trace checking; AT-20/26. |
 | 022 | NFR-009 / generator, adapter | ≥99% timely non-error outcomes; AT-27. |
 | 024 | FR-001/003/008/017 / supervisor, adapter | Clock provenance, identity and positive fencing; AT-01/04/09/17/18; A-01/A-02. |
+| 025 | FR-022 / supervisor and participants | ACTIVE/DRAINING/CLOSED with confirmed exit; AT-28. |
+| 026 | FR-023 / workload generator | Exact uniform routing and separately labeled skew; AT-29. |
 
 ## 13. Principal review and remaining gates
 
@@ -204,13 +206,24 @@ HLD revision 2 and [LLD revision 3](LLD.md) incorporate the following architectu
 | --- | --- |
 | HLD-01 / LLD-01: state integrity | Design mechanism selected in A-01: independent supervisor witness, pre-state validation, versioned journal and acknowledgment barrier. Missing/corrupt witness fails closed; implementation/fault evidence pending. |
 | HLD-02 / LLD-02: internal identity | A-02 fixes roles, endpoint SAN checks, local provisioning, per-RPC expiry and fenced epoch rotation. Negative certificate evidence pending. |
-| HLD-03 / LLD-03: routing | Source clarification remains required: preserve exact D8 batched trace, report per-window skew, do not relabel it short-window uniform or certify disputed NFR-003. Requirements owner chooses source wording; no threshold is changed here. |
+| HLD-03 / LLD-03: routing | Resolved by PRD-026/FR-023/AT-29; exact uniform trace and distinct block-skew sensitivity trace. |
 | HLD-04 / LLD-07: time | A-04 locates logical timestamps within reserved serialized transitions, separates durability acknowledgment, and preserves unknown results. Kernel/protocol validation pending. |
 | HLD-05 / LLD-06: supervisor recovery | A-03 requires exact inventory/OS exit evidence, prohibits adopting a running epoch after supervisor loss, and blocks unknown processes. Crash-recovery evidence pending. |
 | HLD-06 / LLD-04/05: wire/events/forwarding | A-04/A-05 define bounded precommit event reservations, incomplete-history verdicts, forwarding CAS, explicit outcomes and versioned fields/encoding. No exact host-crash accounting claim. |
-| LLD-08: epoch-terminal wording | Source clarification remains required: distinguish authority-terminal notification from fully fenced epoch closure. Isolated confirmed credits may still spend in the old epoch until stopped; no fresh epoch can overlap. Product owner must resolve any stronger immediate-stop interpretation. |
+| LLD-08: epoch lifecycle | Resolved by PRD-025/FR-022/AT-28: ACTIVE, DRAINING and positively fenced CLOSED. |
 | HLD-07: operating targets | All gates retained. Witness RPC/journal flush cost is measured, not assumed to fit 5 ms. No optional cheaper path may bypass integrity to pass benchmarks. |
 
-Before affected code generation, produce schema golden vectors, witness transaction/fail-stop fixtures, process-fencing and certificate fixtures, and shared-clock transition evidence against the recorded contracts. Before gate certification, resolve source routing and epoch-terminal wording with PRD/SRD owners. All PRD/SRD numerical gates, release order and deferred items are preserved. Authority/witness remains a single availability failure domain; no transparent failover or cross-epoch envelope is introduced.
+Before affected code generation, produce schema golden vectors, witness transaction/fail-stop fixtures, process-fencing and certificate fixtures, and shared-clock transition evidence against the recorded contracts. Before gate certification, execute AT-28/29 for the resolved lifecycle and routing contracts. All PRD/SRD numerical gates, release order and deferred items are preserved. Authority/witness remains a single availability failure domain; no transparent failover or cross-epoch envelope is introduced.
 
 No implementation, benchmark, model proof or production-readiness claim follows from this review. See [principal review record](reviews/principal-design-review-2026-11-04.md) for finding-by-finding evidence obligations.
+
+
+## 14. Principal contract closure — revision 3
+
+PRD 7/SRD 4 settle routing and ACTIVE→DRAINING→CLOSED semantics. An isolated holder may consume confirmed old credits until stopped; only CLOSED permits a fresh epoch. Authority/witness corruption stops new authority work immediately, while supervisor fencing accounts for surviving old participants.
+
+The witness now validates before-state and independently recomputes transitions, journals/version-checks them, and acknowledges only flushed records. Per-tenant reservations span IPC/I/O without holding mutexes, and no successor is visible before acknowledgment. A failed postcommit journal outcome is uncertain and enters DRAINING; it is never rolled back and retried as a fresh spend. Witness restart never resumes an old epoch.
+
+[LLD revision 4 §16](LLD.md#16-principal-contract-closure-executable-design-rules) fixes grant coordination, trusted operation/cost binding, types/enums, artifact encoding, event completeness, linear-time interval scanning after sorting, and exact workload denominators. It supersedes earlier deferred descriptions of these details. These are selected design mechanisms with pending conformance/performance evidence.
+
+See [principal closure review](reviews/principal-contract-closure-2026-11-04.md) for findings, dispositions and required evidence. The current design has no deliberately unresolved semantic choice among the findings recorded in that review. This is not a claim that code generation or execution cannot reveal defects.

@@ -1,6 +1,6 @@
 # RateGuard — Product Requirements Document
 
-**Revision:** 6 · **Status:** Proposed · **Date:** 2026-11-03  
+**Revision:** 7 · **Status:** Proposed · **Date:** 2026-11-03  
 **Owner:** Kshiteesh · **Target:** Backend and infrastructure engineers operating multi-tenant APIs
 
 ## Decision in one minute
@@ -118,7 +118,7 @@ For each generated module, record `requirement → contract → design decision 
 This revision adopts the reviewed v1 decisions below. These are requirements to implement and verify; no result is claimed as achieved.
 
 - **Deployment and clock:** releases A–C run inside one Linux kernel and shared time namespace, including a single Docker Linux VM on macOS. Authority and replicas use CLOCK_MONOTONIC and verify common clock/namespace provenance before readiness. Commit timestamps define the quota time axis. Multi-host enforcement is outside v1; an unverified clock cannot produce a real-time safety pass.
-- **Epoch lifecycle:** guarantees apply within one epoch only. Authority process loss, identity change, or state-integrity failure ends that epoch. A supervisor inventories every adapter and replica, disables automatic restart, stops them and confirms their exit before activating a fresh epoch. A disconnected credit replica may spend confirmed credits in the old epoch; an unverified old process blocks replacement. Resetting an epoch can replenish B and has no continuous cross-epoch quota guarantee.
+- **Epoch lifecycle:** guarantees apply within one epoch only. Authority process loss, identity change, or state-integrity failure starts DRAINING; CLOSED requires positive fencing of every participant as specified in PRD-025. A supervisor inventories every adapter and replica, disables automatic restart, stops them and confirms their exit before activating a fresh epoch. A disconnected credit replica may spend confirmed credits in the old epoch; an unverified old process blocks replacement. Resetting an epoch can replenish B and has no continuous cross-epoch quota guarantee.
 - **Trusted integration:** registered adapters use gRPC mTLS. Immutable configuration binds authenticated adapter principals to permitted synthetic tenants and operations. Untrusted headers cannot override that context.
 - **Grant policy:** baseline grants min(Q, floor(available)) units if this covers the triggering cost; otherwise LIMITED. Debit and sequence result commit atomically. Known LIMITED consumes its sequence and replays identically; unknown outcomes block advancement. Demand-aware allocation remains a future scope change.
 - **Required assurance:** Release C includes an independent executable state-machine model, bounded model exploration, and implementation-trace validation with reproducible counterexamples for seeded faults. This is research-informed engineering, not a novelty or proof-of-production-correctness claim.
@@ -132,3 +132,13 @@ This revision adopts the reviewed v1 decisions below. These are requirements to 
 | PRD-024 | A/C | Verify clock provenance, authenticated adapter binding, fixed process inventory and confirmed old-process termination before epoch activation; unsupported topology or incomplete fencing fails closed. |
 
 PRD-001–021 and their release sequence remain applicable. PRD-013/014 remain deferred. PRD-022 strengthens the numerical release goals; PRD-023 makes the assurance deliverable explicit; PRD-024 constrains the operating environment. The SRD must express these as observable contracts.
+
+
+## Revision 7 — precise lifecycle and evaluation contract
+
+| ID | Release | Requirement and evidence |
+| --- | --- | --- |
+| PRD-025 | A/C | Authority failure stops new authority transitions and moves the epoch to DRAINING. Participants that observe DRAINING stop new local spends and forwarding. Isolated replicas/adapters may still act on confirmed old-epoch credits under their last observed ACTIVE state; these events remain part of the old epoch. CLOSED means every registered old adapter, replica and authority has been positively confirmed exited. A fresh epoch may activate only after CLOSED. Guarantees cover the entire old epoch through its final commit, including partitioned spending during DRAINING; no instantaneous remote-stop guarantee or cross-epoch envelope is claimed. Fault evidence must show an isolated old spender cannot overlap activation of the next epoch. |
+| PRD-026 | B/C | For the uniform performance gate, zero-based attempt j has tenant=j mod 1000, block=floor(j/1000), replica=(tenant+block) mod N, arrival=j×200000 ns, and cost=5 when (block+j) mod 10=0, else 1. Each block spreads attempts across slots with counts differing by at most one and rotates each tenant's slot across blocks. Use N=3 for the pass gate. The previous replica=block mod N trace is a separately named block-skew sensitivity trace and cannot substitute for the uniform gate. Publish exact scheduled per-slot/per-tenant counts and the trace hash; every previously specified numerical release threshold remains required. |
+
+These clarifications resolve the source conflicts identified during principal review. They specify planned behavior and do not claim implementation or successful measurements.
