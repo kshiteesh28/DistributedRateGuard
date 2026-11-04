@@ -1,6 +1,6 @@
 # RateGuard — Product Requirements Document
 
-**Revision:** 5 · **Status:** Proposed · **Date:** 2026-11-03  
+**Revision:** 6 · **Status:** Proposed · **Date:** 2026-11-03  
 **Owner:** Kshiteesh · **Target:** Backend and infrastructure engineers operating multi-tenant APIs
 
 ## Decision in one minute
@@ -111,3 +111,24 @@ AI-assisted implementation begins module by module only when that module has no 
 For each generated module, record `requirement → contract → design decision → independent test → observed result`. Test oracles must not simply reuse production decision logic. Seed double-spend, duplicate grant, invalid reset, lost-response replacement, and reject-all defects to show the checks can fail. The present PRD defines intent; it does not claim those downstream specifications or tests exist.
 
 **Status:** no public implementation or reproducible benchmark has been verified for this release. Historical performance numbers in earlier project descriptions are not treated as current results. This document is ready to drive SRD/HLD work. Those documents must resolve clock behavior, numeric representation, and epoch fencing before implementation.
+
+
+## Revision 6 — accepted scope and engineering decisions
+
+This revision adopts the reviewed v1 decisions below. These are requirements to implement and verify; no result is claimed as achieved.
+
+- **Deployment and clock:** releases A–C run inside one Linux kernel and shared time namespace, including a single Docker Linux VM on macOS. Authority and replicas use CLOCK_MONOTONIC and verify common clock/namespace provenance before readiness. Commit timestamps define the quota time axis. Multi-host enforcement is outside v1; an unverified clock cannot produce a real-time safety pass.
+- **Epoch lifecycle:** guarantees apply within one epoch only. Authority process loss, identity change, or state-integrity failure ends that epoch. A supervisor inventories every adapter and replica, disables automatic restart, stops them and confirms their exit before activating a fresh epoch. A disconnected credit replica may spend confirmed credits in the old epoch; an unverified old process blocks replacement. Resetting an epoch can replenish B and has no continuous cross-epoch quota guarantee.
+- **Trusted integration:** registered adapters use gRPC mTLS. Immutable configuration binds authenticated adapter principals to permitted synthetic tenants and operations. Untrusted headers cannot override that context.
+- **Grant policy:** baseline grants min(Q, floor(available)) units if this covers the triggering cost; otherwise LIMITED. Debit and sequence result commit atomically. Known LIMITED consumes its sequence and replays identically; unknown outcomes block advancement. Demand-aware allocation remains a future scope change.
+- **Required assurance:** Release C includes an independent executable state-machine model, bounded model exploration, and implementation-trace validation with reproducible counterexamples for seeded faults. This is research-informed engineering, not a novelty or proof-of-production-correctness claim.
+
+### Additional stable product requirements
+
+| ID | Release | Required outcome and evidence |
+| --- | --- | --- |
+| PRD-022 | B/C | In every latency/capacity run, at least 99% of delivered attempts receive a terminal ALLOW or LIMITED before the 50 ms caller deadline. INVALID, authentication/dependency/overload errors and timeouts count as failures. The existing ≥99.5% generator-delivery gate also applies. Publish all denominators; a fast error response cannot satisfy this gate. |
+| PRD-023 | C | Publish the independent protocol model, explored configuration/state counts, trace validator, and reproducible counterexamples for seeded double-spend, duplicate-grant and stale-epoch defects. Bounded checking does not establish correctness for all executions. |
+| PRD-024 | A/C | Verify clock provenance, authenticated adapter binding, fixed process inventory and confirmed old-process termination before epoch activation; unsupported topology or incomplete fencing fails closed. |
+
+PRD-001–021 and their release sequence remain applicable. PRD-013/014 remain deferred. PRD-022 strengthens the numerical release goals; PRD-023 makes the assurance deliverable explicit; PRD-024 constrains the operating environment. The SRD must express these as observable contracts.
