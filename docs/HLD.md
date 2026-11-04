@@ -200,7 +200,7 @@ Publish aggregate outcome counts, pending/overload, latency, authority calls and
 
 ## 13. Principal review and remaining gates
 
-HLD revision 2 and [LLD revision 3](LLD.md) incorporate the following architecture decisions. “Resolved in design” does not mean implemented, measured or verified.
+HLD revision 3 and [LLD revision 4](LLD.md) incorporate the following architecture decisions. “Resolved in design” does not mean implemented, measured or verified.
 
 | Finding | Principal review disposition |
 | --- | --- |
@@ -227,3 +227,6 @@ The witness now validates before-state and independently recomputes transitions,
 [LLD revision 4 §16](LLD.md#16-principal-contract-closure-executable-design-rules) fixes grant coordination, trusted operation/cost binding, types/enums, artifact encoding, event completeness, linear-time interval scanning after sorting, and exact workload denominators. It supersedes earlier deferred descriptions of these details. These are selected design mechanisms with pending conformance/performance evidence.
 
 See [principal closure review](reviews/principal-contract-closure-2026-11-04.md) for findings, dispositions and required evidence. The current design has no deliberately unresolved semantic choice among the findings recorded in that review. This is not a claim that code generation or execution cannot reveal defects.
+
+
+Implementation planning: [LLD class design](LLD.md#17-class-design-and-construction-contracts), [story catalog](STORIES.md), and [JSON context blocks](context-blocks.json). Each story records source contracts, proposed files, dependencies and acceptance evidence; all implementation statuses remain planned.

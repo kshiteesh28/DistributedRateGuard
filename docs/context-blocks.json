@@ -1,0 +1,1448 @@
+{
+  "schema_version": "1.0",
+  "generated_date": "2026-11-04",
+  "recheck_mutable_state": true,
+  "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
+  "repository": {
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard",
+    "target_branch": "main",
+    "review_branch": "docs/spec-contract-closure-v1",
+    "review_base_commit": "5df15b6312edae2a4e6b50808c051d7b4a96e667",
+    "documentation_snapshot_before_class_and_story_additions": "5a6c8a1b6bc2338bb601b91ee9b0f504ff5e86ad",
+    "local_path_hint": "/Users/kshiteesh/Developer/rateguard",
+    "local_checkout_verified": false
+  },
+  "document_revisions": {
+    "PRD": 7,
+    "SRD": 4,
+    "HLD": 3,
+    "LLD": 4
+  },
+  "state": {
+    "documents": "reviewed_specifications",
+    "implementation": "not_created_or_verified_in_this_task",
+    "benchmarks": "not_run",
+    "model_checking": "not_run",
+    "note": "All implementation files and acceptance results in stories are planned. Re-read main and source revisions before coding."
+  },
+  "constraints": [
+    "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
+    "PRD-025 ACTIVE/DRAINING/CLOSED and positive fencing; no transparent failover or cross-epoch guarantee.",
+    "PRD-026 deterministic uniform trace, separately labeled block-skew sensitivity.",
+    "Immutable per-epoch policy; deferred PRD-013 and PRD-014.",
+    "No refunds/reclamation after uncertain outcomes, crash or partition.",
+    "No automatic strict retries; exact fingerprint/sequence retry for unresolved grants.",
+    "Authority/witness acknowledgment and logical tenant reservations follow LLD section 16.1.",
+    "All numerical product gates preserved; incomplete evidence is UNKNOWN and never PASS."
+  ],
+  "verification": {
+    "documentation_checks": [
+      "Source revisions read from GitHub main before changes.",
+      "Markdown table widths and code-fence balance checked.",
+      "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
+    ],
+    "design_experiments": [
+      {
+        "result": "passed_on_stated_fixtures",
+        "description": "PRD-026 schedule enumerated over 300000 measured attempts for N=1/3/8; exact balanced slot totals and 30000 cost-5 attempts."
+      },
+      {
+        "result": "passed_on_stated_fixtures",
+        "description": "Seed 44, 1000 small integer-time histories: prefix interval scan agrees with independent exhaustive interval enumeration."
+      }
+    ],
+    "not_run": [
+      "Generated implementation compilation/tests",
+      "Real authority/replica fault injection",
+      "Release benchmarks",
+      "TLA/model checker execution"
+    ]
+  },
+  "next_actions": [
+    "Run git status --short --branch in a verified clone and fetch main; do not assume the local_path_hint is a Git checkout.",
+    "Read docs/PRD.md, docs/SRD.md, docs/HLD.md and docs/LLD.md and confirm the revision bundle.",
+    "Start RG-001; follow depends_on for subsequent stories and record actual evidence before marking any criterion passed."
+  ],
+  "authorization": {
+    "documentation_and_merge": "Explicitly authorized by user in this task.",
+    "implementation": "Not requested in this documentation task; context does not itself authorize deployment or claim implementation."
+  },
+  "stories": [
+    {
+      "id": "RG-001",
+      "title": "Freeze wire contracts and build manifest",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-001",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [],
+      "prd_ids": [
+        "PRD-005",
+        "PRD-021"
+      ],
+      "srd_ids": [
+        "FR-005",
+        "FR-020"
+      ],
+      "planned_files": [
+        {
+          "path": "proto/rateguard/v1/admission.proto",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "proto/rateguard/v1/authority.proto",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "CMakeLists.txt",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "build-lock.json",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "AdmissionService",
+        "AuthorityService"
+      ],
+      "code_design_notes": [
+        "Freeze numbered v1 fields, enums, cost/operation binding, typed errors and C++20 dependency lock before implementing services.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-001-AC01",
+          "criterion": "Golden protobuf/encoding fixtures reject unspecified enums, invalid widths and malformed payloads without quota mutation.",
+          "evidence_ids": [
+            "AT-04",
+            "AT-06"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-001-AC02",
+          "criterion": "Build manifest records exact tool/compiler/library versions and reproducible build commands; no runtime metric is claimed.",
+          "evidence_ids": [
+            "AT-13",
+            "AT-20"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-001-AC03",
+          "criterion": "Raw transport failure after dispatch carries Possible commitment; automatic strict retry/hedging is disabled.",
+          "evidence_ids": [
+            "AT-07"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-002",
+      "title": "Implement immutable policy and checked arithmetic",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-002",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-001"
+      ],
+      "prd_ids": [
+        "PRD-001",
+        "PRD-002",
+        "PRD-003"
+      ],
+      "srd_ids": [
+        "FR-001",
+        "FR-002",
+        "FR-003"
+      ],
+      "planned_files": [
+        {
+          "path": "src/policy/policy_snapshot.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/policy/policy_loader.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/policy/canonical_codec.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/authority/bucket_math.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "PolicySnapshot",
+        "PolicyLoader",
+        "CanonicalPolicyCodec",
+        "BucketMath"
+      ],
+      "code_design_notes": [
+        "Preload finite immutable policy and integer state. Never insert unknown tenants. Use checked 128-bit refill and independent golden calculations.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-002-AC01",
+          "criterion": "Canonical byte fixtures produce identical digests regardless of input map order; duplicate IDs and invalid policy bounds reject.",
+          "evidence_ids": [
+            "AT-01",
+            "AT-04"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-002-AC02",
+          "criterion": "At available=c*S admit; at c*S-1 limit. Maximum bounds, saturation, fractions and overflow fixtures agree with independent arithmetic.",
+          "evidence_ids": [
+            "AT-02",
+            "AT-03"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-002-AC03",
+          "criterion": "LIMITED advances refill accounting without cost debit; reject-all and double-debit mutations are detected.",
+          "evidence_ids": [
+            "AT-21"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-003",
+      "title": "Implement shared clock provenance and commit timing",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-003",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-001"
+      ],
+      "prd_ids": [
+        "PRD-002",
+        "PRD-024"
+      ],
+      "srd_ids": [
+        "FR-001",
+        "FR-017"
+      ],
+      "planned_files": [
+        {
+          "path": "src/platform/clock.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/platform/clock_linux.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "IClock",
+        "LinuxMonotonicClock"
+      ],
+      "code_design_notes": [
+        "Clock identity binds boot ID, time namespace and CLOCK_MONOTONIC. Client time and wall-clock TLS validity never create refill.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-003-AC01",
+          "criterion": "Wrong namespace/boot/clock ID prevents readiness; backwards time or syscall failure stops transitions.",
+          "evidence_ids": [
+            "AT-01",
+            "AT-17"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-003-AC02",
+          "criterion": "Clock samples and ordered state transitions have an auditable linearization mapping; late responses cannot move timestamps.",
+          "evidence_ids": [
+            "AT-02",
+            "AT-07"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-003-AC03",
+          "criterion": "Unknown provenance yields UNKNOWN safety evidence rather than PASS.",
+          "evidence_ids": [
+            "AT-17"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-004",
+      "title": "Implement mTLS identity and operation authorization",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-001",
+        "RG-002"
+      ],
+      "prd_ids": [
+        "PRD-008",
+        "PRD-024"
+      ],
+      "srd_ids": [
+        "FR-003"
+      ],
+      "planned_files": [
+        {
+          "path": "src/security/peer_authenticator.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/security/authorization.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "PeerAuthenticator",
+        "AuthorizationResolver"
+      ],
+      "code_design_notes": [
+        "Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-004-AC01",
+          "criterion": "Wrong principal/role/SAN/EKU and spoofed overrides reject without quota allocation.",
+          "evidence_ids": [
+            "AT-04"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-004-AC02",
+          "criterion": "Expired certificate on an existing connection is rejected; fenced new epoch is required for trust rotation.",
+          "evidence_ids": [
+            "AT-04",
+            "AT-14"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-004-AC03",
+          "criterion": "No private keys, full credentials or raw sensitive payloads appear in event/export fixtures.",
+          "evidence_ids": [
+            "AT-10",
+            "AT-13"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-005",
+      "title": "Implement bounded events and incomplete-history accounting",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-005",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-001"
+      ],
+      "prd_ids": [
+        "PRD-009",
+        "PRD-015"
+      ],
+      "srd_ids": [
+        "FR-009",
+        "FR-010"
+      ],
+      "planned_files": [
+        {
+          "path": "src/events/event_recorder.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/events/history_exporter.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "EventRecorder",
+        "HistoryExporter"
+      ],
+      "code_design_notes": [
+        "Reserve slots before commit. Published checksummed records and producer seals distinguish complete evidence from crash gaps. Run-wide cap is 1 GiB.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-005-AC01",
+          "criterion": "Reserved but unpublished slots, gaps, checksum loss and missing producer seals mark a run incomplete/UNKNOWN.",
+          "evidence_ids": [
+            "AT-10",
+            "AT-11"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-005-AC02",
+          "criterion": "Cap exhaustion stops correctness traffic; no event is silently dropped and no debit is refunded.",
+          "evidence_ids": [
+            "AT-11"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-005-AC03",
+          "criterion": "Owner-stage counters reconcile; metric labels are bounded and local synthetic export cleanup follows seven-day policy.",
+          "evidence_ids": [
+            "AT-10",
+            "AT-13"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-006",
+      "title": "Implement supervisor lifecycle and positive fencing",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-006",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-002",
+        "RG-003",
+        "RG-004",
+        "RG-005"
+      ],
+      "prd_ids": [
+        "PRD-007",
+        "PRD-024",
+        "PRD-025"
+      ],
+      "srd_ids": [
+        "FR-001",
+        "FR-007",
+        "FR-008",
+        "FR-022"
+      ],
+      "planned_files": [
+        {
+          "path": "src/supervisor/epoch_gate.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/manifest_store.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/process_controller.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/epoch_supervisor.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/docker_process_controller.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "EpochGate",
+        "ManifestStore",
+        "IProcessController",
+        "EpochSupervisor",
+        "DockerProcessController"
+      ],
+      "code_design_notes": [
+        "Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-006-AC01",
+          "criterion": "Isolated confirmed-credit process blocks fresh epoch activation until positive exact-identity exit evidence exists.",
+          "evidence_ids": [
+            "AT-09",
+            "AT-28"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-006-AC02",
+          "criterion": "Partial manifest write, lost inventory, PID reuse and supervisor crash cannot silently reset state.",
+          "evidence_ids": [
+            "AT-08",
+            "AT-09"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-006-AC03",
+          "criterion": "Host reboot and trust rotation follow fenced new-epoch procedure; all lifecycle fixtures distinguish DRAINING from CLOSED.",
+          "evidence_ids": [
+            "AT-14",
+            "AT-28"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-007",
+      "title": "Implement independently validated witness transactions",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-007",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-002",
+        "RG-003",
+        "RG-005",
+        "RG-006"
+      ],
+      "prd_ids": [
+        "PRD-007",
+        "PRD-015",
+        "PRD-024"
+      ],
+      "srd_ids": [
+        "FR-008",
+        "FR-010"
+      ],
+      "planned_files": [
+        {
+          "path": "src/authority/witness_port.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/witness_state.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/journal_writer.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/authority/local_witness_client.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/witness_server.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "IStateWitness",
+        "WitnessStateMachine",
+        "JournalWriter",
+        "LocalStateWitnessClient",
+        "WitnessServer"
+      ],
+      "code_design_notes": [
+        "Independent expected-state recomputation, exact transaction IDs and pre-reserved bounded journal slots. Flush before ack; lost acknowledgment repeats exact transaction only.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-007-AC01",
+          "criterion": "Single-record deletion/rollback and invalid candidate transitions are rejected by an independently held witness image.",
+          "evidence_ids": [
+            "AT-09"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-007-AC02",
+          "criterion": "Duplicate transaction/ack loss cannot append a second debit; successor is blocked until exact acknowledgment.",
+          "evidence_ids": [
+            "AT-09",
+            "AT-15"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-007-AC03",
+          "criterion": "Disk full, fsync failure, witness death and 2 GiB cap produce DRAINING and uncertainty without rollback-and-resume.",
+          "evidence_ids": [
+            "AT-09",
+            "AT-11"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-011",
+      "title": "Implement independent replay and golden oracle",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-011",
+      "link_type": "repository_story",
+      "release": "B",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-002",
+        "RG-005"
+      ],
+      "prd_ids": [
+        "PRD-006"
+      ],
+      "srd_ids": [
+        "FR-011",
+        "FR-012"
+      ],
+      "planned_files": [
+        {
+          "path": "tools/replay/reference_model.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "tools/replay/main.cpp",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "ReplayModel"
+      ],
+      "code_design_notes": [
+        "Build the independent arithmetic/decision oracle before strict acceptance and credit implementation; full offered traces include order, initial state and immutable policy hashes.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-011-AC01",
+          "criterion": "Golden fixtures cover equal-time order, weighted costs, partial refill, first divergence and changed decisions.",
+          "evidence_ids": [
+            "AT-12"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-011-AC02",
+          "criterion": "Missing/invalid rows fail the whole comparison; identical input yields identical complete outputs and hashes.",
+          "evidence_ids": [
+            "AT-12"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-011-AC03",
+          "criterion": "The oracle does not import production BucketMath or AuthorityEngine logic.",
+          "evidence_ids": [
+            "AT-20",
+            "AT-21"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-008",
+      "title": "Implement strict authority and admission service",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-008",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-001",
+        "RG-003",
+        "RG-004",
+        "RG-005",
+        "RG-007",
+        "RG-011"
+      ],
+      "prd_ids": [
+        "PRD-001",
+        "PRD-002",
+        "PRD-003",
+        "PRD-005"
+      ],
+      "srd_ids": [
+        "FR-002",
+        "FR-005",
+        "FR-006"
+      ],
+      "planned_files": [
+        {
+          "path": "src/authority/tenant_ledger.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/authority/tenant_reservation.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/authority/authority_engine.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/authority/authority_service.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/admission/admission_service.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/admission/grpc_authority_client.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "TenantLedger",
+        "TenantReservation",
+        "AuthorityEngine",
+        "AuthorityService",
+        "AdmissionService",
+        "GrpcAuthorityClient"
+      ],
+      "code_design_notes": [
+        "Per-tenant reservation spans witness work without mutex held over RPC/I/O. Commit under lock, respond after durable witness ack. Invalid/expired precommit calls never debit.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-008-AC01",
+          "criterion": "One and three replicas match independent serial/concurrent model and preserve quota bounds across at least one million attempts.",
+          "evidence_ids": [
+            "AT-01",
+            "AT-02",
+            "AT-03"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-008-AC02",
+          "criterion": "Deadline/lost-response races preserve Possible commitment, no refunds and explicit outcomes.",
+          "evidence_ids": [
+            "AT-06",
+            "AT-07"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-008-AC03",
+          "criterion": "Mutation fixtures detect double-spend and reject-all; malformed/missing state fails closed.",
+          "evidence_ids": [
+            "AT-09",
+            "AT-21"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-009",
+      "title": "Implement trusted adapter forwarding gate",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-009",
+      "link_type": "repository_story",
+      "release": "A",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-004",
+        "RG-006",
+        "RG-008"
+      ],
+      "prd_ids": [
+        "PRD-004",
+        "PRD-005"
+      ],
+      "srd_ids": [
+        "FR-004",
+        "FR-006"
+      ],
+      "planned_files": [
+        {
+          "path": "adapter/forward_attempt.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "adapter/sample_adapter.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "ForwardAttempt",
+        "SampleAdapter"
+      ],
+      "code_design_notes": [
+        "One Pending→ForwardStarted CAS; timely ALLOW and locally ACTIVE epoch required. No automatic backend retries or pending replay after adapter crash.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-009-AC01",
+          "criterion": "Late ALLOW, LIMITED and raw transport errors never forward.",
+          "evidence_ids": [
+            "AT-06",
+            "AT-07"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-009-AC02",
+          "criterion": "Duplicate callback and shutdown races produce at most one backend invocation per attempt.",
+          "evidence_ids": [
+            "AT-07"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-009-AC03",
+          "criterion": "Backend failure never refunds quota; committed/forwarded/completed events remain distinct.",
+          "evidence_ids": [
+            "AT-07",
+            "AT-10"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-010",
+      "title": "Implement fixed-Q grants and replica credit state",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-010",
+      "link_type": "repository_story",
+      "release": "C",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-006",
+        "RG-007",
+        "RG-008",
+        "RG-009",
+        "RG-011"
+      ],
+      "prd_ids": [
+        "PRD-016",
+        "PRD-017",
+        "PRD-018",
+        "PRD-019"
+      ],
+      "srd_ids": [
+        "FR-014",
+        "FR-015",
+        "FR-016",
+        "FR-017",
+        "FR-018"
+      ],
+      "planned_files": [
+        {
+          "path": "src/credits/tenant_credits.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/credits/credit_manager.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "src/admission/authority_client.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "ReplicaTenantCredits",
+        "CreditManager",
+        "IAuthorityClient"
+      ],
+      "code_design_notes": [
+        "At most one confirmed batch/in-flight grant. GRANTED allocates; only local spend yields ALLOW. Coordinator identity/fingerprint persists until known result.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-010-AC01",
+          "criterion": "Duplicate LIMITED after refill returns the old result; stale/skipped/changed fingerprints reject; unknown result blocks next sequence.",
+          "evidence_ids": [
+            "AT-15"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-010-AC02",
+          "criterion": "Partial grant c-1/c/Q boundaries, remainder retirement, one-time activation and expired initiating caller match the contract.",
+          "evidence_ids": [
+            "AT-15",
+            "AT-16"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-010-AC03",
+          "criterion": "Crash/partition/sequence exhaustion never refunds or reuses slots; conservation and per-epoch B+rΔt+NQ hold in complete histories.",
+          "evidence_ids": [
+            "AT-17",
+            "AT-18",
+            "AT-28"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-012",
+      "title": "Implement frozen workloads and comparative reports",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-012",
+      "link_type": "repository_story",
+      "release": "B",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-005",
+        "RG-009",
+        "RG-011"
+      ],
+      "prd_ids": [
+        "PRD-010",
+        "PRD-011",
+        "PRD-012",
+        "PRD-020",
+        "PRD-022",
+        "PRD-026"
+      ],
+      "srd_ids": [
+        "FR-013",
+        "FR-019",
+        "FR-023",
+        "NFR-002",
+        "NFR-003",
+        "NFR-004",
+        "NFR-005",
+        "NFR-006",
+        "NFR-007",
+        "NFR-009"
+      ],
+      "planned_files": [
+        {
+          "path": "tools/loadgen/trace_generator.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "tools/loadgen/runner.h",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "tools/report/main.cpp",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "TraceGenerator",
+        "BenchmarkRunner"
+      ],
+      "code_design_notes": [
+        "Deterministic PRD-026 routing and separate skew trace; open-loop scheduling, no retries, five 60-second runs after 30-second warmup. Credit-mode gate requires RG-010.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-012-AC01",
+          "criterion": "For N>1, uniform and block-skew routing schedules differ; each has its own named manifest/hash. Exact N=1/3/8 counts/cost mix and warmup indexing pass schedule checks.",
+          "evidence_ids": [
+            "AT-25",
+            "AT-29"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-012-AC02",
+          "criterion": "Each run applies ≥99.5% delivery, p99≤5ms at 5000/s, ≥99% timely ALLOW/LIMITED and noisy-tenant ≥99% ALLOW without excluding failures.",
+          "evidence_ids": [
+            "AT-22",
+            "AT-23",
+            "AT-27"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-012-AC03",
+          "criterion": "Credit comparison preserves ≥95% admitted cost with ≥50% fewer authority operations; retries/witness overhead are disclosed and two clean reproductions recalculate gates.",
+          "evidence_ids": [
+            "AT-13",
+            "AT-19",
+            "AT-24"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-013",
+      "title": "Implement bounded formal model and history checker",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-013",
+      "link_type": "repository_story",
+      "release": "C",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-005",
+        "RG-010",
+        "RG-011"
+      ],
+      "prd_ids": [
+        "PRD-018",
+        "PRD-021",
+        "PRD-023"
+      ],
+      "srd_ids": [
+        "FR-017",
+        "FR-020",
+        "FR-021"
+      ],
+      "planned_files": [
+        {
+          "path": "model/runner",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "model/RateGuard.tla",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "tools/history_checker/checker.h",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [
+        "HistoryChecker",
+        "ModelHarness"
+      ],
+      "code_design_notes": [
+        "Independent bounded model and implementation histories; efficient prefix-min interval scan cross-checked against exhaustive small histories. Missing evidence never PASS.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-013-AC01",
+          "criterion": "Complete histories satisfy legal tenant order, grant conservation and integer-time interval bounds; small exhaustive and streaming checkers agree.",
+          "evidence_ids": [
+            "AT-17",
+            "AT-26"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-013-AC02",
+          "criterion": "Double-spend, duplicate grant, reject-all, bound-break and stale-epoch mutants emit reproducible counterexamples.",
+          "evidence_ids": [
+            "AT-21",
+            "AT-26"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-013-AC03",
+          "criterion": "Archive bounds/tool versions/state counts; resource exhaustion or incomplete provenance returns UNKNOWN.",
+          "evidence_ids": [
+            "AT-20",
+            "AT-26"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    },
+    {
+      "id": "RG-014",
+      "title": "Assemble release evidence and reproducible handoff",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-014",
+      "link_type": "repository_story",
+      "release": "C",
+      "status": "planned_not_implemented",
+      "depends_on": [
+        "RG-010",
+        "RG-012",
+        "RG-013"
+      ],
+      "prd_ids": [
+        "PRD-010",
+        "PRD-011",
+        "PRD-012",
+        "PRD-021",
+        "PRD-023"
+      ],
+      "srd_ids": [
+        "FR-013",
+        "FR-020",
+        "FR-021",
+        "NFR-001",
+        "NFR-006"
+      ],
+      "planned_files": [
+        {
+          "path": "docs/releases/manifest.json",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "docs/releases/requirements-evidence.json",
+          "status": "proposed_not_present"
+        },
+        {
+          "path": "scripts/reproduce.sh",
+          "status": "proposed_not_present"
+        }
+      ],
+      "classes": [],
+      "code_design_notes": [
+        "Keep release A/B/C applicability explicit. Every claim points to the exact source/implementation/test revision and observed result; unresolved misses keep the applicable release incomplete.",
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+      ],
+      "files_to_refer": [
+        {
+          "path": "docs/PRD.md",
+          "revision": 7,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
+        },
+        {
+          "path": "docs/SRD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
+        },
+        {
+          "path": "docs/HLD.md",
+          "revision": 3,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+        },
+        {
+          "path": "docs/LLD.md",
+          "revision": 4,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+        }
+      ],
+      "acceptance_criteria": [
+        {
+          "id": "RG-014-AC01",
+          "criterion": "At least one million attempts per mode with zero observed model violations and seeded-defect detection have complete evidence.",
+          "evidence_ids": [
+            "AT-02",
+            "AT-17",
+            "AT-21",
+            "AT-26"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-014-AC02",
+          "criterion": "Two clean setup-and-run reproductions regenerate machine-readable results under pinned inputs.",
+          "evidence_ids": [
+            "AT-13"
+          ],
+          "status": "not_run"
+        },
+        {
+          "id": "RG-014-AC03",
+          "criterion": "Requirement-to-contract-to-design-to-check-to-observed-result links are complete; future implementation is never labeled delivered.",
+          "evidence_ids": [
+            "AT-20"
+          ],
+          "status": "not_run"
+        }
+      ],
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+    }
+  ]
+}

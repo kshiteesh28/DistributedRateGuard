@@ -389,7 +389,7 @@ These rules complete A-01–A-05 and supersede earlier descriptions where a sequ
 
 ### 16.1 Witness protocol and failure boundaries
 
-One logical reservation per tenant serializes all strict decisions, grant allocation and cached-grant replies. No C++ mutex remains held across witness IPC or I/O. Transaction identity is (epoch, tenant, next_transition_version); request fingerprint covers mode, operation, cost, sequence/slot/incarnation if applicable, previous-state hash and policy digest. Transport request deadlines are not part of an idempotency fingerprint.
+One logical reservation per tenant serializes all strict decisions, grant allocation and cached-grant replies. No C++ mutex remains held across witness IPC or I/O. Transaction identity is (epoch, tenant, next_transition_version); transition versions and journal indices are uint64 starting at 1, never wrap, and exhaustion stops new authority work and initiates DRAINING; request fingerprint covers mode, operation, cost, sequence/slot/incarnation if applicable, previous-state hash and policy digest. Transport request deadlines are not part of an idempotency fingerprint.
 
 1. Reserve tenant, snapshot full bucket plus all ≤8 grant records under mutex, release mutex. Witness Validate compares complete snapshot/version with its independently owned image. Missing/rollback/mismatch ends new authority work; do not recreate state.
 2. Reacquire mutex and compare full snapshot again. Check epoch phase and caller deadline, sample CLOCK_MONOTONIC, compute candidate and record event/order in a reserved slot. This is the logical commit instant. Record the candidate as pending visibility; block every successor on this tenant.
@@ -444,3 +444,96 @@ Efficiency uses median of each mode's five per-run operations-per-1000-admitted-
 Before each module is generated, its inputs, validation, failure path, ownership, algorithm and acceptance evidence must point to these contracts. Generate pure policy/arithmetic plus independent fixtures first; then lifecycle/security/witness, strict A, replay B, credits C and independent model/checker. Pin compiler/CMake/gRPC/protobuf/crypto/model-tool versions in a machine-readable build lock using versions available on the actual build host before compiling; this records environment evidence and never changes runtime semantics. Any discovered inconsistency becomes a failing review gate, not an implicit implementation choice.
 
 The recorded semantic findings are resolved in this revision. Conformance tests, fault experiments, model exploration and performance measurement are still required; neither this checklist nor a zero-findings review can guarantee bug-free generated code.
+
+## 17. Class design and construction contracts
+
+All classes/files below are **planned**. C++20 is the implementation language baseline; use std::variant<T,Error> as Result<T>, not an undeclared exception convention or C++23-only std::expected. Error has category, stable code, retry disposition, commitment (NotCommitted/Possible/Committed) and optional bounded diagnostics; no credential values. Constructors return validated factories when validation can fail. Runtime dependencies outlive services and are injected by reference; no hidden global mutable state.
+
+### 17.1 Class ownership and interfaces
+
+Signatures are contract sketches; strong domain types and cancellation/deadline arguments refer to §§3–4/16.
+
+| Class / planned file | Owned state and dependencies | Public operations and invariant |
+| --- | --- | --- |
+| PolicySnapshot / src/policy/policy_snapshot.h | Immutable tenants, operations, role permissions, mode/Q/slots; shared_ptr<const PolicySnapshot> | FindTenant, ResolveOperation, Authorize; lookup never inserts, returns immutable view with snapshot lifetime |
+| PolicyLoader / src/policy/policy_loader.h | No runtime state; bounded parser + CanonicalPolicyCodec | Load(ConfigBytes)→Result<PolicySnapshot>; reject duplicate/malformed/out-of-range config before readiness |
+| CanonicalPolicyCodec / src/policy/canonical_codec.h | Stateless | Encode, Digest; §16.4 fixed canonical order/widths, independent golden vectors |
+| IClock / src/platform/clock.h | Abstract dependency | Now→Result<MonoNanos>, Provenance→ClockIdentity; fake clock internal only |
+| LinuxMonotonicClock / src/platform/clock_linux.h | Verified boot/namespace/clock identity | Implements IClock; syscall/provenance/backwards failures return typed integrity error |
+| PeerAuthenticator / src/security/peer_authenticator.h | Immutable trust registry + trusted wall-time provider | Authenticate(TransportPeer)→Result<AuthenticatedPeer>; role/SAN/EKU/expiry checked every RPC |
+| AuthorizationResolver / src/security/authorization.h | PolicySnapshot reference | Resolve(peer,tenant,operation)→Result<AuthorizedOperation>; sole constructor of trusted operation/cost |
+| EpochGate / src/supervisor/epoch_gate.h | Atomic observed phase + epoch identity | ObserveDrain, PermitCommit(expectedEpoch), Phase; transitions monotonic ACTIVE→DRAINING→CLOSED |
+| TenantLedger / src/authority/tenant_ledger.h | Mutex, immutable identity, bucket, fixed grant-result array, version, reservation state | BeginReservation→Result<TenantReservation>; ReadSnapshot; no public balance setter |
+| TenantReservation / src/authority/tenant_reservation.h | Move-only reservation token, original version/snapshot, phase | ValidateSnapshot, CommitCandidate, CompleteAck, Fail; only this token can change the reserved tenant |
+| BucketMath / src/authority/bucket_math.h | Stateless production arithmetic | Refill, Decide, RetryDelay; checked 128-bit D3 arithmetic, never accesses clock or global state |
+| IStateWitness / src/authority/witness_port.h | Abstract authority boundary | Validate, Commit, QueryAck; exact identity/fingerprint/version per §16.1 |
+| LocalStateWitnessClient / src/authority/local_witness_client.h | Unix-socket client bound to supervisor identity; implements IStateWitness | Validate, Commit, QueryAck; authenticates expected server and keeps exact transaction fingerprint |
+| WitnessServer / src/supervisor/witness_server.h | Supervisor-owned local socket; refs peer identity, WitnessStateMachine and JournalWriter | Dispatch validated authority requests; reject unrelated process identity before touching witness state |
+| DockerProcessController / src/supervisor/docker_process_controller.h | Implements IProcessController using local runtime API and recorded identities | Start, InspectIdentity, Stop, ConfirmExited; never infer exit from missing network reply |
+| WitnessStateMachine / src/supervisor/witness_state.h | Independent expected tenant images and last acknowledgments; own arithmetic validator | ValidateSnapshot, ValidateTransition, PublishAck; cannot import BucketMath as its validator |
+| JournalWriter / src/supervisor/journal_writer.h | Single joined worker, append fd, chain/index, fixed queue and 2 GiB budget | AppendAndFlush→Result<DurableAck>; ack only after flush; no active-epoch recovery |
+| AuthorityEngine / src/authority/authority_engine.h | Preloaded TenantLedger objects; refs clock, witness, policy, gate, recorder | StrictCheck, AllocateCredit, ReplayGrant; private shared ExecuteTransition follows reservation/ack protocol |
+| IAuthorityClient / src/admission/authority_client.h | Abstract replica dependency | Check, Acquire, ResolveGrant; deadline/cancel propagation; automatic transport retry disabled |
+| GrpcAuthorityClient / src/admission/grpc_authority_client.h | RAII channel/stub + registered identity | Implements client; maps raw transport loss to Possible commitment |
+| ReplicaTenantCredits / src/credits/tenant_credits.h | Mutex/CV, active batch, seq/fingerprint, pending coordinator, remainder counters | TrySpend, BeginAcquire, Resolve, Stop; state transitions exactly §6/16.2 |
+| CreditManager / src/credits/credit_manager.h | Fixed map of ReplicaTenantCredits, slot/incarnation; refs client/policy/clock/gate | Check; one coordinator and one grant RPC at a time per tenant; no prefetch or cross-slot reuse |
+| AdmissionService / src/admission/admission_service.h | gRPC handler, bounded pending-slot pool; refs auth/authority/credits/events | CheckAdmission; mode routing immutable, decodes/validates before state allocation |
+| AuthorityService / src/authority/authority_service.h | Internal gRPC facade; refs auth and AuthorityEngine | StrictCheck and AcquireCredit RPCs; only registered replica identity can call |
+| ForwardAttempt / adapter/forward_attempt.h | Attempt ID, deadline, atomic Pending/ForwardStarted/Expired/Failed | TryForwardTransition; exactly one CAS winner; does not retry backend automatically |
+| SampleAdapter / adapter/sample_adapter.h | Trusted fixture mapping and bounded active ForwardAttempt objects | Handle; derive authorized context, call admission, enforce receipt/epoch/deadline, never replay after crash |
+| ManifestStore / src/supervisor/manifest_store.h | Supervisor-owned directory/lock fd; immutable validated manifest snapshots | Load, AtomicReplace; fsync/rename/dir-fsync failures prevent activation; no anti-rollback claim from rename |
+| IProcessController / src/supervisor/process_controller.h | Abstract local runtime boundary | Start, InspectIdentity, Stop, ConfirmExited; identity includes boot/container/PID-start values |
+| EpochSupervisor / src/supervisor/epoch_supervisor.h | Exclusive control thread, inventory/operation state, WitnessStateMachine, JournalWriter | StartEpoch, Drain, FenceAndClose, RecoverAfterCrash; never adopts old ACTIVE epoch |
+| EventRecorder / src/events/event_recorder.h | Fixed run-wide budget, producer sequences and reserved slots | Reserve→Result<EventReservation>, Publish, SealIncomplete; no identifiers as metric labels |
+| HistoryExporter / src/events/history_exporter.h | Bounded streaming file writer | Export with count/hash/complete markers; cleanup follows D7; missing producer seal yields incomplete |
+| TraceGenerator / tools/loadgen/trace_generator.h | Immutable workload spec and integer index | Next; exact PRD-026 schedule, no output-dependent retry/routing |
+| BenchmarkRunner / tools/loadgen/runner.h | Open-loop scheduler and pinned manifest | RunPair; scheduled membership, 50 ms settlement, counts and invalid-run reasons |
+| ReplayModel / tools/replay/reference_model.h | Independent pure model state | ApplyOffered, ComparePolicies; no production BucketMath/AuthorityEngine imports |
+| HistoryChecker / tools/history_checker/checker.h | Independent parser/model/config | Check, ExplainCounterexample; prefix interval check plus serial/provenance validation; UNKNOWN on missing evidence/resource limit |
+| ModelHarness / model/runner | Pinned external model-check tool/config | EnumerateDeclaredBounds, Mutate, ExportCounterexample; tool output cannot self-certify production code |
+
+### 17.2 Construction, lifetime and threading
+
+ServiceRuntime owns instances in dependency order: validated policy/trust/clock → gate/recorder → ledger/witness/client → engines/services → servers. Stop reverses admission: reject new RPCs, mark DRAINING, wake CV waiters, cancel bounded transport waits, join workers, seal/export available histories, destroy services, then dependencies. A crash bypassing graceful shutdown triggers incomplete evidence and supervisor fencing. No detached task may retain raw pointers to destroyed services; pending operations hold owned request buffers and validated snapshot shared_ptrs.
+
+TenantReservation is move-only. Destruction before CommitCandidate cancels reservation without mutating state. Destruction after CommitCandidate without durable acknowledgment calls Fail, enters DRAINING and preserves Possible commitment; it must never undo the debit or release the ledger for successors. CompleteAck checks exact tenant/version/fingerprint, then clears reservation and wakes waiters. No recursive calls into the ledger while its mutex is held. Only one reservation is active per tenant across strict/grant/read-replay paths.
+
+JournalWriter owns its descriptor and joined worker exclusively. Queue capacity is fixed at 1,024 transition records, each bounded to 16 KiB; reservation/queue acquisition occurs before commit so overload cannot silently strand a postcommit append. Per-tenant ordering and durable indices are maintained; batching never changes commit timestamps. Grant result snapshots contain ≤8 fixed-slot records, so encoding must be size-validated at startup; configuration whose transition record cannot fit is rejected before traffic. Existing in-flight records finish or become uncertain when the 2 GiB cap/IO failure occurs. Supervisor continues to account old credit holders until CLOSED.
+
+AuthorityService exposes both the strict internal check and credit grant port. AdmissionService never exposes the witness socket or a balance-reset endpoint. Only Supervisor constructs a new epoch and authority identity; local mutexes cannot authorize a second authority instance. IProcessController positively verifies identity/exit; container names alone cannot prove fencing.
+
+### 17.3 Class collaboration
+
+```mermaid
+classDiagram
+  AdmissionService --> AuthorizationResolver
+  AdmissionService --> IAuthorityClient
+  AdmissionService --> CreditManager
+  CreditManager *-- ReplicaTenantCredits
+  AuthorityService --> AuthorityEngine
+  AuthorityEngine *-- TenantLedger
+  TenantLedger --> TenantReservation
+  AuthorityEngine --> IStateWitness
+  IStateWitness <|.. LocalStateWitnessClient
+  LocalStateWitnessClient --> WitnessServer
+  WitnessServer --> WitnessStateMachine
+  IAuthorityClient <|.. GrpcAuthorityClient
+  IProcessController <|.. DockerProcessController
+  EpochSupervisor *-- WitnessStateMachine
+  EpochSupervisor *-- JournalWriter
+  EpochSupervisor --> ManifestStore
+  EpochSupervisor --> IProcessController
+  AuthorityEngine --> IClock
+  CreditManager --> IClock
+  SampleAdapter *-- ForwardAttempt
+  AuthorityEngine --> EventRecorder
+  CreditManager --> EventRecorder
+```
+
+Class-level seam acceptance: substitute IClock, IAuthorityClient, IStateWitness and IProcessController through constructors only. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; all stop/fencing outcomes against EpochSupervisor. Independent ReplayModel/HistoryChecker use only versioned artifacts and policy input, not production decision functions. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
+
+### 17.4 Per-process composition
+
+SupervisorRuntime owns ManifestStore, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime refers to this per-process construction pattern; it is not one address space for all components. All cross-process transitions use the explicit authenticated ports.
+
+Witness Validate pre-reserves a bounded journal queue slot and maximum record byte budget before returning permission to prepare a transition; no automatic eviction/lease expiry can remove it while the authority may commit. It is released only on explicit precommit abort, committed acknowledgment, or fenced epoch shutdown. This prevents postcommit capacity rejection from becoming an unrecorded ordinary overload. Duplicate Validate with identical transaction identity returns its existing reservation. Only crashes/I/O/integrity failures can invalidate a postcommit reservation, and those follow DRAINING/uncertainty rules.

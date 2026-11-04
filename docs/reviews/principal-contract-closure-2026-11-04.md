@@ -17,6 +17,8 @@
 | PC-09 million-attempt interval validation described quadratic enumeration | High | LLD §16.5 defines checked prefix-min scan after sorting and preserves separate sequential-model checking. |
 | PC-10 incomplete local histories could support false exact safety claims | Critical | Explicit Reserved/Published/Incomplete markers, gaps/unfinished producers cause UNKNOWN; concrete violations still fail. |
 | PC-11 workload boundaries and denominators underdefined | High | LLD §16.6 fixes continuous warmup index, scheduled measurement membership, settlement wait, nearest-rank percentile and each ratio. |
+| PC-13 class ownership and per-process construction underspecified | High | LLD §17 names classes, dependencies, lifecycle, concrete adapters and process composition; includes separate grant outcome and witness queue reservation contracts. |
+| PC-14 implementation handoff lacked story links and explicit status | Medium | STORIES.md and context-blocks.json contain 14 linked planned stories, 42 criteria, proposed files, dependencies and source revisions. |
 | PC-12 source/revision/traceability drift | Medium | Source revisions and FR-022/023/AT-28/29 mappings updated across the document set. |
 
 ## Checks actually performed
@@ -25,7 +27,7 @@
 - Markdown table column consistency and code-fence balance checked for all four edited documents.
 - Deterministic performance schedule enumerated for N=1/3/8 over 300,000 measured attempts: counts are exactly 300,000; 100,000 per slot; and 37,500 per slot respectively. Each has exactly 30,000 cost-5 attempts.
 - With fixed random seed 44, the proposed integer-time prefix interval scan agreed with independent exhaustive half-open interval enumeration on 1,000 small generated histories. This checks the stated formula on those fixtures only; it is not an implementation benchmark or proof for every history.
-- Remote file readback will be checked before handing off the PR.
+- JSON parsing, story IDs, acceptance IDs, dependency DAG, class references and generated story anchors checked before merge; remote readback is verified against the authored content.
 
 ## Disposition
 
