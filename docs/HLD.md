@@ -1,7 +1,7 @@
 # DistributedRateGuard — High-Level Design
 
-**Revision:** 3 · **Date:** 2026-11-04 · **Status:** Proposed; not implemented or verified  
-**Sources:** [PRD revision 7](PRD.md) and [SRD revision 4](SRD.md), read from main.
+**Revision:** 4 · **Date:** 2026-11-12 · **Status:** Proposed; not implemented or verified  
+**Sources:** [PRD revision 8](PRD.md) and [SRD revision 5](SRD.md), read from main.
 
 ## 1. Purpose, scope, and decision status
 
@@ -145,7 +145,7 @@ D6 caps: 10,000 configured tenants, eight replica slots, 1,024 pending checks/re
 
 These are workload calculations, not benchmark results. At 5,000 offered checks/s, a 60 s run schedules 300,000 checks and 30 s warmup schedules 150,000. At 90% cost-1 and 10% cost-5, expected mean is 1.4 units/check, or 7,000 units/s; 1,000 evenly assigned tenants average 5 checks/s and 7 units/s each against r=100 units/s, B=100. This primarily measures service overhead, not sustained quota saturation.
 
-Run open-loop with no retries: five 60 s measurements after 30 s warmup, three replicas, 1,000 tenants and 50 ms deadline. Each run requires p99 completed decision latency ≤5 ms, ≥99% delivered attempts timely ALLOW/LIMITED, and ≥99.5% scheduled arrivals delivered; errors/timeouts fail the terminal-response numerator. Publish scheduled/delivered/missed, per-outcome counts, p50/p95/p99, CPU/memory, raw data and manifest.
+Run open-loop with no retries: five 60 s measurements after 30 s warmup, three replicas, 1,000 tenants and 50 ms deadline. Measure latency from adapter receipt to terminal application response; include every delivered attempt in nearest-rank p50/p95/p99, including error responses. If the caller cancels first, use cancellation time and count the attempt as a failure; if there is no response by the deadline, use the 50 ms deadline duration. Each run requires p99 ≤5 ms, ≥99% delivered attempts timely ALLOW/LIMITED, and ≥99.5% scheduled arrivals delivered. Publish scheduled/delivered/missed, per-outcome counts, CPU/memory, raw data and manifest.
 
 For tenant service, two tenants each offer 50 cost-1 attempts/s and a third offers 1,000/s, each r=B=100. Both conforming tenants require ≥99% timely ALLOW per run below the measured capacity knee. For credit efficiency compare identical offered traces, policy, routing, resources, deadlines and instrumentation; five-run median authority operations per 1,000 admitted cost units must fall ≥50%, preserve ≥95% of strict admitted cost and meet latency/service gates. Report bytes, unused/retired/stranded ranges, per-run results and burst deviation. N=1/3/8 and clamped Q sweep are sensitivity experiments; N=3 and Q=clamp(ceil(B/8),max_cost,B) is the fixed pass configuration. At least 1 million decision attempts per mode are required for correctness with seeded-defect detection, separate from performance runs. Two clean pinned reproductions must recalculate results.
 
@@ -200,7 +200,7 @@ Publish aggregate outcome counts, pending/overload, latency, authority calls and
 
 ## 13. Principal review and remaining gates
 
-HLD revision 3 and [LLD revision 4](LLD.md) incorporate the following architecture decisions. “Resolved in design” does not mean implemented, measured or verified.
+HLD revision 3 and [LLD revision 4](LLD.md) incorporated the following architecture decisions; this section is retained as review history. “Resolved in design” does not mean implemented, measured or verified.
 
 | Finding | Principal review disposition |
 | --- | --- |
@@ -224,9 +224,16 @@ PRD 7/SRD 4 settle routing and ACTIVE→DRAINING→CLOSED semantics. An isolated
 
 The witness now validates before-state and independently recomputes transitions, journals/version-checks them, and acknowledges only flushed records. Per-tenant reservations span IPC/I/O without holding mutexes, and no successor is visible before acknowledgment. A failed postcommit journal outcome is uncertain and enters DRAINING; it is never rolled back and retried as a fresh spend. Witness restart never resumes an old epoch.
 
-[LLD revision 4 §16](LLD.md#16-principal-contract-closure-executable-design-rules) fixes grant coordination, trusted operation/cost binding, types/enums, artifact encoding, event completeness, linear-time interval scanning after sorting, and exact workload denominators. It supersedes earlier deferred descriptions of these details. These are selected design mechanisms with pending conformance/performance evidence.
+[LLD revision 5 §16](LLD.md#16-principal-contract-closure-executable-design-rules) fixes grant coordination, trusted operation/cost binding, types/enums, artifact encoding, event completeness, linear-time interval scanning after sorting, and exact workload denominators. It supersedes earlier deferred descriptions of these details. These are selected design mechanisms with pending conformance/performance evidence.
 
 See [principal closure review](reviews/principal-contract-closure-2026-11-04.md) for findings, dispositions and required evidence. The current design has no deliberately unresolved semantic choice among the findings recorded in that review. This is not a claim that code generation or execution cannot reveal defects.
 
 
 Implementation planning: [LLD class design](LLD.md#17-class-design-and-construction-contracts), [story catalog](STORIES.md), and [JSON context blocks](context-blocks.json). Each story records source contracts, proposed files, dependencies and acceptance evidence; all implementation statuses remain planned.
+
+
+## 15. Revision 4 — latency denominator and readiness
+
+The capacity gate uses the all-delivered-attempt latency population defined in PRD 8 / SRD 5: adapter receipt to terminal response, with errors included and the caller-deadline duration used when no response arrives. The separate timely ALLOW/LIMITED and generator-delivery gates remain mandatory.
+
+The authority/witness path remains a single availability failure domain. Its journal flush cost must be measured on the actual Docker Linux VM; no performance claim or shortcut around integrity is permitted. The design documents specify the mechanisms, while shared-clock provenance, durable journal failure behavior, positive process-exit evidence, certificate handling, and the build/dependency lock remain implementation evidence gates. Pin versions from the actual build environment in RG-001; this document does not invent tested versions. This revision does not claim implementation, benchmark results, or release readiness.
