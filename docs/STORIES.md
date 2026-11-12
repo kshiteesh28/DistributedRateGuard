@@ -1,12 +1,12 @@
 # Implementation stories
 
-**Date:** 2026-11-12 · **Status:** Planned; no implementation or acceptance results claimed.
+**Date:** 2026-11-12 · **Status:** RG-001 implementation started on a feature branch; acceptance pending.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
 ## RG-001
 
-**Freeze wire contracts and build manifest** · Release A · Planned
+**Freeze wire contracts and build manifest** · Release A · In progress; not accepted
 
 Dependencies: none.
 
