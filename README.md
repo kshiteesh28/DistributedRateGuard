@@ -23,7 +23,7 @@ Live policy changes (PRD-013) and long-operation permits (PRD-014) are deferred.
 
 ## Status and implementation notes
 
-The repository currently contains proposed specifications and handoff material; no implementation, tests, benchmarks, or model-checking results are claimed. All product thresholds are goals, not achieved results.
+RG-001 implementation has started in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5): versioned API schemas, contract validation/tests, and C++20 build infrastructure. See [build instructions](docs/build.md) and [RG-001 evidence](docs/evidence/RG-001.md) for the exact scope and verification status. Quota enforcement, release benchmarks, and model checking are not implemented or claimed. All product thresholds remain goals.
 
 The source of truth is the current `main` branch. The local path hint in the context file currently contains documentation only and is not a verified Git checkout. Clone or sync `main` before implementation. Start at **RG-001**. Capture toolchain versions on the actual build host before compiling instead of guessing or claiming an untested lock. Keep enforcement services fail-closed until shared-clock provenance, witness durability, process fencing, and identity fixtures pass.
 
