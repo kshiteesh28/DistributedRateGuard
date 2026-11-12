@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package rateguard.v1;
+
+// Wire contract only. Implementations must validate byte widths, identifier
+// syntax, active epoch/policy binding, and reject UNSPECIFIED/unknown values.
+enum DecisionOutcome {
+  DECISION_OUTCOME_UNSPECIFIED = 0;
+  DECISION_OUTCOME_ALLOW = 1;
+  DECISION_OUTCOME_LIMITED = 2;
+  DECISION_OUTCOME_INVALID = 3;
+  DECISION_OUTCOME_UNAUTHENTICATED = 4;
+  DECISION_OUTCOME_UNAVAILABLE = 5;
+  DECISION_OUTCOME_OVERLOADED = 6;
+}
+
+enum AdmissionMode {
+  ADMISSION_MODE_UNSPECIFIED = 0;
+  ADMISSION_MODE_STRICT = 1;
+  ADMISSION_MODE_CREDIT = 2;
+}
+
+// Deadline is supplied by the gRPC call context, not a request timestamp.
+// Tenant and operation are selectors only; identity authorization comes from
+// the authenticated adapter URI SAN and immutable epoch policy. Cost, mode,
+// time, and deadline are never trusted from request fields.
+message CheckAdmissionRequest {
+  string tenant_id = 1;
+  string operation_id = 2;
+  bytes attempt_id = 3;      // exactly 16 bytes
+  bytes epoch_id = 4;        // exactly 16 bytes
+  bytes policy_digest = 5;   // exactly 32 bytes
+}
+
+message AdmissionDecision {
+  DecisionOutcome outcome = 1;
+  bytes epoch_id = 2;        // exactly 16 bytes
+  bytes policy_digest = 3;   // exactly 32 bytes
+  AdmissionMode mode = 4;
+  bytes attempt_id = 5;      // exactly 16 bytes
+  optional uint64 retry_delay_ns = 6;
+}
+
+// Structured application outcomes, including UNAVAILABLE and OVERLOADED,
+// are returned with gRPC OK. INVALID, UNAUTHENTICATED and unauthorized
+// requests use INVALID_ARGUMENT, UNAUTHENTICATED and PERMISSION_DENIED.
+// A transport failure after dispatch leaves commitment uncertain.
+service AdmissionService {
+  rpc CheckAdmission(CheckAdmissionRequest) returns (AdmissionDecision);
+}
