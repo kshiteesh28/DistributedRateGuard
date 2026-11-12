@@ -13,7 +13,7 @@ on:
       - "include/**"
       - "src/**"
       - "tests/**"
-      - "tools/capture_build_manifest.py"
+      - "tools/**"
       - "build-lock.json"
       - ".github/workflows/contract-build.yml"
   workflow_dispatch:
