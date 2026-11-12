@@ -5,19 +5,35 @@
     "runner_label": "ubuntu-24.04",
     "language_standard": "C++20",
     "cmake": "3.31.6",
-    "ninja": "1.11.1"
+    "ninja": "1.11.1",
+    "dependency_mode": "ubuntu-packages"
   },
   "dependencies": {
     "grpc": {
       "repository": "https://github.com/grpc/grpc.git",
       "requested_ref": "v1.85.0",
-      "resolution": "Git tag plus recursive upstream submodule gitlinks; capture resolved commit IDs in build-manifest.json"
+      "resolution": "Git tag plus recursive upstream submodule gitlinks; capture resolved commit IDs in build-manifest.json",
+      "source_build_alternative": "Optional FetchContent lane only; not evidence for the package lane. Previous all-target source build exceeded the 45-minute job budget."
     },
     "protobuf": {
       "source": "gRPC v1.85.0 third_party/protobuf submodule",
       "resolution": "Use the submodule commit fixed by the gRPC source tree to keep protoc and C++ runtime aligned; capture its resolved commit ID"
     },
-    "system_packages": ["OpenSSL development package", "zlib development package"]
+    "system_packages": [
+      "OpenSSL development package",
+      "zlib development package"
+    ],
+    "package_names": [
+      "libgrpc++-dev",
+      "libgrpc-dev",
+      "libprotobuf-dev",
+      "protobuf-compiler",
+      "protobuf-compiler-grpc",
+      "libssl-dev",
+      "zlib1g-dev"
+    ],
+    "package_versions": {},
+    "version_policy": "Initial Linux run captures observed distribution package versions. Freeze exact resolved versions in this lock and CI before validating repeatability."
   },
   "github_actions": {
     "actions/checkout": "11bd71901bbe5b1630ceea73d27597364c9af683",
@@ -25,10 +41,11 @@
   },
   "validation": {
     "validated": false,
-    "reason": "No local CMake, Ninja, Docker, or Linux build environment is available; validate from the target GitHub Actions run and preserve its observed manifest."
+    "reason": "Packaged dependency lane selected after source build timeout. Pending generated-contract compilation, tests and observed environment manifest."
   },
   "limitations": [
     "The ubuntu-24.04 hosted runner image is a mutable label; workflow records ImageOS/ImageVersion and OS package versions instead of inventing an image digest.",
-    "The gRPC release tag is fixed, and recursive submodules resolve to fixed gitlink revisions; exact commit IDs are recorded from the actual checkout before promoting this candidate lock."
+    "The gRPC release tag is fixed, and recursive submodules resolve to fixed gitlink revisions; exact commit IDs are recorded from the actual checkout before promoting this candidate lock.",
+    "The contract lane validates Ubuntu's matched compiler/runtime packages; it does not imply the optional source dependency lane or Linux enforcement topology is verified."
   ]
 }
