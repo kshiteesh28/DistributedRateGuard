@@ -100,6 +100,18 @@ def verify(lock: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
     elif expected_arch != observed_arch:
         errors.append(f"architecture mismatch: expected {expected_arch!r}, observed {observed_arch!r}")
 
+    expected_standard = target.get("language_standard")
+    observed_build = manifest.get("build_configuration")
+    if not isinstance(observed_build, dict):
+        errors.append("manifest.build_configuration must be an object")
+        observed_build = {}
+    observed_standard = observed_build.get("cxx_standard")
+    if expected_standard != "C++20" or observed_standard != "C++20":
+        errors.append("lock.target.language_standard and manifest.build_configuration.cxx_standard must both be 'C++20'")
+    compile_count = observed_build.get("project_compile_commands_count")
+    if not isinstance(compile_count, int) or isinstance(compile_count, bool) or compile_count <= 0:
+        errors.append("manifest.build_configuration.project_compile_commands_count must be a positive integer")
+
     # The current lock keeps CMake/Ninja under target; a future top-level
     # tools object is also accepted without weakening required values.
     tools = lock.get("tools", target)
