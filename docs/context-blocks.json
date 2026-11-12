@@ -26,7 +26,7 @@
     "implementation": "not_created_or_verified",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "The current source of truth is main. The local path hint currently contains documentation only and is not a verified Git checkout; clone or sync main before coding. All implementation files and acceptance results in stories remain planned. Read current main and verify the target build environment before starting."
+    "note": "Implementation plan and active-minute estimates are published on main. Await the Product Owner's explicit proceed command before development or test execution. The local path remains documentation-only and is not a verified Git checkout."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -74,14 +74,15 @@
     ]
   },
   "next_actions": [
-    "Clone or sync main into a verified Git checkout; the recorded local path currently contains docs only.",
-    "Start RG-001: freeze wire contracts and select toolchain versions by testing the actual target Linux build environment; record the reproducible build lock.",
-    "Implement the independent strict oracle/golden fixture subset before RG-008 acceptance; keep the full replay CLI in Release B.",
-    "Proceed in dependency order; record evidence before marking any acceptance criterion passed."
+    "Wait for the Product Owner's explicit proceed command; do not begin development or test execution before it.",
+    "After proceed, verify/sync main into a Git checkout and inspect the target Linux build environment, then execute RG-001.",
+    "Re-estimate after RG-001 and the first two implementation PRs using observed environment and review effort."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
-    "implementation": "Not requested in this documentation task; context does not itself authorize deployment or claim implementation."
+    "implementation": "Not requested in this documentation task; context does not itself authorize deployment or claim implementation.",
+    "planning_documentation_main": "Explicitly authorized by the user in this task.",
+    "development_and_testing": "Wait for the user's explicit proceed command."
   },
   "stories": [
     {
@@ -762,7 +763,7 @@
     },
     {
       "id": "RG-011",
-      "title": "Implement independent replay and golden oracle",
+      "title": "Build independent oracle (A acceptance prerequisite; replay CLI in B)",
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-011",
       "link_type": "repository_story",
       "release": "B",
@@ -845,7 +846,7 @@
         }
       ],
       "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
-      "release_prerequisite": "A oracle/golden-fixture subset must be complete before RG-008 acceptance; the user-facing replay CLI and full trace comparison remain Release B."
+      "release_prerequisite": "The independent strict oracle and golden fixtures are required before Release A acceptance; the full replay CLI remains a Release B deliverable."
     },
     {
       "id": "RG-008",
@@ -1475,5 +1476,18 @@
     "target": "Single Docker Linux VM with verified shared Linux kernel time namespace for enforcement processes; no multi-host enforcement.",
     "version_policy": "RG-001 selects and records actual compiler, CMake, Linux image, gRPC, protobuf, crypto, and model-tool versions from the available target build environment and verifies a reproducible build before calling the lock validated. Do not guess versions before environment inspection.",
     "local_checkout_observation": "/Users/kshiteesh/Developer/rateguard currently contains documentation only and has no verified Git metadata or source/build files."
+  },
+  "sprint_plan": {
+    "path": "docs/SPRINT-PLAN.md",
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SPRINT-PLAN.md",
+    "status": "planning_only_waiting_for_product_owner_proceed",
+    "estimates_unit": "active_agent_minutes",
+    "baseline_total_minutes": 15250,
+    "feasibility_spike_minutes": {
+      "min": 120,
+      "max": 240
+    },
+    "target_branch": "main",
+    "no_development_or_test_execution_before_proceed": true
   }
 }
