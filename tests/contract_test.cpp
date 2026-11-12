@@ -3,10 +3,13 @@
 #include "rateguard/v1/error_contract.h"
 #include "rateguard/v1/request_validation.h"
 
+#include <array>
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <iterator>
+#include <google/protobuf/descriptor.h>
 #include <string>
 #include <string_view>
 
@@ -130,30 +133,30 @@ int main(int argc, char** argv) {
   Check(contract::StatusFor(contract::ErrorCode::PermissionDenied) == contract::GrpcStatus::PermissionDenied,
         "PERMISSION_DENIED status mapping");
   Check(contract::StatusFor(contract::ErrorCode::PayloadTooLarge) == contract::GrpcStatus::ResourceExhausted,
-        "pre-decode size error status mapping");
-  Check(StructuredDecisionStatus(5) == contract::GrpcStatus::Ok &&
-        StructuredDecisionStatus(6) == contract::GrpcStatus::Ok &&
-        StructuredGrantStatus(4) == contract::GrpcStatus::Ok &&
-        StructuredGrantStatus(5) == contract::GrpcStatus::Ok,
+        "oversize pre-decode transport status mapping");
+  Check(contract::StructuredDecisionStatus(5) == contract::GrpcStatus::Ok &&
+        contract::StructuredDecisionStatus(6) == contract::GrpcStatus::Ok &&
+        contract::StructuredGrantStatus(4) == contract::GrpcStatus::Ok &&
+        contract::StructuredGrantStatus(5) == contract::GrpcStatus::Ok,
         "structured UNAVAILABLE/OVERLOADED use transport OK");
-  Check(StructuredDecisionStatus(3) == contract::GrpcStatus::Internal &&
-        StructuredDecisionStatus(0) == contract::GrpcStatus::Internal,
+  Check(contract::StructuredDecisionStatus(3) == contract::GrpcStatus::Internal &&
+        contract::StructuredDecisionStatus(0) == contract::GrpcStatus::Internal,
         "invalid/unspecified decision is not a successful structured response");
-  Check(contract::CommitmentForTransportFailure(DispatchPhase::BeforeDispatch) == contract::Commitment::NotCommitted,
+  Check(contract::CommitmentForTransportFailure(contract::DispatchPhase::BeforeDispatch) == contract::Commitment::NotCommitted,
         "predispatch transport failure is not committed");
-  Check(contract::CommitmentForTransportFailure(DispatchPhase::Dispatched) == contract::Commitment::Possible,
+  Check(contract::CommitmentForTransportFailure(contract::DispatchPhase::Dispatched) == contract::Commitment::Possible,
         "post-dispatch transport failure has possible commitment");
-  Check(contract::RetryDispositionFor(contract::RpcOperation::StrictAdmission, DispatchPhase::Dispatched) ==
+  Check(contract::RetryDispositionFor(contract::RpcOperation::StrictAdmission, contract::DispatchPhase::Dispatched) ==
             contract::RetryDisposition::NewAttempt &&
-        contract::RetryDispositionFor(contract::RpcOperation::AcquireCredit, DispatchPhase::Dispatched) ==
+        contract::RetryDispositionFor(contract::RpcOperation::AcquireCredit, contract::DispatchPhase::Dispatched) ==
             contract::RetryDisposition::SameGrantSequence,
         "strict retries are fresh application attempts; uncertain grants reuse same sequence");
   Check(contract::IsAllowOutcome(contract::DecisionOutcome::Allow) &&
         !contract::IsAllowOutcome(contract::DecisionOutcome::Limited) &&
         !contract::IsAllowOutcome(contract::DecisionOutcome::Unavailable),
         "only ALLOW outcome can authorize forwarding");
-  Check(IsValidIdentifier("tenant-1.alpha_2") && !IsValidIdentifier("") &&
-        !IsValidIdentifier("bad tenant") && !IsValidIdentifier("x/y"),
+  Check(contract::IsValidIdentifier("tenant-1.alpha_2") && !contract::IsValidIdentifier("") &&
+        !contract::IsValidIdentifier("bad tenant") && !contract::IsValidIdentifier("x/y"),
         "identifier grammar and 1..128 byte bound");
 
   CheckAdmissionRequest req;
@@ -162,24 +165,25 @@ int main(int argc, char** argv) {
         req.attempt_id() == Seq(0x00, 16) && req.epoch_id() == Seq(0x10, 16) &&
         req.policy_digest() == Seq(0x20, 32), "check request fixture values");
   FakeStatePort admission_port;
-  Check(ValidateBeforeState(req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x); }, admission_port),
+  Check(ValidateBeforeState(req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32)); }, admission_port),
         "valid admission request accepted");
   auto bad_req = req; bad_req.set_attempt_id(Seq(0, 15));
-  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x); }, admission_port) &&
+  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32)); }, admission_port) &&
         admission_port.calls == 1, "invalid fixed-width ID rejected before state port");
   bad_req = req; bad_req.set_tenant_id(std::string(129, 'x'));
-  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x); }, admission_port) &&
+  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32)); }, admission_port) &&
         admission_port.calls == 1, "oversized identifier rejected before state port");
-  bad_req = req; bad_req.set_tenant_id(std::string(16 * 1024, 'x'));
-  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x); }, admission_port) &&
-        admission_port.calls == 1, "oversized identifier rejected before state port");
+  bad_req = req;
+  bad_req.set_epoch_id(Seq(0x30, 16));
+  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32)); }, admission_port) &&
+        admission_port.calls == 1, "stale epoch rejected before state port");
   // Unknown protobuf fields are parsed by proto3, but the decoded payload cap
   // still applies before any state-port mutation.
   std::string oversized_unknown = req.SerializeAsString();
-  oversized_unknown.append("\x92\x06\x90\x85\x01", 5); // field 100, length-delimited 17000
+  oversized_unknown.append("\xA2\x06\xE8\x84\x01", 5); // field 100, length-delimited 17000
   oversized_unknown.append(17000, 'z');
   Check(bad_req.ParseFromString(oversized_unknown), "oversized unknown field parses as protobuf");
-  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x); }, admission_port) &&
+  Check(!ValidateBeforeState(bad_req, [](const auto& x) { return validation::ValidateCheckAdmissionRequest(x, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32)); }, admission_port) &&
         admission_port.calls == 1, "oversized decoded payload rejected before state port");
 
   AdmissionDecision unknown_decision;
@@ -214,7 +218,7 @@ int main(int argc, char** argv) {
   FakeStatePort grant_port;
   const std::array<std::uint32_t, 1> registered_slots{3};
   auto valid_credit = [&](const auto& x) {
-    return validation::ValidateAcquireCreditRequest(x, registered_slots, "publish", 5, 100);
+    return validation::ValidateAcquireCreditRequest(x, registered_slots, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32), 5, 100);
   };
   Check(ValidateBeforeState(credit, valid_credit, grant_port), "valid credit request accepted");
   auto bad_credit = credit; bad_credit.set_slot(8);
