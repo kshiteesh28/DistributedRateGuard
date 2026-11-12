@@ -17,6 +17,11 @@ inline constexpr std::size_t kMaxRequestBytes = 16 * 1024;
 inline constexpr std::size_t kMaxRegisteredReplicaSlots = 8;
 inline constexpr std::uint64_t kMaxPolicyUnits = 1000000000ULL;
 
+struct RegisteredReplicaSlot {
+  std::uint32_t slot;
+  std::string_view incarnation_id;
+};
+
 [[nodiscard]] inline std::optional<contract::ServiceError>
 InvalidInput() noexcept {
   return contract::ServiceError{
@@ -53,21 +58,25 @@ ValidateCheckAdmissionRequest(const CheckAdmissionRequest& request,
 [[nodiscard]] inline std::optional<contract::ServiceError>
 ValidateAcquireCreditRequest(
     const AcquireCreditRequest& request,
-    std::span<const std::uint32_t> registered_slots,
+    std::span<const RegisteredReplicaSlot> registered_slots,
     std::string_view configured_tenant,
     std::string_view configured_operation,
     std::string_view active_epoch_id,
     std::string_view active_policy_digest,
     std::uint64_t configured_cost_units,
     std::uint64_t tenant_capacity_units) noexcept {
+  const auto registered = std::find_if(
+      registered_slots.begin(), registered_slots.end(),
+      [&](const RegisteredReplicaSlot& slot) { return slot.slot == request.slot(); });
   if (registered_slots.size() > kMaxRegisteredReplicaSlots ||
       !contract::IsValidIdentifier(request.tenant_id()) ||
       !contract::IsValidIdentifier(request.trigger_operation_id()) ||
       request.tenant_id() != configured_tenant ||
       request.trigger_operation_id() != configured_operation ||
-      std::find(registered_slots.begin(), registered_slots.end(), request.slot()) ==
-          registered_slots.end() ||
+      registered == registered_slots.end() ||
+      !contract::HasExactWidth(registered->incarnation_id, 16) ||
       !contract::HasExactWidth(request.incarnation_id(), 16) ||
+      request.incarnation_id() != registered->incarnation_id ||
       !contract::HasExactWidth(request.epoch_id(), 16) ||
       !contract::HasExactWidth(request.policy_digest(), 32) ||
       request.epoch_id() != active_epoch_id ||
