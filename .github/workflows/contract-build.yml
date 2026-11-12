@@ -39,8 +39,16 @@ jobs:
       - name: Install distribution-matched Protobuf and gRPC tools
         run: |
           sudo apt-get update
-          sudo apt-get install --yes libssl-dev zlib1g-dev python3 libgrpc++-dev libprotobuf-dev protobuf-compiler protobuf-compiler-grpc
+          python3 - <<'PY'
+          import json, subprocess
+          lock = json.load(open("build-lock.json"))
+          packages = [name + "=" + version for name, version in lock["dependencies"]["package_versions"].items()]
+          subprocess.run(["sudo", "apt-get", "install", "--yes", "python3", *packages], check=True)
+          PY
           dpkg-query -W libgrpc++-dev libgrpc-dev libprotobuf-dev protobuf-compiler protobuf-compiler-grpc libssl-dev zlib1g-dev
+
+      - name: Check build-lock verifier rejection cases
+        run: python3 -m unittest discover -s tools/tests -v
 
       - name: Configure C++20 build and protobuf/gRPC generation
         run: >-
@@ -81,6 +89,9 @@ jobs:
             --output build/build-manifest.json \
             --build-result passed
           cat build/build-manifest.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify exact observed toolchain against the frozen lock
+        run: python3 tools/verify_build_manifest.py --lock build-lock.json --manifest build/build-manifest.json
 
       - name: Preserve the observed build manifest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
