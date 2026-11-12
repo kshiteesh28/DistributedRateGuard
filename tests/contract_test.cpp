@@ -216,7 +216,8 @@ int main(int argc, char** argv) {
         credit.trigger_cost_units() == 5 && credit.trigger_operation_id() == "publish",
         "credit request fixture values");
   FakeStatePort grant_port;
-  const std::array<validation::RegisteredReplicaSlot, 1> registered_slots{{{3, Seq(0x40,16)}}};
+  const std::string registered_incarnation = Seq(0x40, 16);
+  const std::array<validation::RegisteredReplicaSlot, 1> registered_slots{{{3, registered_incarnation}}};
   auto valid_credit = [&](const auto& x) {
     return validation::ValidateAcquireCreditRequest(x, registered_slots, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32), 5, 100);
   };
