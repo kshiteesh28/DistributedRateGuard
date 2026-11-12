@@ -27,6 +27,7 @@ def valid_inputs() -> tuple[dict, dict]:
             "os_id": "ubuntu",
             "os_version_id": "24.04",
             "architecture": "x86_64",
+            "language_standard": "C++20",
             "dependency_mode": "ubuntu-packages",
             "cmake": "3.31.6",
             "ninja": "1.11.1",
@@ -41,6 +42,10 @@ def valid_inputs() -> tuple[dict, dict]:
         "lock_status": "frozen_pending_verification",
         "build_result": "passed",
         "source": {"git_commit": "a" * 40},
+        "build_configuration": {
+            "cxx_standard": "C++20",
+            "project_compile_commands_count": 3,
+        },
         "runner": {
             "label_requested": "ubuntu-24.04",
             "machine": "x86_64",
@@ -85,6 +90,18 @@ class VerifyBuildManifestTests(unittest.TestCase):
         lock, manifest = valid_inputs()
         manifest["runner"]["machine"] = "aarch64"
         self.assertTrue(any("architecture mismatch" in e for e in verify(lock, manifest)))
+
+    def test_language_standard_mismatch_fails(self) -> None:
+        lock, manifest = valid_inputs()
+        manifest["build_configuration"]["cxx_standard"] = "gnu++17"
+        self.assertTrue(any("must both be 'C++20'" in e for e in verify(lock, manifest)))
+
+    def test_missing_or_zero_project_compile_commands_fail(self) -> None:
+        lock, manifest = valid_inputs()
+        manifest["build_configuration"]["project_compile_commands_count"] = 0
+        self.assertTrue(any("must be a positive integer" in e for e in verify(lock, manifest)))
+        del manifest["build_configuration"]["cxx_standard"]
+        self.assertTrue(any("must both be 'C++20'" in e for e in verify(lock, manifest)))
 
     def test_missing_expected_or_observed_values_fail(self) -> None:
         lock, manifest = valid_inputs()
