@@ -14,6 +14,9 @@ option(RATEGUARD_FETCH_GRPC "Fetch the pinned gRPC source and its pinned submodu
 option(RATEGUARD_REQUIRE_PRODUCT_CONTRACTS "Fail unless product protos and contract tests are present" OFF)
 
 if(RATEGUARD_FETCH_GRPC)
+  # This build consumes source-tree targets and does not install dependencies.
+  set(protobuf_INSTALL OFF CACHE BOOL "" FORCE)
+  set(utf8_range_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
   set(gRPC_BUILD_TESTS OFF CACHE BOOL "" FORCE)
   set(gRPC_INSTALL OFF CACHE BOOL "" FORCE)
   set(gRPC_BUILD_CODEGEN ON CACHE BOOL "" FORCE)
@@ -34,6 +37,9 @@ if(RATEGUARD_FETCH_GRPC)
     GIT_SUBMODULES_RECURSE TRUE
   )
   FetchContent_MakeAvailable(grpc)
+  if(TARGET grpc++ AND NOT TARGET gRPC::grpc++)
+    add_library(gRPC::grpc++ ALIAS grpc++)
+  endif()
   set(RG_GRPC_SOURCE_DIR "${grpc_SOURCE_DIR}")
 else()
   find_package(Protobuf CONFIG REQUIRED)
