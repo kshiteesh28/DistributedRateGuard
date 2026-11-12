@@ -24,7 +24,7 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_in_progress_not_accepted",
+    "implementation": "rg001_bootstrap_implemented_acceptance_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "Product Owner authorized implementation with 'begin the implementation'. RG-001 bootstrap work is in progress on feature/RG-001-contract-bootstrap. Other stories remain planned; no release gates are claimed."
@@ -72,7 +72,19 @@
       "Source revisions read from GitHub main before changes.",
       "Markdown table widths and code-fence balance checked.",
       "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
-    ]
+    ],
+    "latest_rg001": {
+      "passed": [
+        "Dependency-free C++20 transport helper test",
+        "Manifest Python syntax check",
+        "Unconfigured manifest smoke"
+      ],
+      "pending": [
+        "Generated protobuf C++ compilation and CTest",
+        "Verified Linux build and reproducible dependency lock",
+        "Full canonical policy fixtures and actual gRPC-client retry integration"
+      ]
+    }
   },
   "next_actions": [
     "Complete and independently review RG-001 on feature/RG-001-contract-bootstrap.",
@@ -179,7 +191,15 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_evidence": {
+        "path": "docs/evidence/RG-001.md",
+        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/5",
+        "local_transport_test": "passed",
+        "manifest_smoke": "passed_unconfigured_environment",
+        "generated_protobuf_linux_build": "pending",
+        "lock": "candidate_unvalidated"
+      }
     },
     {
       "id": "RG-002",
