@@ -1,0 +1,73 @@
+concurrency:
+  group: contract-build-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: contract-build
+
+on:
+  pull_request:
+    paths:
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "proto/**"
+      - "include/rateguard/v1/**"
+      - "tests/**"
+      - "tools/capture_build_manifest.py"
+      - "build-lock.json"
+      - ".github/workflows/contract-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: C++20 protobuf/gRPC contract build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install pinned CMake and Ninja
+        uses: lukka/get-cmake@56d043d188c3612951d8755da8f4b709ec951ad6
+        with:
+          cmakeVersion: 3.31.6
+          ninjaVersion: 1.11.1
+
+      - name: Install system development packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libssl-dev zlib1g-dev python3
+
+      - name: Configure C++20 build and protobuf/gRPC generation
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DRATEGUARD_FETCH_GRPC=ON
+          -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON
+
+      - name: Build code-generation smoke and available product contracts
+        run: cmake --build build --parallel 2
+
+      - name: Run contract tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Capture observed build manifest
+        run: |
+          python3 tools/capture_build_manifest.py \
+            --source-root . \
+            --build-dir build \
+            --grpc-source build/_deps/grpc-src \
+            --codegen-tools build/codegen-tools.json \
+            --output build/build-manifest.json \
+            --build-result passed
+          cat build/build-manifest.json >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preserve the observed build manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rg001-build-manifest-${{ github.run_id }}
+          path: build/build-manifest.json
+          if-no-files-found: error
+          retention-days: 30
