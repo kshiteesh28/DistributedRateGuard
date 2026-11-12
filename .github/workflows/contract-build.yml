@@ -45,7 +45,6 @@ jobs:
           packages = [name + "=" + version for name, version in lock["dependencies"]["package_versions"].items()]
           subprocess.run(["sudo", "apt-get", "install", "--yes", "python3", *packages], check=True)
           PY
-          sudo apt-get install --yes nlohmann-json3-dev
           dpkg-query -W nlohmann-json3-dev
           dpkg-query -W libgrpc++-dev libgrpc-dev libprotobuf-dev protobuf-compiler protobuf-compiler-grpc libssl-dev zlib1g-dev
 
