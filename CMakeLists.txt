@@ -24,6 +24,8 @@ if(RATEGUARD_FETCH_GRPC)
   set(gRPC_RE2_PROVIDER module CACHE STRING "" FORCE)
   set(gRPC_SSL_PROVIDER package CACHE STRING "" FORCE)
   set(gRPC_ZLIB_PROVIDER package CACHE STRING "" FORCE)
+  set(protobuf_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+  set(protobuf_BUILD_PROTOC_BINARIES ON CACHE BOOL "" FORCE)
   FetchContent_Declare(
     grpc
     GIT_REPOSITORY https://github.com/grpc/grpc.git
@@ -40,6 +42,8 @@ else()
 endif()
 
 include(cmake/GenerateProto.cmake)
+file(GENERATE OUTPUT "${CMAKE_BINARY_DIR}/codegen-tools.json"
+  CONTENT "{\"protoc\":\"$<TARGET_FILE:protobuf::protoc>\",\"grpc_cpp_plugin\":\"$<TARGET_FILE:grpc_cpp_plugin>\"}\n")
 
 # Always compile one isolated code-generation fixture so this infrastructure PR
 # remains verifiable before the junior-owned product schemas arrive.
@@ -67,6 +71,16 @@ if(RATEGUARD_PRODUCT_PROTO_FILES)
     target_link_libraries(rateguard_contract_tests PRIVATE rateguard_proto)
     add_test(NAME rateguard.contracts
       COMMAND rateguard_contract_tests "${CMAKE_CURRENT_SOURCE_DIR}")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/tests/contracts/transport_error_test.cpp")
+      add_executable(rateguard_transport_error_tests
+        tests/contracts/transport_error_test.cpp)
+      target_include_directories(rateguard_transport_error_tests PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include")
+      add_test(NAME rateguard.transport_errors
+        COMMAND rateguard_transport_error_tests)
+    elseif(RATEGUARD_REQUIRE_PRODUCT_CONTRACTS)
+      message(FATAL_ERROR "tests/contracts/transport_error_test.cpp is required")
+    endif()
   elseif(RATEGUARD_REQUIRE_PRODUCT_CONTRACTS)
     message(FATAL_ERROR "Product proto files exist but tests/contract_test.cpp is missing")
   endif()
@@ -80,6 +94,8 @@ if(BUILD_TESTING)
       --source-root "${CMAKE_CURRENT_SOURCE_DIR}"
       --build-dir "${CMAKE_BINARY_DIR}"
       --grpc-source "${RG_GRPC_SOURCE_DIR}"
+      --protoc "$<TARGET_FILE:protobuf::protoc>"
+      --grpc-plugin "$<TARGET_FILE:grpc_cpp_plugin>"
       --output "${CMAKE_BINARY_DIR}/build-manifest.json"
       --build-result not-yet-run
     BYPRODUCTS "${CMAKE_BINARY_DIR}/build-manifest.json"
