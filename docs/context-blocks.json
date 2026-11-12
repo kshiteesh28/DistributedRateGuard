@@ -24,10 +24,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_bootstrap_implemented_acceptance_pending",
+    "implementation": "rg001_component_verified_review_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Product Owner authorized implementation with 'begin the implementation'. RG-001 bootstrap work is in progress on feature/RG-001-contract-bootstrap. Other stories remain planned; no release gates are claimed."
+    "note": "RG-001 contract component passed independent review and Linux CI 43327798021. Main merge awaits Product Owner approval. Development/testing is authorized; dependent work may be stacked on the verified feature branch."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -87,9 +87,8 @@
     }
   },
   "next_actions": [
-    "Complete and independently review RG-001 on feature/RG-001-contract-bootstrap.",
-    "Run contract tests and the target Linux build; retain actual evidence and leave unavailable checks pending.",
-    "Open a separate feature PR for Product Owner review; do not merge automatically."
+    "Review PR #5; do not merge to main without Product Owner approval.",
+    "Continue RG-002 on a separate stacked branch from the verified RG-001 code; preserve release and evidence gates."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -104,7 +103,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-001",
       "link_type": "repository_story",
       "release": "A",
-      "status": "in_progress_not_accepted",
+      "status": "component_accepted_review_pending",
       "depends_on": [],
       "prd_ids": [
         "PRD-005",
@@ -117,19 +116,19 @@
       "planned_files": [
         {
           "path": "proto/rateguard/v1/admission.proto",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "proto/rateguard/v1/authority.proto",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "CMakeLists.txt",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "build-lock.json",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         }
       ],
       "classes": [
@@ -171,7 +170,7 @@
             "AT-04",
             "AT-06"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-001-AC02",
@@ -180,7 +179,7 @@
             "AT-13",
             "AT-20"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-001-AC03",
@@ -188,17 +187,16 @@
           "evidence_ids": [
             "AT-07"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         }
       ],
       "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
       "implementation_evidence": {
         "path": "docs/evidence/RG-001.md",
         "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/5",
-        "local_transport_test": "passed",
-        "manifest_smoke": "passed_unconfigured_environment",
-        "generated_protobuf_linux_build": "pending",
-        "lock": "candidate_unvalidated"
+        "run": 43327798021,
+        "tested_head": "4c924495a1303054a2c3b26edfae757430ea4d72",
+        "scope": "API/helpers/build/synthetic transport; no quota service"
       }
     },
     {
@@ -1501,7 +1499,7 @@
   "sprint_plan": {
     "path": "docs/SPRINT-PLAN.md",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SPRINT-PLAN.md",
-    "status": "sprint_0_in_progress",
+    "status": "sprint_0_component_verified_review_pending",
     "estimates_unit": "active_agent_minutes",
     "baseline_total_minutes": 15250,
     "feasibility_spike_minutes": {
