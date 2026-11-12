@@ -129,3 +129,14 @@ if(BUILD_TESTING)
     COMMENT "Capturing observed toolchain and source revisions (not a lock validation)"
   )
 endif()
+
+# RG-002 pure arithmetic: no clock/RPC/state ownership in this component.
+add_executable(rateguard_bucket_math_tests tests/bucket_math_test.cpp)
+target_include_directories(rateguard_bucket_math_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+add_test(NAME rateguard.bucket_math COMMAND rateguard_bucket_math_tests)
+add_test(NAME rateguard.bucket_math_oracle
+  COMMAND "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"
+    "RATEGUARD_REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+    "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/bucket_math_oracle.py")
+set_tests_properties(rateguard.bucket_math_oracle PROPERTIES TIMEOUT 60)
