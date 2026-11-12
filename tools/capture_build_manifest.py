@@ -58,6 +58,9 @@ def main() -> int:
     parser.add_argument("--source-root", required=True, type=Path)
     parser.add_argument("--build-dir", required=True, type=Path)
     parser.add_argument("--grpc-source", type=Path, default=None)
+    parser.add_argument("--protoc", type=Path, default=None)
+    parser.add_argument("--grpc-plugin", type=Path, default=None)
+    parser.add_argument("--codegen-tools", type=Path, default=None)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--build-result", choices=("not-yet-run", "passed", "failed"),
                         default="not-yet-run")
@@ -74,6 +77,14 @@ def main() -> int:
             break
     compiler = [compiler_path or os.environ.get("CXX") or "c++", "--version"]
     lock = load_lock(source / "build-lock.json")
+    codegen_tools: dict[str, str] = {}
+    if args.codegen_tools and args.codegen_tools.exists():
+        try:
+            codegen_tools = json.loads(args.codegen_tools.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            codegen_tools = {}
+    protoc_path = args.protoc or (Path(codegen_tools["protoc"]) if codegen_tools.get("protoc") else None)
+    plugin_path = args.grpc_plugin or (Path(codegen_tools["grpc_cpp_plugin"]) if codegen_tools.get("grpc_cpp_plugin") else None)
     third_party = (grpc_source / "third_party") if grpc_source else None
     dependency_commits = {
         "grpc": git_head(grpc_source),
@@ -113,8 +124,10 @@ def main() -> int:
             "cmake": command_output(["cmake", "--version"]),
             "ninja": command_output(["ninja", "--version"]),
             "cxx_compiler": command_output(compiler),
-            "protoc": command_output(["protoc", "--version"]),
-            "grpc_cpp_plugin": shutil.which("grpc_cpp_plugin"),
+            "protoc_path": str(protoc_path) if protoc_path else None,
+            "protoc": command_output([str(protoc_path), "--version"]) if protoc_path else command_output(["protoc", "--version"]),
+            "grpc_cpp_plugin_path": str(plugin_path) if plugin_path else None,
+            "grpc_cpp_plugin": command_output([str(plugin_path), "--version"]) if plugin_path else shutil.which("grpc_cpp_plugin"),
             "git": command_output(["git", "--version"]),
         },
         "system_packages": {
