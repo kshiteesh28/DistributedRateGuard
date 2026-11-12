@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "lock_status": "validated",
+  "lock_status": "frozen_pending_verification",
   "target": {
     "runner_label": "ubuntu-24.04",
     "os_id": "ubuntu",
@@ -23,7 +23,8 @@
       "protobuf-compiler": "3.21.12-8.2ubuntu0.4",
       "protobuf-compiler-grpc": "1.51.1-4.1build5",
       "libssl-dev": "3.0.13-0ubuntu3.16",
-      "zlib1g-dev": "1:1.3.dfsg-3.1ubuntu2.3"
+      "zlib1g-dev": "1:1.3.dfsg-3.1ubuntu2.3",
+      "nlohmann-json3-dev": "3.11.3-1"
     },
     "version_policy": "Install these exact primary package versions and fail on toolchain drift; do not silently update dependencies."
   },
@@ -37,11 +38,12 @@
     "validation": "unverified; separate opt-in compatibility lane; not the dependency mode tested by this lock"
   },
   "validation": {
-    "validated": true,
+    "validated": false,
     "scope": "Primary Ubuntu x86_64 contract toolchain/package snapshot; generated C++20 contracts and clean-directory code-generation repeat verified",
-    "observed_run": 43327798021,
-    "observed_commit": "4c924495a1303054a2c3b26edfae757430ea4d72",
-    "clean_rebuild_and_codegen_match": true
+    "observed_run": 43331122781,
+    "observed_commit": "93b7e9e2f962ca07450b502ea84bf12814f69551",
+    "clean_rebuild_and_codegen_match": true,
+    "pending": "Verify RG-002 policy/JSON extension against independently computed canonical fixtures and actual OpenSSL"
   },
   "limitations": [
     "Not a hermetic or bit-for-bit binary reproducibility claim: runner image and transitive system packages are not fully pinned.",
