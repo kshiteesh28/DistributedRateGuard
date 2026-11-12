@@ -133,7 +133,13 @@ def main() -> int:
         "system_packages": {
             "libssl_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libssl-dev"]),
             "zlib1g_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "zlib1g-dev"]),
+            "libgrpc_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libgrpc-dev"]),
+            "libgrpcpp_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libgrpc++-dev"]),
+            "libprotobuf_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libprotobuf-dev"]),
+            "protobuf_compiler": command_output(["dpkg-query", "-W", "-f=${Version}", "protobuf-compiler"]),
+            "protobuf_compiler_grpc": command_output(["dpkg-query", "-W", "-f=${Version}", "protobuf-compiler-grpc"]),
         },
+        "dependency_mode": "system_packages" if not grpc_source else "grpc_source",
         "dependency_commits": dependency_commits,
         "candidate_lock": lock,
         "limitations": [
