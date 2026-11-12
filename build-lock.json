@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "lock_status": "candidate_unvalidated",
+  "target": {
+    "runner_label": "ubuntu-24.04",
+    "language_standard": "C++20",
+    "cmake": "3.31.6",
+    "ninja": "1.11.1"
+  },
+  "dependencies": {
+    "grpc": {
+      "repository": "https://github.com/grpc/grpc.git",
+      "requested_ref": "v1.85.0",
+      "resolution": "Git tag plus recursive upstream submodule gitlinks; capture resolved commit IDs in build-manifest.json"
+    },
+    "protobuf": {
+      "source": "gRPC v1.85.0 third_party/protobuf submodule",
+      "resolution": "Use the submodule commit fixed by the gRPC source tree to keep protoc and C++ runtime aligned; capture its resolved commit ID"
+    },
+    "system_packages": ["OpenSSL development package", "zlib development package"]
+  },
+  "github_actions": {
+    "actions/checkout": "11bd71901bbe5b1630ceea73d27597364c9af683",
+    "lukka/get-cmake": "56d043d188c3612951d8755da8f4b709ec951ad6"
+  },
+  "validation": {
+    "validated": false,
+    "reason": "No local CMake, Ninja, Docker, or Linux build environment is available; validate from the target GitHub Actions run and preserve its observed manifest."
+  },
+  "limitations": [
+    "The ubuntu-24.04 hosted runner image is a mutable label; workflow records ImageOS/ImageVersion and OS package versions instead of inventing an image digest.",
+    "The gRPC release tag is fixed, and recursive submodules resolve to fixed gitlink revisions; exact commit IDs are recorded from the actual checkout before promoting this candidate lock."
+  ]
+}
