@@ -8,6 +8,7 @@ import json
 import os
 import platform
 import shutil
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -51,6 +52,42 @@ def load_lock(path: Path) -> dict[str, Any]:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         return {"lock_status": "invalid", "error": str(exc)}
+
+
+
+def build_configuration(source: Path, build: Path) -> dict[str, Any]:
+    """Observe the compiler standard used by every project C++ translation unit."""
+    flags_seen: set[str] = set()
+    count = 0
+    all_cpp20 = True
+    try:
+        entries = json.loads((build / "compile_commands.json").read_text(encoding="utf-8"))
+        if not isinstance(entries, list):
+            raise ValueError("compile_commands root is not a list")
+        for entry in entries:
+            path = Path(entry["file"])
+            if not path.is_absolute():
+                path = Path(entry["directory"]) / path
+            path = path.resolve()
+            try:
+                relative = path.relative_to(source)
+            except ValueError:
+                continue
+            if "_deps" in relative.parts or path.suffix not in (".cpp", ".cc", ".cxx", ".C"):
+                continue
+            args = entry.get("arguments")
+            if args is None:
+                args = shlex.split(entry["command"])
+            flags = [arg for arg in args if arg.startswith("-std=")]
+            flags_seen.update(flags)
+            all_cpp20 = all_cpp20 and flags == ["-std=c++20"]
+            count += 1
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        return {"cxx_standard": None, "project_compile_commands_count": 0,
+                "error": str(exc)}
+    return {"cxx_standard": "C++20" if count and all_cpp20 else None,
+            "project_compile_commands_count": count,
+            "project_cxx_standard_flags": sorted(flags_seen)}
 
 
 def main() -> int:
@@ -142,6 +179,7 @@ def main() -> int:
         "dependency_mode": "system_packages" if not grpc_source else "grpc_source",
         "dependency_commits": dependency_commits,
         "candidate_lock": lock,
+        "build_configuration": build_configuration(source, build),
         "limitations": [
             "This manifest records one observed run; it does not by itself prove bit-for-bit reproducibility.",
             "Do not promote lock_status until CI succeeds and requested refs are compared with captured immutable commits.",
