@@ -55,6 +55,23 @@ jobs:
       - name: Run contract tests
         run: ctest --test-dir build --output-on-failure
 
+      - name: Reproduce contracts from a second clean build directory
+        run: |
+          cmake -S . -B build-clean -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON
+          cmake --build build-clean --parallel 2
+          ctest --test-dir build-clean --output-on-failure
+          python3 - <<'PY'
+          import hashlib, pathlib
+          def generated(root):
+              base = pathlib.Path(root) / "generated"
+              return {str(p.relative_to(base)): hashlib.sha256(p.read_bytes()).hexdigest()
+                      for p in base.rglob("*") if p.is_file()}
+          first, second = generated("build"), generated("build-clean")
+          if not first or first != second:
+              raise SystemExit("Clean code-generation reproduction mismatch")
+          print(f"Clean reproduction: {len(first)} generated files match")
+          PY
+
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
@@ -63,7 +80,7 @@ jobs:
             --codegen-tools build/codegen-tools.json \
             --output build/build-manifest.json \
             --build-result passed
-          cat build/build-manifest.json >> "$GITHUB_STEP_SUMMARY"
+          cat build/build-manifest.json | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Preserve the observed build manifest
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
