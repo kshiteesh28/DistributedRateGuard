@@ -7,9 +7,7 @@
     "os_version_id": "24.04",
     "architecture": "x86_64",
     "language_standard": "C++20",
-    "dependency_mode": "ubuntu-packages",
-    "cmake": "3.31.6",
-    "ninja": "1.11.1"
+    "dependency_mode": "ubuntu-packages"
   },
   "tools": {
     "cmake": "cmake version 3.31.6\n\nCMake suite maintained and supported by Kitware (kitware.com/cmake).",
@@ -41,10 +39,10 @@
   "validation": {
     "validated": false,
     "scope": "Primary contract toolchain and package versions on the recorded Ubuntu x86_64 environment",
-    "observed_run": 43326950216,
-    "observed_commit": "d1e1c5a6052f1709084eb2586c85304dc8569c57",
+    "observed_run": 43327385231,
+    "observed_commit": "8a9a88b8c00e692e7eeaf891ee398e2cd2885d3e",
     "clean_rebuild_and_codegen_match": true,
-    "pending": "Strict frozen-lock comparison in CI"
+    "pending": "Verify actual C++20 compiler flags with the frozen dependency lock"
   },
   "limitations": [
     "Not a hermetic or bit-for-bit binary reproducibility claim: runner image and transitive system packages are not fully pinned.",
