@@ -27,36 +27,51 @@ InvalidInput() noexcept {
 }
 
 [[nodiscard]] inline std::optional<contract::ServiceError>
-ValidateCheckAdmissionRequest(const CheckAdmissionRequest& request) noexcept {
+ValidateCheckAdmissionRequest(const CheckAdmissionRequest& request,
+                              std::string_view configured_tenant,
+                              std::string_view configured_operation,
+                              std::string_view active_epoch_id,
+                              std::string_view active_policy_digest) noexcept {
   if (!contract::IsValidIdentifier(request.tenant_id()) ||
       !contract::IsValidIdentifier(request.operation_id()) ||
       !contract::HasExactWidth(request.attempt_id(), 16) ||
       !contract::HasExactWidth(request.epoch_id(), 16) ||
       !contract::HasExactWidth(request.policy_digest(), 32) ||
+      request.tenant_id() != configured_tenant ||
+      request.operation_id() != configured_operation ||
+      request.epoch_id() != active_epoch_id ||
+      request.policy_digest() != active_policy_digest ||
       request.ByteSizeLong() > kMaxRequestBytes)
     return InvalidInput();
   return std::nullopt;
 }
 
-// Slot registry and operation/cost values come from the immutable,
-// authenticated epoch policy. Authenticate the caller before this check; do
-// not mutate state unless validation succeeds.
+// Tenant, slot registry, active epoch/digest, and operation/cost values come
+// from the immutable authenticated epoch policy. Authenticate the caller and
+// enforce the transport message-size cap before parsing; this post-decode
+// ByteSizeLong check is defense in depth. Do not mutate state on failure.
 [[nodiscard]] inline std::optional<contract::ServiceError>
 ValidateAcquireCreditRequest(
     const AcquireCreditRequest& request,
     std::span<const std::uint32_t> registered_slots,
+    std::string_view configured_tenant,
     std::string_view configured_operation,
+    std::string_view active_epoch_id,
+    std::string_view active_policy_digest,
     std::uint64_t configured_cost_units,
     std::uint64_t tenant_capacity_units) noexcept {
   if (registered_slots.size() > kMaxRegisteredReplicaSlots ||
       !contract::IsValidIdentifier(request.tenant_id()) ||
       !contract::IsValidIdentifier(request.trigger_operation_id()) ||
+      request.tenant_id() != configured_tenant ||
       request.trigger_operation_id() != configured_operation ||
       std::find(registered_slots.begin(), registered_slots.end(), request.slot()) ==
           registered_slots.end() ||
       !contract::HasExactWidth(request.incarnation_id(), 16) ||
       !contract::HasExactWidth(request.epoch_id(), 16) ||
       !contract::HasExactWidth(request.policy_digest(), 32) ||
+      request.epoch_id() != active_epoch_id ||
+      request.policy_digest() != active_policy_digest ||
       request.sequence() == 0 ||
       tenant_capacity_units == 0 || tenant_capacity_units > kMaxPolicyUnits ||
       configured_cost_units == 0 || configured_cost_units > tenant_capacity_units ||
