@@ -1,6 +1,6 @@
 # RateGuard — Product Requirements Document
 
-**Revision:** 7 · **Status:** Proposed · **Date:** 2026-11-03  
+**Revision:** 8 · **Status:** Proposed · **Date:** 2026-11-12  
 **Owner:** Kshiteesh · **Target:** Backend and infrastructure engineers operating multi-tenant APIs
 
 ## Decision in one minute
@@ -75,7 +75,7 @@ Compare strict and credit modes with the same policy, offered trace, resource bu
 
 Use a correct strict implementation as the engineering baseline. Instance-local counters and a deliberately non-atomic update are diagnostic failures, not performance competitors. A shared global bucket is a different policy used to show the isolation/utilization trade-off. Compare external systems only when their semantics and configuration can be aligned.
 
-Freeze a benchmark manifest: source revision, build mode, dependency versions, hardware, container limits, policies, operation mix, trace/seed, deadline, and time resolution. Use open-loop arrivals, 30-second warmup, five 60-second runs, and no automatic retries. Report generator delay, offered and achieved rate, p50/p95/p99, timeout and error rates, CPU/memory, authority operations and bytes per admitted cost unit, unused/stranded credits, and observed burst deviation. Report individual runs and raw data. Instrumented correctness runs are separate from performance runs.
+Freeze a benchmark manifest: source revision, build mode, dependency versions, hardware, container limits, policies, operation mix, trace/seed, deadline, and time resolution. Use open-loop arrivals, 30-second warmup, five 60-second runs, and no automatic retries. For every delivered attempt, measure decision latency from adapter receipt to its first terminal application response; include ALLOW, LIMITED, and error responses. If no response arrives, record the caller-deadline duration as the latency sample. Compute p50/p95/p99 over all delivered attempts using nearest-rank percentiles; never filter errors, cancellations, or timeouts from the latency sample. Report generator delay separately, along with scheduled/delivered/missed counts, timeout and error rates, CPU/memory, authority operations and bytes per admitted cost unit, unused/stranded credits, and observed burst deviation. Report individual runs and raw data. Instrumented correctness runs are separate from performance runs.
 
 ## Numerical release goals
 
@@ -85,7 +85,7 @@ These are **requirements to achieve**, not measured results. Release A/B cannot 
 | --- | --- | --- |
 | Quota correctness | **Zero observed model violations in at least 1,000,000 decision attempts per mode**, including declared concurrent boundary cases. Tests must detect seeded double-spend and reject-all defects; credit-mode tests must also detect duplicate grants and an intentionally violated burst bound. | A and C |
 | Tenant service | **≥99% of conforming attempts receive timely `ALLOW` in each of five runs** while two tenants each offer 50% of their reserved rate and a third offers 10× its rate. Count timeouts and unavailable responses as failures; run below the measured limiter capacity knee. | B and C |
-| Decision latency and capacity | **p99 ≤5 ms in each of five runs at 5,000 offered checks/s**, 1,000 tenants, three replicas, and a 50 ms caller deadline on one documented host. Use the stated 90% cost-1/10% cost-5 mix and report errors separately. | B and C |
+| Decision latency and capacity | **p99 ≤5 ms in each of five runs at 5,000 offered checks/s**, 1,000 tenants, three replicas, and a 50 ms caller deadline on one documented host. Calculate p99 over every delivered attempt, including errors and cancellations; no-response timeouts contribute the caller-deadline duration. Use nearest-rank percentiles and report errors separately. Use the stated 90% cost-1/10% cost-5 mix. | B and C |
 | Credit efficiency | At the same offered trace, policy, host budget, and deadline, credit mode must use **≥50% fewer authority operations per 1,000 admitted cost units** than strict mode. It must preserve **≥95% of strict-mode admitted cost** and meet the latency and service gates above. Compare the five-run medians; publish every run and stranded-credit cost. | C |
 | Credit safety | **Zero observed conservation or `B + rΔt + NQ` bound violations** across the required credit-mode attempts and fault cases. No new grant after an unresolved allocation outcome. | C |
 | Reproducibility | **Two clean setup-and-run reproductions** using the published instructions and pinned inputs; each produces machine-readable results that recalculate the reported gates. | B and C |
@@ -106,11 +106,11 @@ These references motivate design choices; none verifies RateGuard's proposed bou
 
 ## Spec-to-code gate
 
-AI-assisted implementation begins module by module only when that module has no unresolved behavior-changing decision. The SRD must define wire types, units, bounds, outcome mapping, deadlines, and grant sequences. The HLD must define authority identity, clock, epoch fencing, state integrity, and resource limits. The LLD must define atomic spending and the grant retry state machine.
+Implementation proceeds in dependency order from the linked [SRD revision 5](SRD.md), [HLD revision 4](HLD.md), [LLD revision 5](LLD.md), and [story catalog](STORIES.md). A module may be implemented when its contract and design are specified; environment-dependent evidence (clock provenance, process fencing, certificates, and journal behavior) must be demonstrated before the affected service is enabled or its safety gates are claimed. Pin compiler and dependency versions on the actual build host in RG-001 before compiling; do not guess versions or present an unbuilt lock as validated.
 
-For each generated module, record `requirement → contract → design decision → independent test → observed result`. Test oracles must not simply reuse production decision logic. Seed double-spend, duplicate grant, invalid reset, lost-response replacement, and reject-all defects to show the checks can fail. The present PRD defines intent; it does not claim those downstream specifications or tests exist.
+For each module, record `requirement → contract → design decision → independent test → observed result`. Test oracles must not simply reuse production decision logic. Seed double-spend, duplicate grant, invalid reset, lost-response replacement, and reject-all defects to show the checks can fail. These documents define proposed behavior and design; they do not claim implementation or passing tests.
 
-**Status:** no public implementation or reproducible benchmark has been verified for this release. Historical performance numbers in earlier project descriptions are not treated as current results. This document is ready to drive SRD/HLD work. Those documents must resolve clock behavior, numeric representation, and epoch fencing before implementation.
+**Status:** no implementation or reproducible benchmark has been verified. Historical performance numbers in earlier project descriptions are not current results. PRD 8, SRD 5, HLD 4, and LLD 5 form the current proposed contract/design bundle. No unresolved product-semantic decision is recorded in that bundle; platform validation and all acceptance evidence remain pending.
 
 
 ## Revision 6 — accepted scope and engineering decisions
@@ -127,7 +127,7 @@ This revision adopts the reviewed v1 decisions below. These are requirements to 
 
 | ID | Release | Required outcome and evidence |
 | --- | --- | --- |
-| PRD-022 | B/C | In every latency/capacity run, at least 99% of delivered attempts receive a terminal ALLOW or LIMITED before the 50 ms caller deadline. INVALID, authentication/dependency/overload errors and timeouts count as failures. The existing ≥99.5% generator-delivery gate also applies. Publish all denominators; a fast error response cannot satisfy this gate. |
+| PRD-022 | B/C | In every latency/capacity run, at least 99% of delivered attempts receive a terminal ALLOW or LIMITED before the 50 ms caller deadline. INVALID, authentication/dependency/overload errors, caller cancellations, and timeouts count as failures. The existing ≥99.5% generator-delivery gate also applies. Publish all denominators; a fast error response cannot satisfy this gate. |
 | PRD-023 | C | Publish the independent protocol model, explored configuration/state counts, trace validator, and reproducible counterexamples for seeded double-spend, duplicate-grant and stale-epoch defects. Bounded checking does not establish correctness for all executions. |
 | PRD-024 | A/C | Verify clock provenance, authenticated adapter binding, fixed process inventory and confirmed old-process termination before epoch activation; unsupported topology or incomplete fencing fails closed. |
 
@@ -142,3 +142,10 @@ PRD-001–021 and their release sequence remain applicable. PRD-013/014 remain d
 | PRD-026 | B/C | For the uniform performance gate, zero-based attempt j has tenant=j mod 1000, block=floor(j/1000), replica=(tenant+block) mod N, arrival=j×200000 ns, and cost=5 when (block+j) mod 10=0, else 1. Each block spreads attempts across slots with counts differing by at most one and rotates each tenant's slot across blocks. Use N=3 for the pass gate. The previous replica=block mod N trace is a separately named block-skew sensitivity trace and cannot substitute for the uniform gate. Publish exact scheduled per-slot/per-tenant counts and the trace hash; every previously specified numerical release threshold remains required. |
 
 These clarifications resolve the source conflicts identified during principal review. They specify planned behavior and do not claim implementation or successful measurements.
+
+
+## Revision 8 — benchmark denominator and readiness closure
+
+This revision makes the p99 population explicit: every delivered attempt is included, regardless of outcome. A call with no response is assigned its caller-deadline duration; caller cancellations use cancellation time; fast errors remain latency samples and are also failures under PRD-022. This prevents completion-only filtering from making a failing run look fast. The numeric 5 ms, 50 ms, 99%, and 99.5% gates are unchanged.
+
+The spec-to-code status now points to the current SRD/HLD/LLD bundle. Toolchain versions are frozen from the actual build environment in RG-001 rather than guessed in advance. No implementation, platform evidence, or benchmark result is claimed.
