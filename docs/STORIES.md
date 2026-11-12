@@ -1,12 +1,12 @@
 # Implementation stories
 
-**Date:** 2026-11-12 · **Status:** RG-001 implementation started on a feature branch; acceptance pending.
+**Date:** 2026-11-12 · **Status:** RG-001 component acceptance passed; PR review pending. Later stories remain planned.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
 ## RG-001
 
-**Freeze wire contracts and build manifest** · Release A · In progress; not accepted
+**Freeze wire contracts and build manifest** · Release A · Component accepted; PR review pending
 
 Dependencies: none.
 
@@ -18,7 +18,7 @@ Classes: AdmissionService, AuthorityService.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-005, PRD-021, FR-005, FR-020.
 
-Acceptance criteria (not run):
+Acceptance criteria: component PASS; see [RG-001 evidence](evidence/RG-001.md). Product/service integration remains assigned to later stories.
 
 - **RG-001-AC01** — Golden protobuf/encoding fixtures reject unspecified enums, invalid widths and malformed payloads without quota mutation. Evidence: AT-04, AT-06.
 - **RG-001-AC02** — Build manifest records exact tool/compiler/library versions and reproducible build commands; no runtime metric is claimed. Evidence: AT-13, AT-20.
