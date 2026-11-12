@@ -1,29 +1,31 @@
 {
   "schema_version": "1.0",
-  "generated_date": "2026-11-04",
+  "generated_date": "2026-11-12",
   "recheck_mutable_state": true,
   "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
   "repository": {
     "url": "https://github.com/kshiteesh28/DistributedRateGuard",
     "target_branch": "main",
-    "review_branch": "docs/spec-contract-closure-v1",
+    "review_branch": "main",
     "review_base_commit": "5df15b6312edae2a4e6b50808c051d7b4a96e667",
     "documentation_snapshot_before_class_and_story_additions": "5a6c8a1b6bc2338bb601b91ee9b0f504ff5e86ad",
     "local_path_hint": "/Users/kshiteesh/Developer/rateguard",
-    "local_checkout_verified": false
+    "local_checkout_verified": false,
+    "current_source_branch": "main",
+    "last_review_branch": "docs/spec-contract-closure-v1"
   },
   "document_revisions": {
-    "PRD": 7,
-    "SRD": 4,
-    "HLD": 3,
-    "LLD": 4
+    "PRD": 8,
+    "SRD": 5,
+    "HLD": 4,
+    "LLD": 5
   },
   "state": {
     "documents": "reviewed_specifications",
-    "implementation": "not_created_or_verified_in_this_task",
+    "implementation": "not_created_or_verified",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "All implementation files and acceptance results in stories are planned. Re-read main and source revisions before coding."
+    "note": "The current source of truth is main. The local path hint currently contains documentation only and is not a verified Git checkout; clone or sync main before coding. All implementation files and acceptance results in stories remain planned. Read current main and verify the target build environment before starting."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -56,12 +58,19 @@
       "Real authority/replica fault injection",
       "Release benchmarks",
       "TLA/model checker execution"
+    ],
+    "documentation_changes": [
+      "PRD 8 / SRD 5 / HLD 4 / LLD 5 now use one p99 population and timeout/cancellation rule.",
+      "README and spec-to-code status text point to the current main-branch document bundle.",
+      "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
+      "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
     ]
   },
   "next_actions": [
-    "Run git status --short --branch in a verified clone and fetch main; do not assume the local_path_hint is a Git checkout.",
-    "Read docs/PRD.md, docs/SRD.md, docs/HLD.md and docs/LLD.md and confirm the revision bundle.",
-    "Start RG-001; follow depends_on for subsequent stories and record actual evidence before marking any criterion passed."
+    "Clone or sync main into a verified Git checkout; the recorded local path currently contains docs only.",
+    "Start RG-001: freeze wire contracts and select toolchain versions by testing the actual target Linux build environment; record the reproducible build lock.",
+    "Implement the independent strict oracle/golden fixture subset before RG-008 acceptance; keep the full replay CLI in Release B.",
+    "Proceed in dependency order; record evidence before marking any acceptance criterion passed."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -108,27 +117,28 @@
       ],
       "code_design_notes": [
         "Freeze numbered v1 fields, enums, cost/operation binding, typed errors and C++20 dependency lock before implementing services.",
-        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.",
+        "Choose tool versions only after checking the available target Linux build environment; record versions and image digest, then verify a reproducible build. A documentation-only checkout or untested lock is not build evidence."
       ],
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -213,22 +223,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -301,22 +311,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -389,22 +399,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -477,22 +487,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -586,22 +596,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -694,22 +704,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -775,28 +785,28 @@
         "ReplayModel"
       ],
       "code_design_notes": [
-        "Build the independent arithmetic/decision oracle before strict acceptance and credit implementation; full offered traces include order, initial state and immutable policy hashes.",
+        "Build a minimal independent strict serial oracle and golden fixtures before strict A acceptance. Complete the full offered-trace replay CLI in Release B. Never import production BucketMath or AuthorityEngine logic.",
         "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
       ],
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -827,7 +837,8 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "release_prerequisite": "A oracle/golden-fixture subset must be complete before RG-008 acceptance; the user-facing replay CLI and full trace comparison remain Release B."
     },
     {
       "id": "RG-008",
@@ -896,22 +907,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -988,22 +999,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -1090,22 +1101,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -1197,22 +1208,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -1228,7 +1239,7 @@
         },
         {
           "id": "RG-012-AC02",
-          "criterion": "Each run applies ≥99.5% delivery, p99≤5ms at 5000/s, ≥99% timely ALLOW/LIMITED and noisy-tenant ≥99% ALLOW without excluding failures.",
+          "criterion": "Each run applies ≥99.5% delivery, nearest-rank p99≤5 ms at 5,000/s over all delivered attempts (include errors; no-response timeouts contribute the caller-deadline duration), ≥99% timely ALLOW/LIMITED and noisy-tenant ≥99% ALLOW without excluding failures.",
           "evidence_ids": [
             "AT-22",
             "AT-23",
@@ -1296,22 +1307,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -1394,22 +1405,22 @@
       "files_to_refer": [
         {
           "path": "docs/PRD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/PRD.md"
         },
         {
           "path": "docs/SRD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SRD.md"
         },
         {
           "path": "docs/HLD.md",
-          "revision": 3,
+          "revision": 4,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 4,
+          "revision": 5,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
         }
       ],
@@ -1444,5 +1455,18 @@
       ],
       "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
     }
-  ]
+  ],
+  "measurement_contract": {
+    "decision_latency": "For every delivered measured attempt, start at adapter receipt and stop at the first terminal application response. Include ALLOW, LIMITED, and error responses. If the caller cancels first, use cancellation time and count it as a failure; if no response arrives by deadline, use that deadline duration as the latency sample. Compute nearest-rank percentiles over all delivered attempts; do not filter errors, cancellations, or timeouts.",
+    "p99_gate_ms": 5,
+    "offered_rate_per_second": 5000,
+    "caller_deadline_ms": 50,
+    "generator_delivery_gate_percent": 99.5,
+    "timely_allow_or_limited_gate_percent": 99
+  },
+  "build_environment_decision": {
+    "target": "Single Docker Linux VM with verified shared Linux kernel time namespace for enforcement processes; no multi-host enforcement.",
+    "version_policy": "RG-001 selects and records actual compiler, CMake, Linux image, gRPC, protobuf, crypto, and model-tool versions from the available target build environment and verifies a reproducible build before calling the lock validated. Do not guess versions before environment inspection.",
+    "local_checkout_observation": "/Users/kshiteesh/Developer/rateguard currently contains documentation only and has no verified Git metadata or source/build files."
+  }
 }
