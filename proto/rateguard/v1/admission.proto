@@ -20,6 +20,7 @@ enum AdmissionMode {
   ADMISSION_MODE_CREDIT = 2;
 }
 
+// Deadline is supplied by the gRPC call context, not a request timestamp.
 // Tenant and operation are selectors only; identity authorization comes from
 // the authenticated adapter URI SAN and immutable epoch policy. Cost, mode,
 // time, and deadline are never trusted from request fields.
