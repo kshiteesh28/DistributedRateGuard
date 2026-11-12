@@ -114,14 +114,14 @@ int main(int argc, char** argv) {
   Field(grant_response, "composite_grant_id", 3); Field(grant_response, "grant_units", 4);
   Field(grant_response, "epoch_id", 5); Field(grant_response, "policy_digest", 6);
 
-  Check(static_cast<int>(DECISION_OUTCOME_UNSPECIFIED) == 0 &&
-        static_cast<int>(DECISION_OUTCOME_ALLOW) == 1 &&
-        static_cast<int>(DECISION_OUTCOME_OVERLOADED) == 6, "decision enum numeric contract");
-  Check(static_cast<int>(GRANT_OUTCOME_UNSPECIFIED) == 0 &&
-        static_cast<int>(GRANT_OUTCOME_GRANTED) == 1 &&
-        static_cast<int>(GRANT_OUTCOME_OVERLOADED) == 5, "grant enum numeric contract");
-  Check(static_cast<int>(ADMISSION_MODE_UNSPECIFIED) == 0 &&
-        static_cast<int>(ADMISSION_MODE_CREDIT) == 2, "mode enum numeric contract");
+  Check(static_cast<int>(rg::DECISION_OUTCOME_UNSPECIFIED) == 0 &&
+        static_cast<int>(rg::DECISION_OUTCOME_ALLOW) == 1 &&
+        static_cast<int>(rg::DECISION_OUTCOME_OVERLOADED) == 6, "decision enum numeric contract");
+  Check(static_cast<int>(rg::GRANT_OUTCOME_UNSPECIFIED) == 0 &&
+        static_cast<int>(rg::GRANT_OUTCOME_GRANTED) == 1 &&
+        static_cast<int>(rg::GRANT_OUTCOME_OVERLOADED) == 5, "grant enum numeric contract");
+  Check(static_cast<int>(rg::ADMISSION_MODE_UNSPECIFIED) == 0 &&
+        static_cast<int>(rg::ADMISSION_MODE_CREDIT) == 2, "mode enum numeric contract");
   Check(!validation::IsKnownDecisionOutcome(0) && !validation::IsKnownDecisionOutcome(7), "reject unspecified/unknown decision");
   Check(!validation::IsKnownGrantOutcome(0) && !validation::IsKnownGrantOutcome(6), "reject unspecified/unknown grant");
   Check(!validation::IsKnownAdmissionMode(0) && !validation::IsKnownAdmissionMode(3), "reject unspecified/unknown mode");
@@ -199,7 +199,7 @@ int main(int argc, char** argv) {
 
   AdmissionDecision allow;
   RoundTrip(root, "admission_allow_retry_123.hex", allow, "AdmissionDecision/retry");
-  Check(allow.outcome() == DECISION_OUTCOME_ALLOW && allow.mode() == ADMISSION_MODE_STRICT &&
+  Check(allow.outcome() == rg::DECISION_OUTCOME_ALLOW && allow.mode() == rg::ADMISSION_MODE_STRICT &&
         allow.has_retry_delay_ns() && allow.retry_delay_ns() == 123,
         "decision fields and present retry value");
   AdmissionDecision absent;
@@ -247,14 +247,14 @@ int main(int argc, char** argv) {
   AcquireCreditResponse limited;
   RoundTrip(root, "grant_result_limited_zero_units_present.hex", limited,
             "AcquireCreditResponse/limited-zero");
-  Check(limited.grant_outcome() == GRANT_OUTCOME_LIMITED &&
+  Check(limited.grant_outcome() == rg::GRANT_OUTCOME_LIMITED &&
         limited.has_grant_units() && limited.grant_units() == 0 &&
         limited.sequence() == 7, "known LIMITED preserves zero grant-units presence");
 
   AcquireCreditResponse granted;
   RoundTrip(root, "grant_result_granted_composite.hex", granted,
             "AcquireCreditResponse/granted-composite");
-  Check(granted.grant_outcome() == GRANT_OUTCOME_GRANTED &&
+  Check(granted.grant_outcome() == rg::GRANT_OUTCOME_GRANTED &&
         granted.sequence() == 7 && granted.has_composite_grant_id() &&
         granted.has_grant_units() && granted.grant_units() == 25,
         "GRANTED response preserves grant amount and composite identity");
