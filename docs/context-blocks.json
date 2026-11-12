@@ -12,7 +12,8 @@
     "local_path_hint": "/Users/kshiteesh/Developer/rateguard",
     "local_checkout_verified": false,
     "current_source_branch": "main",
-    "last_review_branch": "docs/spec-contract-closure-v1"
+    "last_review_branch": "docs/spec-contract-closure-v1",
+    "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present."
   },
   "document_revisions": {
     "PRD": 8,
@@ -21,7 +22,7 @@
     "LLD": 5
   },
   "state": {
-    "documents": "reviewed_specifications",
+    "documents": "reviewed_specifications_revision_8_5_4_5",
     "implementation": "not_created_or_verified",
     "benchmarks": "not_run",
     "model_checking": "not_run",
@@ -39,9 +40,10 @@
   ],
   "verification": {
     "documentation_checks": [
-      "Source revisions read from GitHub main before changes.",
-      "Markdown table widths and code-fence balance checked.",
-      "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
+      "Fetched the current main-branch PRD, SRD, HLD, LLD, story catalog, and context blocks before editing.",
+      "Read back all seven edited files from main and confirmed source revisions PRD 8 / SRD 5 / HLD 4 / LLD 5.",
+      "Parsed the updated JSON handoff and checked its 14 story references against the current document revisions.",
+      "Compared the p99 and timeout/cancellation rules across PRD, SRD, HLD, LLD, stories, and context blocks."
     ],
     "design_experiments": [
       {
@@ -64,6 +66,11 @@
       "README and spec-to-code status text point to the current main-branch document bundle.",
       "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
       "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
+    ],
+    "previous_spec_merge_documentation_checks": [
+      "Source revisions read from GitHub main before changes.",
+      "Markdown table widths and code-fence balance checked.",
+      "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
     ]
   },
   "next_actions": [
