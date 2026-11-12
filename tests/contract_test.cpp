@@ -216,7 +216,7 @@ int main(int argc, char** argv) {
         credit.trigger_cost_units() == 5 && credit.trigger_operation_id() == "publish",
         "credit request fixture values");
   FakeStatePort grant_port;
-  const std::array<std::uint32_t, 1> registered_slots{3};
+  const std::array<validation::RegisteredReplicaSlot, 1> registered_slots{{{3, Seq(0x40,16)}}};
   auto valid_credit = [&](const auto& x) {
     return validation::ValidateAcquireCreditRequest(x, registered_slots, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32), 5, 100);
   };
@@ -227,6 +227,9 @@ int main(int argc, char** argv) {
   bad_credit = credit; bad_credit.set_slot(7);
   Check(!ValidateBeforeState(bad_credit, valid_credit, grant_port) && grant_port.calls == 1,
         "slot cap does not imply slot registration");
+  bad_credit = credit; bad_credit.set_incarnation_id(Seq(0x50,16));
+  Check(!ValidateBeforeState(bad_credit, valid_credit, grant_port) && grant_port.calls == 1,
+        "stale incarnation rejected before state port");
   bad_credit = credit; bad_credit.set_sequence(0);
   Check(!ValidateBeforeState(bad_credit, valid_credit, grant_port) && grant_port.calls == 1,
         "zero grant sequence rejected before state port");
@@ -246,6 +249,19 @@ int main(int argc, char** argv) {
   Check(limited.grant_outcome() == GRANT_OUTCOME_LIMITED &&
         limited.has_grant_units() && limited.grant_units() == 0 &&
         limited.sequence() == 7, "known LIMITED preserves zero grant-units presence");
+
+  AcquireCreditResponse granted;
+  RoundTrip(root, "grant_result_granted_composite.hex", granted,
+            "AcquireCreditResponse/granted-composite");
+  Check(granted.grant_outcome() == GRANT_OUTCOME_GRANTED &&
+        granted.sequence() == 7 && granted.has_composite_grant_id() &&
+        granted.has_grant_units() && granted.grant_units() == 25,
+        "GRANTED response preserves grant amount and composite identity");
+  const auto& grant_id = granted.composite_grant_id();
+  Check(grant_id.epoch_id() == Seq(0x10,16) && grant_id.tenant_id() == "acct-1" &&
+        grant_id.slot() == 3 && grant_id.incarnation_id() == Seq(0x40,16) &&
+        grant_id.sequence() == 7 && granted.epoch_id() == grant_id.epoch_id(),
+        "nested grant ID tuple round-trips exactly");
 
   if (failures) return 1;
   std::cout << "generated protobuf/error contract checks passed\n";
