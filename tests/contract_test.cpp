@@ -264,6 +264,44 @@ int main(int argc, char** argv) {
         grant_id.sequence() == 7 && granted.epoch_id() == grant_id.epoch_id(),
         "nested grant ID tuple round-trips exactly");
 
+
+  AcquireCreditResponse unknown_grant;
+  Check(unknown_grant.ParseFromString(std::string("\x08\x4d", 2)),
+        "generated parser preserves unknown grant outcome");
+  Check(!validation::IsKnownGrantOutcome(static_cast<std::uint32_t>(unknown_grant.grant_outcome())),
+        "unknown grant outcome rejected");
+  AcquireCreditResponse unspecified_grant;
+  Check(unspecified_grant.ParseFromString(""), "default grant parses");
+  Check(!validation::IsKnownGrantOutcome(static_cast<std::uint32_t>(unspecified_grant.grant_outcome())),
+        "unspecified grant rejected");
+  AdmissionDecision unknown_mode;
+  Check(unknown_mode.ParseFromString(std::string("\x20\x4d", 2)),
+        "generated parser preserves unknown admission mode");
+  Check(!validation::IsKnownAdmissionMode(static_cast<std::uint32_t>(unknown_mode.mode())),
+        "unknown admission mode rejected");
+  AdmissionDecision unspecified_mode;
+  Check(unspecified_mode.ParseFromString(""), "default decision parses");
+  Check(!validation::IsKnownAdmissionMode(static_cast<std::uint32_t>(unspecified_mode.mode())),
+        "unspecified admission mode rejected");
+
+  const std::array<std::string, 3> malformed_requests{
+      std::string("\x0a\x05x", 3),  // truncated length-delimited tenant
+      std::string("\x00", 1),       // illegal field number zero
+      std::string("\x08", 1) + std::string(10, static_cast<char>(0x80))};
+  FakeStatePort malformed_port;
+  for (const auto& wire : malformed_requests) {
+    CheckAdmissionRequest malformed;
+    const bool parsed = malformed.ParseFromString(wire);
+    Check(!parsed, "generated parser rejects malformed wire");
+    if (parsed) {
+      (void)ValidateBeforeState(malformed, [](const auto& x) {
+        return validation::ValidateCheckAdmissionRequest(
+            x, "acct-1", "publish", Seq(0x10,16), Seq(0x20,32));
+      }, malformed_port);
+    }
+  }
+  Check(malformed_port.calls == 0, "malformed wire never reaches test state port");
+
   if (failures) return 1;
   std::cout << "generated protobuf/error contract checks passed\n";
   return 0;
