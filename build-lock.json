@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "lock_status": "frozen_pending_verification",
+  "lock_status": "validated",
   "target": {
     "runner_label": "ubuntu-24.04",
     "os_id": "ubuntu",
@@ -37,12 +37,11 @@
     "validation": "unverified; separate opt-in compatibility lane; not the dependency mode tested by this lock"
   },
   "validation": {
-    "validated": false,
-    "scope": "Primary contract toolchain and package versions on the recorded Ubuntu x86_64 environment",
-    "observed_run": 43327385231,
-    "observed_commit": "8a9a88b8c00e692e7eeaf891ee398e2cd2885d3e",
-    "clean_rebuild_and_codegen_match": true,
-    "pending": "Verify actual C++20 compiler flags with the frozen dependency lock"
+    "validated": true,
+    "scope": "Primary Ubuntu x86_64 contract toolchain/package snapshot; generated C++20 contracts and clean-directory code-generation repeat verified",
+    "observed_run": 43327798021,
+    "observed_commit": "4c924495a1303054a2c3b26edfae757430ea4d72",
+    "clean_rebuild_and_codegen_match": true
   },
   "limitations": [
     "Not a hermetic or bit-for-bit binary reproducibility claim: runner image and transitive system packages are not fully pinned.",
