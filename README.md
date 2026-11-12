@@ -11,6 +11,7 @@ Read in this order:
 3. [HLD revision 4](docs/HLD.md) — proposed process and deployment architecture.
 4. [LLD revision 5](docs/LLD.md) — proposed interfaces, state transitions, classes, and implementation order.
 5. [Implementation stories](docs/STORIES.md) and [JSON context blocks](docs/context-blocks.json) — planned work and acceptance evidence.
+6. [Agile sprint plan](docs/SPRINT-PLAN.md) — minute-based effort estimates, sequence, roles, and acceptance gates.
 
 ## Release plan
 
