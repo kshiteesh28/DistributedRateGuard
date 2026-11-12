@@ -84,10 +84,37 @@ enum class GrpcStatus : std::uint8_t {
   return GrpcStatus::Internal;
 }
 
+
+// A complete structured decision/grant response uses gRPC OK, including
+// application UNAVAILABLE/OVERLOADED. Invalid/unauthenticated outcomes are
+// represented by their gRPC transport status instead.
+[[nodiscard]] constexpr GrpcStatus StructuredDecisionStatus(std::uint32_t raw) noexcept {
+  switch (raw) {
+    case 1: case 2: case 5: case 6: return GrpcStatus::Ok;
+    default: return GrpcStatus::Internal;
+  }
+}
+[[nodiscard]] constexpr GrpcStatus StructuredGrantStatus(std::uint32_t raw) noexcept {
+  switch (raw) {
+    case 1: case 2: case 4: case 5: return GrpcStatus::Ok;
+    default: return GrpcStatus::Internal;
+  }
+}
+
 enum class DispatchPhase : std::uint8_t {
   BeforeDispatch,
   Dispatched,
 };
+enum class RpcOperation : std::uint8_t { StrictAdmission, AcquireCredit };
+// Advisory caller action only; channel-level automatic retries/hedging remain
+// disabled. A strict retry is a fresh chargeable attempt; credit resolution
+// must preserve the same sequence and semantic fingerprint.
+[[nodiscard]] constexpr RetryDisposition RetryDispositionFor(
+    RpcOperation operation, DispatchPhase) noexcept {
+  return operation == RpcOperation::AcquireCredit
+             ? RetryDisposition::SameGrantSequence
+             : RetryDisposition::NewAttempt;
+}
 
 [[nodiscard]] constexpr Commitment CommitmentForTransportFailure(
     DispatchPhase phase) noexcept {
