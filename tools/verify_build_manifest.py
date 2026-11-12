@@ -11,6 +11,7 @@ from typing import Any
 
 
 PACKAGE_FIELDS = {
+    "nlohmann-json3-dev": "nlohmann_json_dev",
     "libgrpc++-dev": "libgrpcpp_dev",
     "libgrpc-dev": "libgrpc_dev",
     "libprotobuf-dev": "libprotobuf_dev",
@@ -114,7 +115,7 @@ def verify(lock: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
 
     # The current lock keeps CMake/Ninja under target; a future top-level
     # tools object is also accepted without weakening required values.
-    tools = lock.get("tools", target)
+    tools = lock.get("tools")
     observed_tools = manifest.get("tools")
     if not isinstance(tools, dict):
         errors.append("lock.tools must contain exact cmake, ninja, cxx_compiler and protoc values")
