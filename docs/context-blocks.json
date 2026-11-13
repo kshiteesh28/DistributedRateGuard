@@ -89,7 +89,7 @@
     ]
   },
   "next_actions": [
-    "Complete lock-promotion CI and submit RG-002 PR for review; main merge remains unauthorized.",
+    "RG-002 final lock-promotion CI passed; PR #6 ready for Product Owner review; do not merge main without authorization.",
     "Continue RG-003 isolated component with independent review and Linux checks.",
     "Keep actual Docker target/image-digest gate open; no enforcement activation."
   ],
@@ -1521,7 +1521,8 @@
   },
   "work_log": {
     "path": "docs/SCRUM-WORK-LOG.md",
-    "canonical_branch": "feature/RG-002-policy-arithmetic",
-    "historical_actual_effort": "unknown_not_recorded"
+    "canonical_branch": "docs/scrum-work-log",
+    "historical_actual_effort": "unknown_not_recorded",
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
   }
 }
