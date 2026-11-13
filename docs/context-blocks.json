@@ -92,7 +92,10 @@
       "run": 43355987772,
       "tested_head": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
       "evidence": "docs/evidence/RG-003.md",
-      "excluded": "Participant topology, service commit/deadline and checker UNKNOWN integrations"
+      "excluded": "Participant topology, service commit/deadline and checker UNKNOWN integrations",
+      "final_documentation_head": "ccbeddf6a42b0e9247b658284988ec30b2038a9f",
+      "final_documentation_run": 43356954793,
+      "pull_request_status": "ready_unmerged"
     }
   },
   "next_actions": [
@@ -105,7 +108,8 @@
     "documentation_and_merge": "Explicitly authorized by user in this task.",
     "implementation": "Development/testing authorized; main merge remains under Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
-    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation."
+    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation.",
+    "main_implementation_merge": "Not authorized for current implementation phase; Product Owner review controls main merge."
   },
   "stories": [
     {
