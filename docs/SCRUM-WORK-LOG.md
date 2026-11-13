@@ -18,7 +18,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
-| RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Isolated implementation assigned/in progress | Developer handoff, independent review and Linux CI; service/checker integration remains gated |
+| RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | [PR #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8) draft; Linux CI pending | Final shared-reader cleanup/CI; service/checker integration remains gated |
 | RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
@@ -125,3 +125,12 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Master:** Found two defects in the Tester's RG-003 harness before publication: hardcoded temporary output path, and an embedded-NUL std::string length exceeding the literal's storage.
 - **Tester:** Replaced the path with mkstemp/cleanup and constructed the embedded NUL safely. Added a reproducible Python runner that compiles an actual regression-guard mutant and checks specific independent failure labels.
 - **Evidence boundary:** Local corrected harness and mutant passed before the new startup-sampling change. Junior's deterministic tests passed locally. Linux OS smoke was explicitly unsupported on macOS; it is not logged as a Linux pass.
+
+### LOG-015 — 2026-11-13 02:58 UTC: clock publication and final review cleanup
+
+- **Master:** Published RG-003 isolated code, decision record, CMake targets and [PR #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), stacked on verified RG-002. Includes independent tests, real clamp-mutant compilation, and Linux fork/exec smoke. Initial CI queued; not yet accepted.
+- **Junior Dev:** Delivered mandatory startup sample, retained regression reference, exact boot/offset parsing, four namespace snapshots, same-descriptor filesystem checks, sticky fail-closed sampling and concurrency tests. Portable C++20 checks passed; Linux smoke explicitly returned unsupported 77 on macOS.
+- **Tester:** Updated independent factory-failure and retained-startup-reference cases; corrected mutation runner to inject an actual clamp instead of simply removing the guard. Recompiled independent/unit/mutant checks successfully on macOS. Linux-specific fd validation is not covered by those local passes.
+- **Senior Dev:** Accepted final core code for publication/CI, then noted an unused unhardened file-reader helper.
+- **Master decision / rework:** Junior and Tester are factoring/tests against the actual production bounded-fd reader; remove unused path helper. CI must validate the final version. Independent test-source fixes are preserved in LOG-014.
+- **Next preparation:** Senior Dev assigned read-only RG-004 requirement/API extraction. No authentication implementation is claimed from this preparation.
