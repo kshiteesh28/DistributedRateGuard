@@ -10,7 +10,7 @@
 
 The Master records agent assignments, handoffs, review findings, rework, actual checks, and unresolved gates here. Entries identify who authored, reviewed, integrated, and verified work; these are different responsibilities. Git history preserves earlier versions. Later corrections reference the entry they correct. Subagent reports are attributed reports until linked execution evidence confirms them.
 
-Historical entries below are reconstructed from retained handoffs and GitHub evidence. Exact active minutes and earlier start/finish times were not recorded and are **unknown**; sprint estimates are not actual effort. New entry timestamps are publication/observation times, not inferred work duration. No private reasoning, credentials, or hidden execution transcript is included.
+Historical entries below are reconstructed from retained handoffs and GitHub evidence. Exact active minutes and earlier start/finish times were not recorded and are **unknown**; sprint estimates are not actual effort. LOG-007–016 header times are approximate report markers; GitHub commit/action timestamps are authoritative. Later UTC observation stamps are sampled from the clock tool; none represents inferred active work duration. No private reasoning, credentials, or hidden execution transcript is included.
 
 ## Board snapshot
 
@@ -18,7 +18,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
-| RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | [PR #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8) draft; Linux CI pending | Final shared-reader cleanup/CI; service/checker integration remains gated |
+| RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 draft pending final docs CI | RG-003-B/C/D topology, service and checker integrations remain pending |
 | RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
@@ -143,3 +143,19 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Master:** Independently reran the corrected sanitized developer test successfully. Published the production-used bounded-fd reader, final unit/independent tests and a required targeted sanitizer CI step at `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`.
 - **Tester:** Independently checked exact/over limits, descriptor ownership and negative/closed fd typed errors. Actual clamp mutation is rejected, including the retained startup sample check.
 - **Gate:** Final Linux normal/clean/sanitizer CI is pending. Earlier green runs do not waive this new gate, and no full RG-003 integration acceptance is claimed.
+
+### LOG-017 — 2026-11-13 03:10:06 UTC observation: clock independent acceptance and dependency audit
+
+- **Master:** Inspected final [run 43355987772](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43355987772), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8` / merge `208c8ba13c8bbe7cfc36b5fe44a2e0b1b5490ae8`: 13 CTest groups twice, 3 sanitizer tests, 16 Python checks, 12 generated-file matches and 20 actual C++20 translation units.
+- **Tester:** Independently fetched logs/tested source, confirmed actual non-skipped Linux fork/exec smoke, safe NUL fixture, common reader bounds/ownership, startup reference and compiled clamp-mutant rejection. Accepted startup/provenance/sample component scope; explicitly left service/checker obligations pending.
+- **Senior Dev:** Accepted final reader/fixture changes by code review; did not claim an independent Linux rerun. No new code blocker.
+- **Scrum audit agent:** Detected semantic deadlock if RG-006 must wait for all RG-003 ACs while RG-007/008/013 are needed to complete those ACs. Recommended named component input contracts without waiving any requirement.
+- **Master:** Recorded RG-003-A verified component input for RG-006/007/008, and pending RG-003-B topology (RG-006), RG-003-C commit/deadline mapping (RG-007/008), RG-003-D UNKNOWN classification (RG-013). Full RG-003 is not Done. Updated PR/evidence/story/context/sprint/README to match.
+- **Master process finding:** One publication orchestration script had a JavaScript syntax error and failed before executing any writes; corrected and reran it. No partial repository mutation resulted.
+- **Current gate:** Final documentation-head [run 43356954793](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43356954793) is in progress. Runtime/deployment and product gates remain open. Main has not been merged.
+
+### LOG-018 — 2026-11-13 03:10:06 UTC observation: RG-004 preparation
+
+- **Senior Dev:** Read main PRD 8 / SRD 5 / LLD 5 and frozen policy-v1, produced a ten-gap authentication contract extraction: dual-role replica EKUs, trusted wall time, expiry under queueing, SAN ambiguity, status classification, replica permission scope, exact server URI pinning, leaf/root shape, handshake versus RPC failures and reused-channel checks on both sides.
+- **Master:** Requested concrete source-compatible defaults and verification against pinned gRPC 1.51.1/OpenSSL 3 APIs before security code is assigned. This is active design preparation, not an implemented authentication feature.
+- **Limitation:** No PKI provisioning, mTLS server/channel, certificate fixtures, auth tests or deployment trust-time evidence is claimed from that preparation.
