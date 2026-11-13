@@ -451,7 +451,9 @@ class PolicyLoaderIntegrationTests(unittest.TestCase):
         duplicate_key = original.replace(
             '"mode": "credit",', '"mode": "credit",\n  "mode": "credit",', 1)
         assert_rejected(self, duplicate_key, "duplicate root key", "invalid_json")
-        assert_rejected(self, original[:-1] + ', "extra": true}', "unknown root field", "invalid_schema")
+        unknown_root = copy.deepcopy(self.policy)
+        unknown_root["unexpected"] = True
+        assert_rejected(self, compact_json(unknown_root), "unknown root field", "invalid_schema")
         assert_rejected(self, original + "\n{}", "trailing JSON value", "invalid_json")
         assert_rejected(self, '{"schema_version":', "truncated malformed JSON", "invalid_json")
         assert_rejected(self, original.replace('"schema_version": 1', '"schema_version": 2'),
@@ -464,8 +466,6 @@ class PolicyLoaderIntegrationTests(unittest.TestCase):
                         "float schema version", "invalid_json")
         assert_rejected(self, original.replace('"capacity_units": "20"', '"capacity_units": 20.0'),
                         "float policy value", "invalid_json")
-        assert_rejected(self, original.replace('"schema_version": 1', '"schema_version": 1.0'),
-                        "float schema version", "invalid_json")
         assert_rejected(self, original.replace('"capacity_units": "20"', '"capacity_units": "020"'),
                         "noncanonical decimal", "invalid_value")
 
