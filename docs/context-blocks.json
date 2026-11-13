@@ -93,20 +93,24 @@
       "tested_head": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
       "evidence": "docs/evidence/RG-003.md",
       "excluded": "Participant topology, actual commit/deadline mapping, Release A strict UNKNOWN gate in RG-011A/005 and C extension in RG-013",
-      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md"
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md",
+      "final_documentation_head": "f656648c884ce9bbe6fcb917566898a2f01b4c0e",
+      "final_documentation_run": 43358083253,
+      "pull_request_status": "ready_unmerged"
     }
   },
   "next_actions": [
-    "Review PR #8 clock component; full RG-003 integration remains explicitly pending.",
-    "Resolve and record RG-004 security decisions before authentication implementation.",
-    "Keep Docker target/image-digest and runtime/release gates open.",
-    "PR #5/#6 ready; no main merge without Product Owner command."
+    "Run RG-004 compatibility probes under recorded security-v1 defaults before component implementation acceptance.",
+    "Keep RG-003-B/C and Release A RG-003-D integrations pending; RG-013 adds C extensions.",
+    "Review ready component PRs #5/#6/#8 and scrum documentation PR #7; main merge remains under Product Owner control.",
+    "Docker target/image-digest, enforcement, benchmarks and formal assurance remain open."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
     "implementation": "Development/testing authorized; main merge remains under Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
-    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation."
+    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation.",
+    "main_implementation_merge": "Product Owner controls current implementation merge to main; all implementation PRs remain unmerged."
   },
   "stories": [
     {
@@ -475,7 +479,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "contract_design_preparation",
+      "status": "decisions_recorded_compatibility_probes_required",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -555,7 +559,19 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_decisions": {
+        "path": "docs/decisions/RG-004-security-v1.md",
+        "revision": 1,
+        "branch": "docs/scrum-work-log",
+        "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/decisions/RG-004-security-v1.md",
+        "status": "source_reviewed_not_implemented",
+        "remaining_evidence": [
+          "Pinned gRPC API compile and before-dispatch rejection",
+          "Reused/reconnected/resumed leaf pin and expiry checks",
+          "Actual Docker Linux adjtimex/time synchronization preflight"
+        ]
+      }
     },
     {
       "id": "RG-005",
