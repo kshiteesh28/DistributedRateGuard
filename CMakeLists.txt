@@ -164,3 +164,30 @@ add_test(NAME rateguard.policy_oracle
     "${Python3_EXECUTABLE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/policy_loader_integration.py")
 set_tests_properties(rateguard.policy rateguard.policy_oracle PROPERTIES TIMEOUT 60)
+
+# RG-003 verified Linux clock provenance and serialized sticky-fail sampling.
+find_package(Threads REQUIRED)
+add_library(rateguard_clock src/platform/clock_linux.cpp)
+target_include_directories(rateguard_clock PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_clock PUBLIC Threads::Threads)
+target_compile_options(rateguard_clock PRIVATE -Wall -Wextra -Werror -pedantic)
+add_executable(rateguard_clock_tests tests/clock_test.cpp)
+target_link_libraries(rateguard_clock_tests PRIVATE rateguard_clock)
+add_test(NAME rateguard.clock COMMAND rateguard_clock_tests)
+add_executable(rateguard_clock_independent_tests tools/tests/clock_independent_test.cpp)
+target_link_libraries(rateguard_clock_independent_tests PRIVATE rateguard_clock)
+add_test(NAME rateguard.clock_independent COMMAND rateguard_clock_independent_tests)
+add_test(NAME rateguard.clock_clamp_mutation
+  COMMAND "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"
+    "RG003_SOURCE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/src"
+    "RG003_INCLUDE_ROOT=${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/clock_mutation_test.py")
+set_tests_properties(rateguard.clock_clamp_mutation PROPERTIES TIMEOUT 120)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(rateguard_clock_linux_smoke tests/clock_linux_smoke_test.cpp)
+  target_link_libraries(rateguard_clock_linux_smoke PRIVATE rateguard_clock)
+  add_test(NAME rateguard.clock_linux COMMAND rateguard_clock_linux_smoke)
+  # Unsupported provenance on the supported Linux lane must FAIL, never skip.
+  set_tests_properties(rateguard.clock_linux PROPERTIES TIMEOUT 20)
+endif()
