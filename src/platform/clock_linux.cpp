@@ -7,7 +7,6 @@
 #include <cerrno>
 #include <cctype>
 #include <cstdint>
-#include <fstream>
 #include <limits>
 #include <memory>
 #include <string>
@@ -102,19 +101,7 @@ ClockResult<std::string> ReadProcFile(const char* path, std::size_t maximum_byte
       static_cast<unsigned long>(fs.f_type) !=
           static_cast<unsigned long>(PROC_SUPER_MAGIC))
     return Failure(ClockFailureReason::PlatformRead);
-
-  std::string bytes(maximum_bytes + 1, '\0');
-  std::size_t total = 0;
-  while (total < bytes.size()) {
-    const ssize_t count = ::read(fd, bytes.data() + total, bytes.size() - total);
-    if (count < 0 && errno == EINTR) continue;
-    if (count < 0) return Failure(ClockFailureReason::PlatformRead);
-    if (count == 0) break;
-    total += static_cast<std::size_t>(count);
-  }
-  if (total > maximum_bytes) return Failure(ClockFailureReason::InputTooLong);
-  bytes.resize(total);
-  return bytes;
+  return detail::ReadBoundedFd(fd, maximum_bytes);
 }
 
 class LinuxClockPlatform final : public IClockPlatform {
@@ -244,20 +231,21 @@ ClockResult<ClockIdentity> ProbeIdentity(IClockPlatform& platform) {
 }  // namespace
 
 namespace detail {
-ClockResult<std::string> ReadBoundedFile(const char* path,
-                                         std::size_t maximum_bytes) {
+ClockResult<std::string> ReadBoundedFd(int fd, std::size_t maximum_bytes) {
+  if (fd < 0) return Failure(ClockFailureReason::PlatformRead);
   if (maximum_bytes > 512)
     return Failure(ClockFailureReason::InputTooLong);
-  std::ifstream input(path, std::ios::binary);
-  if (!input) return Failure(ClockFailureReason::PlatformRead);
   std::string bytes(maximum_bytes + 1, '\0');
-  input.read(bytes.data(), static_cast<std::streamsize>(bytes.size()));
-  const auto count = input.gcount();
-  if (count < 0) return Failure(ClockFailureReason::PlatformRead);
-  if (static_cast<std::size_t>(count) > maximum_bytes)
-    return Failure(ClockFailureReason::InputTooLong);
-  if (input.bad()) return Failure(ClockFailureReason::PlatformRead);
-  bytes.resize(static_cast<std::size_t>(count));
+  std::size_t total = 0;
+  while (total < bytes.size()) {
+    const ssize_t count = ::read(fd, bytes.data() + total, bytes.size() - total);
+    if (count < 0 && errno == EINTR) continue;
+    if (count < 0) return Failure(ClockFailureReason::PlatformRead);
+    if (count == 0) break;
+    total += static_cast<std::size_t>(count);
+  }
+  if (total > maximum_bytes) return Failure(ClockFailureReason::InputTooLong);
+  bytes.resize(total);
   return bytes;
 }
 
