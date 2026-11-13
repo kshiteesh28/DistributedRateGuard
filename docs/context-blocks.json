@@ -14,7 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-001-contract-bootstrap"
+    "implementation_branch": "feature/RG-002-policy-arithmetic",
+    "implementation_base_branch": "feature/RG-001-contract-bootstrap"
   },
   "document_revisions": {
     "PRD": 8,
@@ -24,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_component_verified_review_pending",
+    "implementation": "rg001_component_verified_rg002_final_verification_rg003_assigned",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "RG-001 contract component passed independent review and Linux CI 43327798021. Main merge awaits Product Owner approval. Development/testing is authorized; dependent work may be stacked on the verified feature branch."
+    "note": "No implementation merged to main. RG-001 component verified, full Sprint0 Docker deployment gate remains open. RG-002 first combined CI passed; final caps/crypto extensions and corrected test fixture require final CI. RG-003 isolated implementation assigned."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -57,7 +58,6 @@
       }
     ],
     "not_run": [
-      "Generated implementation compilation/tests",
       "Real authority/replica fault injection",
       "Release benchmarks",
       "TLA/model checker execution"
@@ -74,25 +74,28 @@
       "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
     ],
     "latest_rg001": {
-      "passed": [
-        "Dependency-free C++20 transport helper test",
-        "Manifest Python syntax check",
-        "Unconfigured manifest smoke"
-      ],
-      "pending": [
-        "Generated protobuf C++ compilation and CTest",
-        "Verified Linux build and reproducible dependency lock",
-        "Full canonical policy fixtures and actual gRPC-client retry integration"
-      ]
+      "evidence": "docs/evidence/RG-001.md",
+      "run": 43328571076,
+      "status": "component_verified_review_pending",
+      "remaining": "Docker target/image-digest and runtime integration gates are not satisfied by hosted package tests"
+    },
+    "latest_rg002": {
+      "status": "final_verification_pending",
+      "first_combined_run": 43332249683,
+      "extended_run": 43353532557,
+      "extended_run_result": "one_test_fixture_failure_fixed_pending_rerun",
+      "corrected_head": "7640975031aee2af2ee7ae855ce88b76115f1569"
     }
   },
   "next_actions": [
-    "Review PR #5; do not merge to main without Product Owner approval.",
-    "Continue RG-002 on a separate stacked branch from the verified RG-001 code; preserve release and evidence gates."
+    "Finish RG-002 final CI and independent acceptance; preserve failure evidence.",
+    "Continue RG-003 isolated component with independent review and Linux checks.",
+    "Keep actual Docker target/image-digest gate open; no enforcement activation.",
+    "Review PR #5/#6; no main merge without Product Owner authorization."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
-    "implementation": "RG-001 development and test execution in progress on a feature branch; merge remains subject to Product Owner review.",
+    "implementation": "Development/testing authorized; main merge remains under Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
     "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation."
   },
@@ -205,7 +208,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-002",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "implemented_final_verification_pending",
       "depends_on": [
         "RG-001"
       ],
@@ -222,19 +225,19 @@
       "planned_files": [
         {
           "path": "src/policy/policy_snapshot.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "src/policy/policy_loader.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "src/policy/canonical_codec.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "src/authority/bucket_math.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         }
       ],
       "classes": [
@@ -277,7 +280,7 @@
             "AT-01",
             "AT-04"
           ],
-          "status": "not_run"
+          "status": "final_extension_verification_pending"
         },
         {
           "id": "RG-002-AC02",
@@ -286,7 +289,7 @@
             "AT-02",
             "AT-03"
           ],
-          "status": "not_run"
+          "status": "passed_component_arithmetic_final_review_pending"
         },
         {
           "id": "RG-002-AC03",
@@ -294,10 +297,15 @@
           "evidence_ids": [
             "AT-21"
           ],
-          "status": "not_run"
+          "status": "passed_component_arithmetic_final_review_pending"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_evidence": {
+        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/6",
+        "first_combined_run": 43332249683,
+        "scope": "Pure policy/encoding/arithmetic; final extensions under verification"
+      }
     },
     {
       "id": "RG-003",
@@ -305,7 +313,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-003",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "in_progress_isolated_implementation_assigned",
       "depends_on": [
         "RG-001"
       ],
@@ -1508,5 +1516,10 @@
     },
     "target_branch": "main",
     "no_development_or_test_execution_before_proceed": false
+  },
+  "work_log": {
+    "path": "docs/SCRUM-WORK-LOG.md",
+    "canonical_branch": "feature/RG-002-policy-arithmetic",
+    "historical_actual_effort": "unknown_not_recorded"
   }
 }
