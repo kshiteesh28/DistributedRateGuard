@@ -23,9 +23,9 @@ Live policy changes (PRD-013) and long-operation permits (PRD-014) are deferred.
 
 ## Status and implementation notes
 
-RG-001 implementation has started in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5): versioned API schemas, contract validation/tests, and C++20 build infrastructure. See [build instructions](docs/build.md) and [RG-001 evidence](docs/evidence/RG-001.md) for the exact scope and verification status. Quota enforcement, release benchmarks, and model checking are not implemented or claimed. All product thresholds remain goals.
+RG-001 contracts/build ([PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5)) and RG-002 immutable policy/checked arithmetic ([PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6)) have passing component evidence and await review; neither is merged to main. RG-003 clock work is in progress. Read the [per-agent scrum log](docs/SCRUM-WORK-LOG.md), [build instructions](docs/build.md), [RG-001 evidence](docs/evidence/RG-001.md), and [RG-002 evidence](docs/evidence/RG-002.md) for scope and observed results. Quota enforcement, release benchmarks, and model checking are not implemented or claimed. All product thresholds remain goals.
 
-The source of truth is the current `main` branch. The local path hint in the context file currently contains documentation only and is not a verified Git checkout. Clone or sync `main` before implementation. Start at **RG-001**. Capture toolchain versions on the actual build host before compiling instead of guessing or claiming an untested lock. Keep enforcement services fail-closed until shared-clock provenance, witness durability, process fencing, and identity fixtures pass.
+The source of truth is the current `main` branch. The local path hint in the context file currently contains documentation only and is not a verified Git checkout. Use the relevant review branch for implementation; dependent PRs may stack on a verified feature branch. The primary Ubuntu package lock is based on observed CI. Actual Docker target/image-digest evidence remains open; hosted component tests do not satisfy that deployment gate. Keep enforcement services fail-closed until shared-clock provenance, witness durability, process fencing, and identity fixtures pass.
 
 ## Research foundation
 
