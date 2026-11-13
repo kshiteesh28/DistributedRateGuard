@@ -23,7 +23,8 @@
       "protobuf-compiler": "3.21.12-8.2ubuntu0.4",
       "protobuf-compiler-grpc": "1.51.1-4.1build5",
       "libssl-dev": "3.0.13-0ubuntu3.16",
-      "zlib1g-dev": "1:1.3.dfsg-3.1ubuntu2.3"
+      "zlib1g-dev": "1:1.3.dfsg-3.1ubuntu2.3",
+      "nlohmann-json3-dev": "3.11.3-1"
     },
     "version_policy": "Install these exact primary package versions and fail on toolchain drift; do not silently update dependencies."
   },
@@ -38,9 +39,10 @@
   },
   "validation": {
     "validated": true,
-    "scope": "Primary Ubuntu x86_64 contract toolchain/package snapshot; generated C++20 contracts and clean-directory code-generation repeat verified",
-    "observed_run": 43327798021,
-    "observed_commit": "4c924495a1303054a2c3b26edfae757430ea4d72",
+    "scope": "Primary Ubuntu x86_64 foundation toolchain/package snapshot; generated C++20 contracts, policy/crypto and arithmetic component checks, two clean builds and code-generation repeat verified",
+    "observed_run": 43353832066,
+    "observed_commit": "7640975031aee2af2ee7ae855ce88b76115f1569",
+    "tested_merge_ref": "9be7be9861ddc0f0bd04718e6d500781de5b18ca",
     "clean_rebuild_and_codegen_match": true
   },
   "limitations": [

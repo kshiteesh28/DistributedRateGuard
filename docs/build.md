@@ -1,10 +1,10 @@
-# Building the RG-001 contract component
+# Building the foundation components
 
-The default Linux contract build uses the primary toolchain versions in [build-lock.json](../build-lock.json). The [acceptance evidence](evidence/RG-001.md) records passing CI, its tested revision and limitations. This component does not implement quota enforcement.
+The default Linux contract build uses the primary toolchain versions in [build-lock.json](../build-lock.json). The [acceptance evidence](evidence/RG-001.md) records passing CI, its tested revision and limitations. These components do not implement quota enforcement. [RG-002 evidence](evidence/RG-002.md) adds immutable policy, canonical digest and checked arithmetic verification.
 
 ## Recorded Ubuntu environment
 
-Use Ubuntu 24.04 x86_64, CMake 3.31.6 and Ninja 1.11.1. Install the exact primary Protobuf/gRPC/OpenSSL/zlib package versions from the lock:
+Use Ubuntu 24.04 x86_64, CMake 3.31.6 and Ninja 1.11.1. Install the exact primary Protobuf/gRPC/OpenSSL/zlib/nlohmann-json package versions from the lock:
 
 ```sh
 sudo apt-get update
@@ -32,7 +32,7 @@ Repeat configure/build/CTest into `build-clean` with the same arguments. CI comp
 
 The tests cover the versioned wire layout, generated parsing/serialization, shape/configuration validation, status/commitment mapping and channel policy. The synthetic loopback retry fixture proves four calls with retries enabled versus one with enforcement arguments. Runtime clients must use `CreateEnforcementChannel`; the helper does not supply authentication or application retry logic. See the [upstream gRPC channel argument contract](https://github.com/grpc/grpc/blob/v1.51.1/include/grpc/impl/codegen/grpc_types.h) for retry/hedging semantics.
 
-Request helper tests are not production RPC/state integration. The gRPC receive-size limit, authenticated tenant resolution, real client uncertainty handling and quota atomicity remain in their assigned later stories. Canonical policy codec/digest fixtures belong to RG-002.
+Request helper tests are not production RPC/state integration. The gRPC receive-size limit, authenticated tenant resolution, real client uncertainty handling and quota atomicity remain in their assigned later stories. RG-002 adds the frozen [policy-v1](contracts/policy-v1.md) loader/encoder, independent Python byte/hash oracle, finite startup caps and arithmetic mutation checks. OpenSSL 3 provider APIs supply the digest; actual CA fingerprint matching is RG-004. `ctest` runs both C++ policy checks and the production-driver Python integration suite.
 
 ## Optional source dependency experiment
 

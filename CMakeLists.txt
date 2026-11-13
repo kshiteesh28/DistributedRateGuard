@@ -129,3 +129,38 @@ if(BUILD_TESTING)
     COMMENT "Capturing observed toolchain and source revisions (not a lock validation)"
   )
 endif()
+
+# RG-002 pure arithmetic: no clock/RPC/state ownership in this component.
+add_executable(rateguard_bucket_math_tests tests/bucket_math_test.cpp)
+target_include_directories(rateguard_bucket_math_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+add_test(NAME rateguard.bucket_math COMMAND rateguard_bucket_math_tests)
+add_test(NAME rateguard.bucket_math_oracle
+  COMMAND "${CMAKE_COMMAND}" -E env "CXX=${CMAKE_CXX_COMPILER}"
+    "RATEGUARD_REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+    "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/bucket_math_oracle.py")
+set_tests_properties(rateguard.bucket_math_oracle PROPERTIES TIMEOUT 60)
+
+# RG-002 immutable policy, canonical identity, and independent serialization oracle.
+find_package(nlohmann_json 3.11.3 EXACT CONFIG REQUIRED)
+find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
+add_library(rateguard_policy
+  src/policy/policy_loader.cpp
+  src/policy/canonical_codec.cpp)
+target_include_directories(rateguard_policy PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(rateguard_policy PUBLIC nlohmann_json::nlohmann_json OpenSSL::Crypto)
+target_compile_options(rateguard_policy PRIVATE -Wall -Wextra -Werror -pedantic)
+
+add_executable(rateguard_policy_tests tests/policy_test.cpp)
+target_link_libraries(rateguard_policy_tests PRIVATE rateguard_policy)
+add_test(NAME rateguard.policy
+  COMMAND rateguard_policy_tests "${CMAKE_CURRENT_SOURCE_DIR}")
+add_executable(policy_driver tests/policy_driver.cpp)
+target_link_libraries(policy_driver PRIVATE rateguard_policy)
+add_test(NAME rateguard.policy_oracle
+  COMMAND "${CMAKE_COMMAND}" -E env
+    "RATEGUARD_POLICY_DRIVER=$<TARGET_FILE:policy_driver>"
+    "RATEGUARD_REPO_ROOT=${CMAKE_CURRENT_SOURCE_DIR}"
+    "${Python3_EXECUTABLE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/policy_loader_integration.py")
+set_tests_properties(rateguard.policy rateguard.policy_oracle PROPERTIES TIMEOUT 60)
