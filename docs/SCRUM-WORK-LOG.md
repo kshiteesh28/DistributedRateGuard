@@ -16,7 +16,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 draft pending lock-promotion CI | Product Owner review; runtime integration in later stories |
-| RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Preparation only; no implementation | Settle serialization/provenance details, then code and Linux evidence |
+| RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Isolated implementation assigned/in progress | Developer handoff, independent review and Linux CI; service/checker integration remains gated |
 | RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
@@ -103,3 +103,8 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Tester:** Independently fetched actual job logs and source. Confirmed 14 production policy integration methods, direct exact/over 64 MiB Load checks, real isolated-provider failure, 9 CTest groups in both clean builds, 16 Python unit checks, 12 generated-file matches and 16 actual C++20 translation units. No remaining RG-002 component blocker.
 - **Master:** Updated stories/context/sprint/evidence consistently. Promoting the exact eight-package lock from frozen-pending to validated based on this observed result; metadata/lock-promotion CI must still pass before PR #6 becomes ready.
 - **Scope:** Pure immutable policy, canonical identity and accounting only. Runtime trust-root validation remains RG-004; quota service, witness, Docker deployment and all release gates remain outstanding.
+
+### LOG-012 — 2026-11-13 02:47 UTC: Scrum re-audit and summary corrections
+
+- **Scrum audit agent:** Rechecked stories, context, sprint plan, evidence, work log and PR #6 at `5203f91`. Component acceptance, unmerged status, stacked review rules and open Docker deployment gate were consistent. Found stale RG-003 board text, stale PR verification text and an unlabeled historical build-version note.
+- **Master:** Corrected the three summary fields; earlier entries remain historical observations. Lock-promotion [run 43354481661](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43354481661) is pending; no new component blocker was identified.
