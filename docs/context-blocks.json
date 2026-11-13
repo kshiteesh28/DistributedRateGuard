@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-002-policy-arithmetic",
-    "implementation_base_branch": "feature/RG-001-contract-bootstrap"
+    "implementation_branch": "feature/RG-003-clock-provenance",
+    "implementation_base_branch": "feature/RG-002-policy-arithmetic"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_rg002_components_verified_rg003_in_progress",
+    "implementation": "rg001_rg002_components_verified_rg003_component_verified_integration_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "No implementation merged to main. RG-001 and RG-002 components verified; full Sprint0 Docker deployment gate remains open. RG-003 isolated implementation assigned."
+    "note": "Clock component verified; full story and deployment/service/checker/release gates remain pending. Main unchanged."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -86,12 +86,20 @@
       "README and spec-to-code status text point to the current main-branch document bundle.",
       "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
       "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
-    ]
+    ],
+    "latest_rg003": {
+      "status": "component_verified_independent_acceptance_passed",
+      "run": 43355987772,
+      "tested_head": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+      "evidence": "docs/evidence/RG-003.md",
+      "excluded": "Participant topology, actual commit/deadline mapping, Release A strict UNKNOWN gate in RG-011A/005 and C extension in RG-013"
+    }
   },
   "next_actions": [
-    "Complete lock-promotion CI and submit RG-002 PR for review; main merge remains unauthorized.",
-    "Continue RG-003 isolated component with independent review and Linux checks.",
-    "Keep actual Docker target/image-digest gate open; no enforcement activation."
+    "Review PR #8 clock component; full RG-003 integration remains explicitly pending.",
+    "Resolve and record RG-004 security decisions before authentication implementation.",
+    "Keep Docker target/image-digest and runtime/release gates open.",
+    "PR #5/#6 ready; no main merge without Product Owner command."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -315,7 +323,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-003",
       "link_type": "repository_story",
       "release": "A",
-      "status": "in_progress_isolated_implementation_assigned",
+      "status": "component_verified_integration_pending",
       "depends_on": [
         "RG-001"
       ],
@@ -330,11 +338,11 @@
       "planned_files": [
         {
           "path": "src/platform/clock.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_RG003_feature_branch"
         },
         {
           "path": "src/platform/clock_linux.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_RG003_feature_branch"
         }
       ],
       "classes": [
@@ -375,7 +383,7 @@
             "AT-01",
             "AT-17"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-003-AC02",
@@ -384,7 +392,7 @@
             "AT-02",
             "AT-07"
           ],
-          "status": "not_run"
+          "status": "integration_pending_named_owner"
         },
         {
           "id": "RG-003-AC03",
@@ -392,10 +400,72 @@
           "evidence_ids": [
             "AT-17"
           ],
-          "status": "not_run"
+          "status": "integration_pending_named_owner"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "dependency_contracts": [
+        {
+          "id": "RG-003-A",
+          "interface": "IClock/LinuxMonotonicClock",
+          "status": "verified_component",
+          "tested_revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "run": 43355987772,
+          "permitted_consumers": [
+            "RG-006",
+            "RG-007",
+            "RG-008"
+          ],
+          "excluded_guarantees": [
+            "Docker participant provenance",
+            "Service commit/deadline mapping",
+            "Checker UNKNOWN classification"
+          ]
+        },
+        {
+          "id": "RG-003-B",
+          "status": "pending",
+          "owners": [
+            "RG-006"
+          ]
+        },
+        {
+          "id": "RG-003-C",
+          "status": "pending",
+          "owners": [
+            "RG-007",
+            "RG-008"
+          ],
+          "acceptance": [
+            "RG-003-AC02"
+          ]
+        },
+        {
+          "id": "RG-003-D",
+          "status": "pending",
+          "owners": [
+            "RG-011"
+          ],
+          "acceptance": [
+            "RG-003-AC03"
+          ],
+          "owner_deliverable": "RG-011A",
+          "release": "A",
+          "inputs": [
+            "RG-005 completeness",
+            "RG-006 participant/epoch provenance",
+            "RG-007/008 commit mapping"
+          ],
+          "acceptance_owner": "Tester",
+          "required_behavior": "Missing, incomparable, inconsistent or incomplete clock/history evidence produces UNKNOWN with reason and blocks strict safety PASS.",
+          "required_before": [
+            "RG-008 strict acceptance",
+            "Release A completion"
+          ],
+          "release_c_extension": "RG-013 credit conservation, interval bound and formal trace/model checks"
+        }
+      ]
     },
     {
       "id": "RG-004",
@@ -681,7 +751,15 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ]
     },
     {
       "id": "RG-007",
@@ -788,7 +866,15 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ]
     },
     {
       "id": "RG-011",
@@ -823,7 +909,8 @@
       ],
       "code_design_notes": [
         "Build a minimal independent strict serial oracle and golden fixtures before strict A acceptance. Complete the full offered-trace replay CLI in Release B. Never import production BucketMath or AuthorityEngine logic.",
-        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.",
+        "RG-011A owns Release A strict provenance evidence gate RG-003-D: RG-005 completeness plus verified runtime provenance/commit mapping; inadequate evidence is UNKNOWN and cannot count as safety PASS before RG-008 acceptance. RG-013 adds C extensions."
       ],
       "files_to_refer": [
         {
@@ -993,7 +1080,24 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ],
+      "acceptance_dependency_contracts": [
+        {
+          "contract": "RG-003-D",
+          "owner_story": "RG-011",
+          "owner_deliverable": "RG-011A",
+          "status": "pending",
+          "scope": "Required before strict acceptance, not before development"
+        }
+      ]
     },
     {
       "id": "RG-009",
@@ -1521,7 +1625,8 @@
   },
   "work_log": {
     "path": "docs/SCRUM-WORK-LOG.md",
-    "canonical_branch": "feature/RG-002-policy-arithmetic",
-    "historical_actual_effort": "unknown_not_recorded"
+    "canonical_branch": "docs/scrum-work-log",
+    "historical_actual_effort": "unknown_not_recorded",
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
   }
 }

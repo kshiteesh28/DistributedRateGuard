@@ -81,6 +81,15 @@ jobs:
           print(f"Clean reproduction: {len(first)} generated files match")
           PY
 
+      - name: Check clock and test fixtures under address/undefined sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-clock-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_CLOCK=ON
+          cmake --build build-clock-sanitized --parallel 2 --target rateguard_clock_tests rateguard_clock_independent_tests rateguard_clock_linux_smoke
+          ctest --test-dir build-clock-sanitized --output-on-failure -R '^rateguard[.]clock($|_independent$|_linux$)'
+
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
