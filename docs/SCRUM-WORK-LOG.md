@@ -18,8 +18,9 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
-| RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 draft pending final docs CI | RG-003-B/C/D topology, service and checker integrations remain pending |
-| RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
+| RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
+| RG-004 authentication | Senior Dev: contract/API preparation; Master: decision review | Design preparation; no implementation | Record source-compatible security decisions before code |
+| RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
 
@@ -159,3 +160,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Senior Dev:** Read main PRD 8 / SRD 5 / LLD 5 and frozen policy-v1, produced a ten-gap authentication contract extraction: dual-role replica EKUs, trusted wall time, expiry under queueing, SAN ambiguity, status classification, replica permission scope, exact server URI pinning, leaf/root shape, handshake versus RPC failures and reused-channel checks on both sides.
 - **Master:** Requested concrete source-compatible defaults and verification against pinned gRPC 1.51.1/OpenSSL 3 APIs before security code is assigned. This is active design preparation, not an implemented authentication feature.
 - **Limitation:** No PKI provisioning, mTLS server/channel, certificate fixtures, auth tests or deployment trust-time evidence is claimed from that preparation.
+
+### LOG-019 — 2026-11-13 03:12:19 UTC observation: review-ready clock handoff
+
+- **Master:** Final documentation-head [run 43356954793](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43356954793) passed at `ccbeddf6a42b0e9247b658284988ec30b2038a9f`, including normal, clean, sanitizer and manifest steps. Marked [PR #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8) ready for review.
+- **Master verification:** Read back PR #5/#6/#7/#8: all open and unmerged. Main remains `71393cf11a0f8508cfb7e85b85538ccc22067f75`. PR #6 targets RG-001; log PR #7 and clock PR #8 target RG-002.
+- **Checks on handoff:** Parsed the live context JSON (14 unique parent story IDs), confirmed named RG-003-A input contracts and pending B/C/D owners, and checked changed Markdown fence balance.
+- **Current board:** API/build and policy/arithmetic components are review-ready; clock component is review-ready with full-story integration pending. All applicable deployment, enforcement and release gates remain open.
+- **Ongoing preparation:** Senior Dev is checking pinned gRPC API compatibility and security defaults for RG-004. No security implementation is represented as complete.
