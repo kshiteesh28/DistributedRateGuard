@@ -23,8 +23,10 @@ struct TimeOffsets {
 [[nodiscard]] ClockResult<std::array<std::uint8_t, 16>> ParseBootUuid(
     std::string_view input);
 [[nodiscard]] ClockResult<TimeOffsets> ParseTimeOffsets(std::string_view input);
-[[nodiscard]] ClockResult<std::string> ReadBoundedFile(const char* path,
-                                                       std::size_t maximum_bytes);
+// Bounded POSIX read primitive shared by production and tests. The caller owns
+// the already-open descriptor and remains responsible for validating its type.
+[[nodiscard]] ClockResult<std::string> ReadBoundedFd(int fd,
+                                                     std::size_t maximum_bytes);
 // Internal smoke-test probe only. Production callers must use CreateLinuxClock
 // with a trusted epoch-manifest identity.
 [[nodiscard]] ClockResult<ClockIdentity> ProbeCurrentLinuxClockIdentity();
