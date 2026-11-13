@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_rg002_components_verified_rg003_under_review",
+    "implementation": "rg001_rg002_components_verified_rg003_component_verified_integration_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "No implementation merged to main. RG-001 and RG-002 components verified; full Sprint0 Docker deployment gate remains open. RG-003 isolated implementation assigned."
+    "note": "Clock component verified; full story and deployment/service/checker/release gates remain pending. Main unchanged. RG-004 security contract/API decisions under review; no authentication code assigned."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -86,14 +86,20 @@
       "README and spec-to-code status text point to the current main-branch document bundle.",
       "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
       "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
-    ]
+    ],
+    "latest_rg003": {
+      "status": "component_verified_independent_acceptance_passed",
+      "run": 43355987772,
+      "tested_head": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+      "evidence": "docs/evidence/RG-003.md",
+      "excluded": "Participant topology, service commit/deadline and checker UNKNOWN integrations"
+    }
   },
   "next_actions": [
-    "Finish RG-003 shared-reader cleanup, independent review and Linux CI before component acceptance.",
-    "Keep RG-003 AC02/03 service and checker integration pending; do not label full story Done.",
-    "RG-004 requirement/API extraction only; code requires frozen internal decisions.",
-    "PR #5/#6 are ready; main merge remains under Product Owner control.",
-    "Keep actual Docker target/image-digest gate open; no enforcement activation."
+    "Review PR #8 clock component; full RG-003 integration remains explicitly pending.",
+    "Resolve and record RG-004 security decisions before authentication implementation.",
+    "Keep Docker target/image-digest and runtime/release gates open.",
+    "PR #5/#6 ready; no main merge without Product Owner command."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -317,7 +323,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-003",
       "link_type": "repository_story",
       "release": "A",
-      "status": "implemented_component_review_linux_ci_pending",
+      "status": "component_verified_integration_pending",
       "depends_on": [
         "RG-001"
       ],
@@ -377,7 +383,7 @@
             "AT-01",
             "AT-17"
           ],
-          "status": "component_linux_verification_pending"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-003-AC02",
@@ -386,7 +392,7 @@
             "AT-02",
             "AT-07"
           ],
-          "status": "integration_pending_assigned_later_stories"
+          "status": "integration_pending_named_owner"
         },
         {
           "id": "RG-003-AC03",
@@ -394,15 +400,58 @@
           "evidence_ids": [
             "AT-17"
           ],
-          "status": "integration_pending_assigned_later_stories"
+          "status": "integration_pending_named_owner"
         }
       ],
       "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
-      "implementation_evidence": {
-        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/8",
-        "status": "local_portable_checks_passed_linux_pending",
-        "scope": "Clock component only; actual runtime commit/deadline and checker UNKNOWN integration remain RG-007/008/013"
-      }
+      "dependency_contracts": [
+        {
+          "id": "RG-003-A",
+          "interface": "IClock/LinuxMonotonicClock",
+          "status": "verified_component",
+          "tested_revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "run": 43355987772,
+          "permitted_consumers": [
+            "RG-006",
+            "RG-007",
+            "RG-008"
+          ],
+          "excluded_guarantees": [
+            "Docker participant provenance",
+            "Service commit/deadline mapping",
+            "Checker UNKNOWN classification"
+          ]
+        },
+        {
+          "id": "RG-003-B",
+          "status": "pending",
+          "owners": [
+            "RG-006"
+          ]
+        },
+        {
+          "id": "RG-003-C",
+          "status": "pending",
+          "owners": [
+            "RG-007",
+            "RG-008"
+          ],
+          "acceptance": [
+            "RG-003-AC02"
+          ]
+        },
+        {
+          "id": "RG-003-D",
+          "status": "pending",
+          "owners": [
+            "RG-013"
+          ],
+          "acceptance": [
+            "RG-003-AC03"
+          ]
+        }
+      ]
     },
     {
       "id": "RG-004",
@@ -410,7 +459,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "contract_design_preparation",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -688,7 +737,15 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ]
     },
     {
       "id": "RG-007",
@@ -795,7 +852,15 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ]
     },
     {
       "id": "RG-011",
@@ -1000,7 +1065,15 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ]
     },
     {
       "id": "RG-009",
