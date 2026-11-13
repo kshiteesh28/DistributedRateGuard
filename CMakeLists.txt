@@ -143,7 +143,7 @@ set_tests_properties(rateguard.bucket_math_oracle PROPERTIES TIMEOUT 60)
 
 # RG-002 immutable policy, canonical identity, and independent serialization oracle.
 find_package(nlohmann_json 3.11.3 EXACT CONFIG REQUIRED)
-find_package(OpenSSL REQUIRED COMPONENTS Crypto)
+find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
 add_library(rateguard_policy
   src/policy/policy_loader.cpp
   src/policy/canonical_codec.cpp)
