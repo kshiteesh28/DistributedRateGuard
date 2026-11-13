@@ -65,7 +65,7 @@ Component evidence: [RG-003](evidence/RG-003.md), head `2d55c6e032ae75947f045ac7
 | RG-003-A clock API/startup/sampling | Verified input for RG-006/007/008 development |
 | RG-003-B participant topology | Pending RG-006; Master/Senior Dev |
 | RG-003-C actual commit/deadline mapping | Pending RG-007/008; Senior Dev/Tester; AC02 |
-| RG-003-D UNKNOWN evidence classification | Pending RG-013; Tester/Senior Dev; AC03 |
+| RG-003-D strict UNKNOWN evidence gate | Pending RG-011A with RG-005 completeness/runtime inputs; before RG-008 acceptance; AC03. RG-013 adds C credit/formal extensions |
 
 Acceptance criteria (unchanged; disposition above):
 
