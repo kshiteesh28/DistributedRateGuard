@@ -58,14 +58,14 @@ Classes: IClock, LinuxMonotonicClock.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-002, PRD-024, FR-001, FR-017.
 
-Component evidence: [RG-003](evidence/RG-003.md), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, run 43355987772, independent acceptance. Full story is not Done.
+Component evidence: [RG-003](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, run 43355987772, independent acceptance. Full story is not Done.
 
 | Deliverable | Status / owner |
 | --- | --- |
 | RG-003-A clock API/startup/sampling | Verified input for RG-006/007/008 development |
 | RG-003-B participant topology | Pending RG-006; Master/Senior Dev |
 | RG-003-C actual commit/deadline mapping | Pending RG-007/008; Senior Dev/Tester; AC02 |
-| RG-003-D UNKNOWN evidence classification | Pending RG-013; Tester/Senior Dev; AC03 |
+| RG-003-D strict UNKNOWN evidence gate | Pending RG-011A with RG-005 completeness/runtime inputs; before RG-008 acceptance; AC03. RG-013 adds C credit/formal extensions |
 
 Acceptance criteria (unchanged; disposition above):
 
