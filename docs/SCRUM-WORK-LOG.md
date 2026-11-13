@@ -1,5 +1,7 @@
 # Scrum Work Log
 
+**Live log:** [docs/scrum-work-log branch](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md). This is the canonical ongoing log; feature-branch copies are snapshots.
+
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
 **Review branches:** [RG-001 / PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6). No implementation has been merged to main.
@@ -8,16 +10,17 @@
 
 The Master records agent assignments, handoffs, review findings, rework, actual checks, and unresolved gates here. Entries identify who authored, reviewed, integrated, and verified work; these are different responsibilities. Git history preserves earlier versions. Later corrections reference the entry they correct. Subagent reports are attributed reports until linked execution evidence confirms them.
 
-Historical entries below are reconstructed from retained handoffs and GitHub evidence. Exact active minutes and earlier start/finish times were not recorded and are **unknown**; sprint estimates are not actual effort. New entry timestamps are publication/observation times, not inferred work duration. No private reasoning, credentials, or hidden execution transcript is included.
+Historical entries below are reconstructed from retained handoffs and GitHub evidence. Exact active minutes and earlier start/finish times were not recorded and are **unknown**; sprint estimates are not actual effort. LOG-007–016 header times are approximate report markers; GitHub commit/action timestamps are authoritative. Later UTC observation stamps are sampled from the clock tool; none represents inferred active work duration. No private reasoning, credentials, or hidden execution transcript is included.
 
 ## Board snapshot
 
 | Story | Owner/contributors | State | Remaining gate |
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
-| RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 draft pending lock-promotion CI | Product Owner review; runtime integration in later stories |
-| RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Isolated implementation assigned/in progress | Developer handoff, independent review and Linux CI; service/checker integration remains gated |
-| RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
+| RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
+| RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
+| RG-004 authentication | Senior Dev: contract/API preparation; Master: decision review | Selected security defaults; no implementation | gRPC handshake/reuse/resumption and synchronized-VM probes required |
+| RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
 
@@ -108,3 +111,77 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 
 - **Scrum audit agent:** Rechecked stories, context, sprint plan, evidence, work log and PR #6 at `5203f91`. Component acceptance, unmerged status, stacked review rules and open Docker deployment gate were consistent. Found stale RG-003 board text, stale PR verification text and an unlabeled historical build-version note.
 - **Master:** Corrected the three summary fields; earlier entries remain historical observations. Lock-promotion [run 43354481661](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43354481661) is pending; no new component blocker was identified.
+
+### LOG-013 — 2026-11-13 02:52 UTC: RG-002 ready; dedicated live log branch
+
+- **Master:** [run 43354640416](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43354640416) passed the final RG-002 head `410b9d66e998b094fea6a5deffc69bf0412338fd`. Marked PR #6 ready for review without merging it. Previous run 43354481661 completed checks but was automatically cancelled during artifact upload by a newer documentation commit; it is not counted as a successful run.
+- **Process improvement:** Continued log updates now live on `docs/scrum-work-log`, independently reviewed against the verified RG-002 feature branch. This avoids cancelling implementation CI whenever the live scrum log changes. Feature branch copies remain historical snapshots; the live URL above is authoritative.
+- **Master:** Created RG-003 review branch from the same verified RG-002 head; code remains under review before publication.
+- **Senior Dev:** Code review requested stronger startup source validation and explicit clock availability before readiness.
+- **Master decisions:** Production opens/validates/reads the same proc descriptors (PROC_SUPER_MAGIC for boot/offsets, NSFS_MAGIC for namespace descriptors), under an explicit trusted-kernel/operator/proc-mount assumption. Clock factory must also obtain and retain a successful initial sample before exposing an object.
+- **Junior Dev / Tester:** Updating implementation and independent startup tests for those decisions. Earlier local passes do not cover the new changes until rerun.
+
+### LOG-014 — 2026-11-13 02:52 UTC: independent test review findings
+
+- **Master:** Found two defects in the Tester's RG-003 harness before publication: hardcoded temporary output path, and an embedded-NUL std::string length exceeding the literal's storage.
+- **Tester:** Replaced the path with mkstemp/cleanup and constructed the embedded NUL safely. Added a reproducible Python runner that compiles an actual regression-guard mutant and checks specific independent failure labels.
+- **Evidence boundary:** Local corrected harness and mutant passed before the new startup-sampling change. Junior's deterministic tests passed locally. Linux OS smoke was explicitly unsupported on macOS; it is not logged as a Linux pass.
+
+### LOG-015 — 2026-11-13 02:58 UTC: clock publication and final review cleanup
+
+- **Master:** Published RG-003 isolated code, decision record, CMake targets and [PR #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), stacked on verified RG-002. Includes independent tests, real clamp-mutant compilation, and Linux fork/exec smoke. Initial CI queued; not yet accepted.
+- **Junior Dev:** Delivered mandatory startup sample, retained regression reference, exact boot/offset parsing, four namespace snapshots, same-descriptor filesystem checks, sticky fail-closed sampling and concurrency tests. Portable C++20 checks passed; Linux smoke explicitly returned unsupported 77 on macOS.
+- **Tester:** Updated independent factory-failure and retained-startup-reference cases; corrected mutation runner to inject an actual clamp instead of simply removing the guard. Recompiled independent/unit/mutant checks successfully on macOS. Linux-specific fd validation is not covered by those local passes.
+- **Senior Dev:** Accepted final core code for publication/CI, then noted an unused unhardened file-reader helper.
+- **Master decision / rework:** Junior and Tester are factoring/tests against the actual production bounded-fd reader; remove unused path helper. CI must validate the final version. Independent test-source fixes are preserved in LOG-014.
+- **Next preparation:** Senior Dev assigned read-only RG-004 requirement/API extraction. No authentication implementation is claimed from this preparation.
+
+### LOG-016 — 2026-11-13 03:03 UTC: sanitizer finding and final clock CI
+
+- **Master:** Initial [Linux run 43355498930](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43355498930) passed 13 CTest groups twice, including real proc/ns filesystem handling and fork/exec smoke. This is preliminary evidence, not final acceptance after subsequent edits.
+- **Master:** Ran local address/undefined sanitizers because an earlier independent test had a literal-length defect. Sanitizer caught a separate global-buffer-overflow in Junior Dev's embedded-NUL parser fixture: explicit length 31 exceeded 28-byte literal storage. The independent harness passed sanitized checks.
+- **Junior Dev:** Replaced the fixture with safe string construction plus push_back of NUL, audited related parser fixtures, and reran strict and sanitizer tests successfully.
+- **Master:** Independently reran the corrected sanitized developer test successfully. Published the production-used bounded-fd reader, final unit/independent tests and a required targeted sanitizer CI step at `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`.
+- **Tester:** Independently checked exact/over limits, descriptor ownership and negative/closed fd typed errors. Actual clamp mutation is rejected, including the retained startup sample check.
+- **Gate:** Final Linux normal/clean/sanitizer CI is pending. Earlier green runs do not waive this new gate, and no full RG-003 integration acceptance is claimed.
+
+### LOG-017 — 2026-11-13 03:10:06 UTC observation: clock independent acceptance and dependency audit
+
+- **Master:** Inspected final [run 43355987772](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43355987772), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8` / merge `208c8ba13c8bbe7cfc36b5fe44a2e0b1b5490ae8`: 13 CTest groups twice, 3 sanitizer tests, 16 Python checks, 12 generated-file matches and 20 actual C++20 translation units.
+- **Tester:** Independently fetched logs/tested source, confirmed actual non-skipped Linux fork/exec smoke, safe NUL fixture, common reader bounds/ownership, startup reference and compiled clamp-mutant rejection. Accepted startup/provenance/sample component scope; explicitly left service/checker obligations pending.
+- **Senior Dev:** Accepted final reader/fixture changes by code review; did not claim an independent Linux rerun. No new code blocker.
+- **Scrum audit agent:** Detected semantic deadlock if RG-006 must wait for all RG-003 ACs while RG-007/008/013 are needed to complete those ACs. Recommended named component input contracts without waiving any requirement.
+- **Master:** Recorded RG-003-A verified component input for RG-006/007/008, and pending RG-003-B topology (RG-006), RG-003-C commit/deadline mapping (RG-007/008), RG-003-D UNKNOWN classification (RG-013). Full RG-003 is not Done. Updated PR/evidence/story/context/sprint/README to match.
+- **Master process finding:** One publication orchestration script had a JavaScript syntax error and failed before executing any writes; corrected and reran it. No partial repository mutation resulted.
+- **Current gate:** Final documentation-head [run 43356954793](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43356954793) is in progress. Runtime/deployment and product gates remain open. Main has not been merged.
+
+### LOG-018 — 2026-11-13 03:10:06 UTC observation: RG-004 preparation
+
+- **Senior Dev:** Read main PRD 8 / SRD 5 / LLD 5 and frozen policy-v1, produced a ten-gap authentication contract extraction: dual-role replica EKUs, trusted wall time, expiry under queueing, SAN ambiguity, status classification, replica permission scope, exact server URI pinning, leaf/root shape, handshake versus RPC failures and reused-channel checks on both sides.
+- **Master:** Requested concrete source-compatible defaults and verification against pinned gRPC 1.51.1/OpenSSL 3 APIs before security code is assigned. This is active design preparation, not an implemented authentication feature.
+- **Limitation:** No PKI provisioning, mTLS server/channel, certificate fixtures, auth tests or deployment trust-time evidence is claimed from that preparation.
+
+### LOG-019 — 2026-11-13 03:12:19 UTC observation: review-ready clock handoff
+
+- **Master:** Final documentation-head [run 43356954793](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43356954793) passed at `ccbeddf6a42b0e9247b658284988ec30b2038a9f`, including normal, clean, sanitizer and manifest steps. Marked [PR #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8) ready for review.
+- **Master verification:** Read back PR #5/#6/#7/#8: all open and unmerged. Main remains `71393cf11a0f8508cfb7e85b85538ccc22067f75`. PR #6 targets RG-001; log PR #7 and clock PR #8 target RG-002.
+- **Checks on handoff:** Parsed the live context JSON (14 unique parent story IDs), confirmed named RG-003-A input contracts and pending B/C/D owners, and checked changed Markdown fence balance.
+- **Current board:** API/build and policy/arithmetic components are review-ready; clock component is review-ready with full-story integration pending. All applicable deployment, enforcement and release gates remain open.
+- **Ongoing preparation:** Senior Dev is checking pinned gRPC API compatibility and security defaults for RG-004. No security implementation is represented as complete.
+
+### LOG-020 — 2026-11-13 03:18:18 UTC observation: Release A ownership correction
+
+- **Master:** Found that the earlier RG-003-D assignment solely to RG-013 (C) could postpone Release A's missing-provenance guard. Requested source recheck.
+- **Scrum audit agent:** Re-read PRD 8 and SRD 5 §7/D4; confirmed the guard already applies in A and acknowledged the earlier C-only assignment was too broad. This supersedes that portion of LOG-017 and prior dependency tables.
+- **Corrected contract:** RG-003-D is delivered in RG-011A, with RG-005 completeness, RG-006 participant provenance and RG-007/008 actual commit inputs. Senior Dev implements; Tester independently verifies valid evidence, known violations and missing/incomparable/incomplete evidence. UNKNOWN blocks strict safety PASS before RG-008 acceptance/Release A completion. RG-013 adds credit/formal checks in C.
+- **Master:** Updated story/context/sprint/evidence/LLD addendum and PR body. No clock code or product acceptance criterion changed. Fresh documentation-head CI required.
+- **Master publication finding:** A metadata store of undefined stopped the first correction batch after one story-document write. Re-read current blobs, completed the remaining edits, and will check the final document bundle. No implementation or main files were changed by the failed batch.
+
+### LOG-021 — 2026-11-13 03:27:16 UTC observation: corrected bundle green and security defaults recorded
+
+- **Master:** Corrected clock documentation head `f656648c884ce9bbe6fcb917566898a2f01b4c0e` passed [run 43358083253](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43358083253). All normal/clean/sanitizer/manifest steps completed successfully. PR #8 remains ready and unmerged; no code change accompanied the Release A owner correction.
+- **Senior Dev:** Verified pinned gRPC 1.51.1 custom verifier exposes URI SANs and leaf PEM before peer-check completion. Reviewed the Master proposal for immutable per-leaf hashes and wall-time synchronization gates; reported no product/source conflict. Source-only research, not a compile/TLS result.
+- **Master decisions:** Published [security defaults revision 1](decisions/RG-004-security-v1.md): immutable manifest leaf pins alongside unchanged policy CA hash; role-specific EKUs; exact URI; both-boundary permissions; per-call root/leaf expiry; trusted CLOCK_REALTIME with adjtimex status and regression/error fail-closed; no live rotation. Preserve the trusted VM/time-authority assumption and no proof of inaccurate-but-monotonic UTC.
+- **Review input retained:** [Senior preparation and source links](reviews/RG-004-senior-preparation.md). Earlier questions are retained as historical input and linked to their selected defaults.
+- **Required next evidence:** Compile/handshake verifier APIs on frozen packages; prove reused/reconnected/resumed sessions either preserve exact peer pin verification or fail closed; validate real Docker adjtimex/synchronization preflight without claiming fake-time tests prove deployment. No authentication code, PKI provisioning or TLS acceptance is claimed.
+- **Handoff state:** PR #5/#6/#8 are review-ready component work; PR #7 contains this live scrum log and planning handoff. Main remains unchanged. The full service and releases remain incomplete.
