@@ -46,6 +46,9 @@ class InputGuard final : public nlohmann::json_sax<Json> {
   bool boolean(bool) override { return true; }
   bool number_integer(number_integer_t) override { return true; }
   bool number_unsigned(number_unsigned_t) override { return true; }
+  // Float tokens are rejected by this lexical guard and reported as
+  // InvalidJson. Boolean values remain syntactically valid JSON and are
+  // rejected later as InvalidValue when an integer field requires a string.
   bool number_float(number_float_t, const string_t&) override {
     return Reject("JSON floating-point numbers are not permitted");
   }
