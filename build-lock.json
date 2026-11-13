@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "lock_status": "frozen_pending_verification",
+  "lock_status": "validated",
   "target": {
     "runner_label": "ubuntu-24.04",
     "os_id": "ubuntu",
@@ -38,12 +38,12 @@
     "validation": "unverified; separate opt-in compatibility lane; not the dependency mode tested by this lock"
   },
   "validation": {
-    "validated": false,
-    "scope": "Primary Ubuntu x86_64 contract toolchain/package snapshot; generated C++20 contracts and clean-directory code-generation repeat verified",
-    "observed_run": 43331122781,
-    "observed_commit": "93b7e9e2f962ca07450b502ea84bf12814f69551",
-    "clean_rebuild_and_codegen_match": true,
-    "pending": "Verify RG-002 policy/JSON extension against independently computed canonical fixtures and actual OpenSSL"
+    "validated": true,
+    "scope": "Primary Ubuntu x86_64 foundation toolchain/package snapshot; generated C++20 contracts, policy/crypto and arithmetic component checks, two clean builds and code-generation repeat verified",
+    "observed_run": 43353832066,
+    "observed_commit": "7640975031aee2af2ee7ae855ce88b76115f1569",
+    "tested_merge_ref": "9be7be9861ddc0f0bd04718e6d500781de5b18ca",
+    "clean_rebuild_and_codegen_match": true
   },
   "limitations": [
     "Not a hermetic or bit-for-bit binary reproducibility claim: runner image and transitive system packages are not fully pinned.",
