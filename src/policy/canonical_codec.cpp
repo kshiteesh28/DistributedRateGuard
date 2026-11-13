@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iterator>
 #include <limits>
+#include <memory>
 #include <new>
 #include <string_view>
 #include <utility>
@@ -143,8 +144,13 @@ Result<Digest32> CanonicalPolicyCodec::Digest(const PolicySnapshot& snapshot) {
   const auto& bytes = std::get<std::vector<std::uint8_t>>(encoded);
   Digest32 digest{};
   unsigned int length = 0;
-  if (EVP_Digest(bytes.data(), bytes.size(), digest.data(), &length, EVP_sha256(), nullptr) != 1 ||
-      length != digest.size())
+  std::unique_ptr<EVP_MD, decltype(&EVP_MD_free)> algorithm(
+      EVP_MD_fetch(nullptr, "SHA256", nullptr), EVP_MD_free);
+  std::unique_ptr<EVP_MD_CTX, decltype(&EVP_MD_CTX_free)> context(
+      EVP_MD_CTX_new(), EVP_MD_CTX_free);
+  if (!algorithm || !context || EVP_DigestInit_ex(context.get(), algorithm.get(), nullptr) != 1 ||
+      EVP_DigestUpdate(context.get(), bytes.data(), bytes.size()) != 1 ||
+      EVP_DigestFinal_ex(context.get(), digest.data(), &length) != 1 || length != digest.size())
     return PolicyError{PolicyErrorCode::CryptoFailure, "SHA-256 computation failed"};
   return digest;
 }
