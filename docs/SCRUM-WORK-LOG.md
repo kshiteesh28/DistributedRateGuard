@@ -134,3 +134,12 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Senior Dev:** Accepted final core code for publication/CI, then noted an unused unhardened file-reader helper.
 - **Master decision / rework:** Junior and Tester are factoring/tests against the actual production bounded-fd reader; remove unused path helper. CI must validate the final version. Independent test-source fixes are preserved in LOG-014.
 - **Next preparation:** Senior Dev assigned read-only RG-004 requirement/API extraction. No authentication implementation is claimed from this preparation.
+
+### LOG-016 — 2026-11-13 03:03 UTC: sanitizer finding and final clock CI
+
+- **Master:** Initial [Linux run 43355498930](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43355498930) passed 13 CTest groups twice, including real proc/ns filesystem handling and fork/exec smoke. This is preliminary evidence, not final acceptance after subsequent edits.
+- **Master:** Ran local address/undefined sanitizers because an earlier independent test had a literal-length defect. Sanitizer caught a separate global-buffer-overflow in Junior Dev's embedded-NUL parser fixture: explicit length 31 exceeded 28-byte literal storage. The independent harness passed sanitized checks.
+- **Junior Dev:** Replaced the fixture with safe string construction plus push_back of NUL, audited related parser fixtures, and reran strict and sanitizer tests successfully.
+- **Master:** Independently reran the corrected sanitized developer test successfully. Published the production-used bounded-fd reader, final unit/independent tests and a required targeted sanitizer CI step at `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`.
+- **Tester:** Independently checked exact/over limits, descriptor ownership and negative/closed fd typed errors. Actual clamp mutation is rejected, including the retained startup sample check.
+- **Gate:** Final Linux normal/clean/sanitizer CI is pending. Earlier green runs do not waive this new gate, and no full RG-003 integration acceptance is claimed.
