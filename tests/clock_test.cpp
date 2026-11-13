@@ -107,6 +107,8 @@ void TestParsers() {
   Check(std::holds_alternative<detail::TimeOffsets>(detail::ParseTimeOffsets(
             "  boottime\t-2\t4  \nmonotonic 0 0")),
         "row order and spaces/tabs accepted");
+  std::string embedded_nul = "monotonic 0 0\nboottime 0 0";
+  embedded_nul.push_back('\0');
   const std::array<std::string, 12> invalid_offsets{
       "monotonic +1 0\nboottime 0 0",       // plus sign
       "monotonic 01 0\nboottime 0 0",       // leading zero
@@ -119,7 +121,7 @@ void TestParsers() {
       "monotonic 0 0",                       // missing row
       "monotonic 0 0\nboottime 0 0\nother 0 0", // unknown row
       "monotonic 0 0 extra\nboottime 0 0",  // extra token
-      std::string("monotonic 0 0\nboottime 0 0\0", 31)};
+      std::move(embedded_nul)};
   for (const auto& text : invalid_offsets)
     Check(std::holds_alternative<ClockFailure>(detail::ParseTimeOffsets(text)),
           "malformed offsets rejected");
@@ -143,10 +145,21 @@ void TestParsers() {
     const auto written = ::write(fd, contents.data(), contents.size());
     Check(written == static_cast<ssize_t>(contents.size()),
           "write bounded-reader temp file");
-    ::close(fd);
-    Check(HasFailure(detail::ReadBoundedFile(path, 64),
+    (void)::lseek(fd, 0, SEEK_SET);
+    Check(HasFailure(detail::ReadBoundedFd(fd, 64),
                      ClockFailureReason::InputTooLong),
           "bounded reader detects one byte over limit");
+    Check(::ftruncate(fd, 64) == 0 && ::lseek(fd, 0, SEEK_SET) == 0,
+          "truncate and rewind bounded-reader file");
+    const auto exact = detail::ReadBoundedFd(fd, 64);
+    Check(std::get_if<std::string>(&exact) && std::get<std::string>(exact).size() == 64,
+          "bounded reader accepts exact limit");
+    Check(::ftruncate(fd, 0) == 0 && ::lseek(fd, 0, SEEK_SET) == 0,
+          "empty bounded-reader file");
+    const auto empty = detail::ReadBoundedFd(fd, 0);
+    Check(std::get_if<std::string>(&empty) && std::get<std::string>(empty).empty(),
+          "bounded reader accepts zero-byte file at zero limit");
+    ::close(fd);
     ::unlink(path);
   }
 }
