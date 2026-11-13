@@ -62,12 +62,6 @@
       "Release benchmarks",
       "TLA/model checker execution"
     ],
-    "documentation_changes": [
-      "PRD 8 / SRD 5 / HLD 4 / LLD 5 now use one p99 population and timeout/cancellation rule.",
-      "README and spec-to-code status text point to the current main-branch document bundle.",
-      "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
-      "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
-    ],
     "previous_spec_merge_documentation_checks": [
       "Source revisions read from GitHub main before changes.",
       "Markdown table widths and code-fence balance checked.",
@@ -86,7 +80,13 @@
       "merge_ref": "9be7be9861ddc0f0bd04718e6d500781de5b18ca",
       "evidence": "docs/evidence/RG-002.md",
       "scope": "Pure policy/arithmetic; no quota service, runtime certificate or clock claims"
-    }
+    },
+    "historical_spec_merge_documentation_changes": [
+      "PRD 8 / SRD 5 / HLD 4 / LLD 5 now use one p99 population and timeout/cancellation rule.",
+      "README and spec-to-code status text point to the current main-branch document bundle.",
+      "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
+      "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
+    ]
   },
   "next_actions": [
     "Complete lock-promotion CI and submit RG-002 PR for review; main merge remains unauthorized.",
