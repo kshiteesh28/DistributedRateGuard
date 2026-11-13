@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-002-policy-arithmetic",
-    "implementation_base_branch": "feature/RG-001-contract-bootstrap"
+    "implementation_branch": "feature/RG-003-clock-provenance",
+    "implementation_base_branch": "feature/RG-002-policy-arithmetic"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,7 +25,7 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_rg002_components_verified_rg003_in_progress",
+    "implementation": "rg001_rg002_components_verified_rg003_under_review",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "No implementation merged to main. RG-001 and RG-002 components verified; full Sprint0 Docker deployment gate remains open. RG-003 isolated implementation assigned."
@@ -89,8 +89,10 @@
     ]
   },
   "next_actions": [
-    "RG-002 final lock-promotion CI passed; PR #6 ready for Product Owner review; do not merge main without authorization.",
-    "Continue RG-003 isolated component with independent review and Linux checks.",
+    "Finish RG-003 shared-reader cleanup, independent review and Linux CI before component acceptance.",
+    "Keep RG-003 AC02/03 service and checker integration pending; do not label full story Done.",
+    "RG-004 requirement/API extraction only; code requires frozen internal decisions.",
+    "PR #5/#6 are ready; main merge remains under Product Owner control.",
     "Keep actual Docker target/image-digest gate open; no enforcement activation."
   ],
   "authorization": {
@@ -315,7 +317,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-003",
       "link_type": "repository_story",
       "release": "A",
-      "status": "in_progress_isolated_implementation_assigned",
+      "status": "implemented_component_review_linux_ci_pending",
       "depends_on": [
         "RG-001"
       ],
@@ -330,11 +332,11 @@
       "planned_files": [
         {
           "path": "src/platform/clock.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_RG003_feature_branch"
         },
         {
           "path": "src/platform/clock_linux.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_RG003_feature_branch"
         }
       ],
       "classes": [
@@ -375,7 +377,7 @@
             "AT-01",
             "AT-17"
           ],
-          "status": "not_run"
+          "status": "component_linux_verification_pending"
         },
         {
           "id": "RG-003-AC02",
@@ -384,7 +386,7 @@
             "AT-02",
             "AT-07"
           ],
-          "status": "not_run"
+          "status": "integration_pending_assigned_later_stories"
         },
         {
           "id": "RG-003-AC03",
@@ -392,10 +394,15 @@
           "evidence_ids": [
             "AT-17"
           ],
-          "status": "not_run"
+          "status": "integration_pending_assigned_later_stories"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_evidence": {
+        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/8",
+        "status": "local_portable_checks_passed_linux_pending",
+        "scope": "Clock component only; actual runtime commit/deadline and checker UNKNOWN integration remain RG-007/008/013"
+      }
     },
     {
       "id": "RG-004",
