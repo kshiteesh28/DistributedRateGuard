@@ -1,7 +1,7 @@
 # Agile Sprint Plan — DistributedRateGuard
 
 **Date:** 2026-11-12  
-**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003 assigned. Product Owner authorized development and testing on 2026-11-12.  
+**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003 component verified; integration pending. Product Owner authorized development and testing on 2026-11-12.  
 **Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
 
 ## Team and control
@@ -75,7 +75,7 @@ Implement credits only after Release A acceptance. Keep fixed-Q grants, same-seq
 
 ## Workflow, acceptance, and PR rules
 
-- A story is **Ready** only when its dependencies are accepted, its source requirements/design are linked, failure behavior is explicit, and acceptance evidence is identified.
+- A story is **Ready** only when its explicitly named input dependency contracts are verified, its source requirements/design are linked, failure behavior is explicit, and acceptance evidence is identified.
 - A story is **Done** only when code is reviewed, required tests have actually run, independent evidence is recorded against the commit and environment, and the story/context status is updated. Planned tests or documentation alone are not evidence.
 - After the Product Owner’s proceed command, use a separate feature branch and PR for each coherent story or vertical slice, based on current `main` or a verified prerequisite feature branch for a stacked PR. Stacked PRs target that feature branch so their diff remains independent; main merge requires Product Owner authorization. Rebase/retarget and rerun checks after the base changes. PRs include story IDs, PRD/SRD IDs, failure cases, evidence IDs, and observed results.
 - Senior Dev reviews implementation and concurrency; Tester independently reviews acceptance; Scrum Master tracks dependencies and status; Master reviews integration. Do not merge or mark releases complete without the Product Owner’s authorization.
@@ -85,6 +85,12 @@ Implement credits only after Release A acceptance. Keep fixed-Q grants, same-seq
 
 RG-001 API/helpers and the primary hosted Ubuntu package build are verified in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5); this is component acceptance. **Sprint 0 remains open for the actual Docker target, image digest and topology evidence**, owned by Master/Senior Dev. The optional gRPC source-build experiment remains unverified.
 
-RG-002 policy/arithmetic is implemented on a stacked branch in [PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6); its final cap/crypto extensions passed both clean builds in run 43353832066 and independent Tester acceptance. See [RG-002 evidence](evidence/RG-002.md). RG-003 clock implementation is assigned separately. Pure foundations may proceed; enforcement cannot activate until its runtime prerequisites pass. Full-system tests, benchmarks, model checking, witness durability, process fencing and certificates remain pending.
+RG-002 policy/arithmetic is implemented on a stacked branch in [PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6); its final cap/crypto extensions passed both clean builds in run 43353832066 and independent Tester acceptance. See [RG-002 evidence](evidence/RG-002.md). RG-003-A clock component passed Linux/sanitizer checks and independent review; full RG-003 integration remains pending. Pure foundations may proceed; enforcement cannot activate until its runtime prerequisites pass. Full-system tests, benchmarks, model checking, witness durability, process fencing and certificates remain pending.
 
 The [per-agent scrum work log](SCRUM-WORK-LOG.md) records handoffs, findings, failures, corrections and exact evidence. Earlier agent-minute estimates remain estimates; actual historical effort was not recorded. No release completion or main merge is claimed.
+
+## Named dependency contracts
+
+Implementation readiness depends on verified input deliverables rather than completion of their entire parent stories. Each contract identifies interface, tested revision/evidence, permitted consumers and excluded guarantees. Component acceptance permits dependent development only; system activation, story completion and release acceptance still require all applicable integration/product gates. Changes to a consumed contract require affected consumers to be reviewed and retested.
+
+**RG-003-A** supplies IClock/LinuxMonotonicClock at `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, [run 43355987772](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43355987772). RG-006/007/008 may consume its verified startup identity, initial sample, serialized sampling and sticky failure behavior. **RG-003-B** (RG-006) still must prove every participant's topology; **RG-003-C** (RG-007/008) must complete actual commit/deadline mapping; **RG-003-D** (RG-013) must complete UNKNOWN evidence behavior. Full RG-003 remains incomplete. This removes a scheduling dependency cycle without changing any acceptance criterion or release gate.
