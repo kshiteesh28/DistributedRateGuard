@@ -1,5 +1,7 @@
 # Scrum Work Log
 
+**Live log:** [docs/scrum-work-log branch](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md). This is the canonical ongoing log; feature-branch copies are snapshots.
+
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
 **Review branches:** [RG-001 / PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6). No implementation has been merged to main.
@@ -15,7 +17,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | Story | Owner/contributors | State | Remaining gate |
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
-| RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 draft pending lock-promotion CI | Product Owner review; runtime integration in later stories |
+| RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Isolated implementation assigned/in progress | Developer handoff, independent review and Linux CI; service/checker integration remains gated |
 | RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
@@ -108,3 +110,18 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 
 - **Scrum audit agent:** Rechecked stories, context, sprint plan, evidence, work log and PR #6 at `5203f91`. Component acceptance, unmerged status, stacked review rules and open Docker deployment gate were consistent. Found stale RG-003 board text, stale PR verification text and an unlabeled historical build-version note.
 - **Master:** Corrected the three summary fields; earlier entries remain historical observations. Lock-promotion [run 43354481661](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43354481661) is pending; no new component blocker was identified.
+
+### LOG-013 — 2026-11-13 02:52 UTC: RG-002 ready; dedicated live log branch
+
+- **Master:** [run 43354640416](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43354640416) passed the final RG-002 head `410b9d66e998b094fea6a5deffc69bf0412338fd`. Marked PR #6 ready for review without merging it. Previous run 43354481661 completed checks but was automatically cancelled during artifact upload by a newer documentation commit; it is not counted as a successful run.
+- **Process improvement:** Continued log updates now live on `docs/scrum-work-log`, independently reviewed against the verified RG-002 feature branch. This avoids cancelling implementation CI whenever the live scrum log changes. Feature branch copies remain historical snapshots; the live URL above is authoritative.
+- **Master:** Created RG-003 review branch from the same verified RG-002 head; code remains under review before publication.
+- **Senior Dev:** Code review requested stronger startup source validation and explicit clock availability before readiness.
+- **Master decisions:** Production opens/validates/reads the same proc descriptors (PROC_SUPER_MAGIC for boot/offsets, NSFS_MAGIC for namespace descriptors), under an explicit trusted-kernel/operator/proc-mount assumption. Clock factory must also obtain and retain a successful initial sample before exposing an object.
+- **Junior Dev / Tester:** Updating implementation and independent startup tests for those decisions. Earlier local passes do not cover the new changes until rerun.
+
+### LOG-014 — 2026-11-13 02:52 UTC: independent test review findings
+
+- **Master:** Found two defects in the Tester's RG-003 harness before publication: hardcoded temporary output path, and an embedded-NUL std::string length exceeding the literal's storage.
+- **Tester:** Replaced the path with mkstemp/cleanup and constructed the embedded NUL safely. Added a reproducible Python runner that compiles an actual regression-guard mutant and checks specific independent failure labels.
+- **Evidence boundary:** Local corrected harness and mutant passed before the new startup-sampling change. Junior's deterministic tests passed locally. Linux OS smoke was explicitly unsupported on macOS; it is not logged as a Linux pass.
