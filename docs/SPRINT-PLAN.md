@@ -1,7 +1,7 @@
 # Agile Sprint Plan — DistributedRateGuard
 
 **Date:** 2026-11-12  
-**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 final verification; RG-003 assigned. Product Owner authorized development and testing on 2026-11-12.  
+**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003 assigned. Product Owner authorized development and testing on 2026-11-12.  
 **Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
 
 ## Team and control
@@ -85,6 +85,6 @@ Implement credits only after Release A acceptance. Keep fixed-Q grants, same-seq
 
 RG-001 API/helpers and the primary hosted Ubuntu package build are verified in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5); this is component acceptance. **Sprint 0 remains open for the actual Docker target, image digest and topology evidence**, owned by Master/Senior Dev. The optional gRPC source-build experiment remains unverified.
 
-RG-002 policy/arithmetic is implemented on a stacked branch in [PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6); its first combined clean builds passed and final extensions are under verification. RG-003 clock implementation is assigned separately. Pure foundations may proceed; enforcement cannot activate until its runtime prerequisites pass. Full-system tests, benchmarks, model checking, witness durability, process fencing and certificates remain pending.
+RG-002 policy/arithmetic is implemented on a stacked branch in [PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6); its final cap/crypto extensions passed both clean builds in run 43353832066 and independent Tester acceptance. See [RG-002 evidence](evidence/RG-002.md). RG-003 clock implementation is assigned separately. Pure foundations may proceed; enforcement cannot activate until its runtime prerequisites pass. Full-system tests, benchmarks, model checking, witness durability, process fencing and certificates remain pending.
 
 The [per-agent scrum work log](SCRUM-WORK-LOG.md) records handoffs, findings, failures, corrections and exact evidence. Earlier agent-minute estimates remain estimates; actual historical effort was not recorded. No release completion or main merge is claimed.
