@@ -2,8 +2,10 @@
 #include "../src/policy/policy_loader.h"
 
 #include <nlohmann/json.hpp>
+#include <openssl/evp.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <cstdint>
 #include <fstream>
 #include <iostream>
@@ -11,6 +13,9 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 namespace {
 using nlohmann::json;
@@ -66,6 +71,36 @@ std::string Hex(const std::uint8_t* bytes, std::size_t size) {
 bool Rejected(std::string_view input) {
   return std::holds_alternative<PolicyError>(PolicyLoader::Load(input));
 }
+
+bool CryptoFailureIsTypedInIsolatedChild(const PolicySnapshot& snapshot) {
+  const pid_t child = fork();
+  if (child < 0) return false;
+  if (child == 0) {
+    bool restored = false;
+    bool typed_failure = false;
+    {
+      struct RestoreDefaultProperties {
+        bool& restored;
+        ~RestoreDefaultProperties() {
+          restored = EVP_set_default_properties(nullptr, nullptr) == 1;
+        }
+      } restore{restored};
+
+      if (EVP_set_default_properties(nullptr, "provider=rateguard_no_such_provider") == 1) {
+        const auto result = CanonicalPolicyCodec::Digest(snapshot);
+        if (const auto* error = std::get_if<PolicyError>(&result))
+          typed_failure = error->code == PolicyErrorCode::CryptoFailure;
+      }
+    }
+    _exit(typed_failure && restored ? 0 : 1);
+  }
+
+  int status = 0;
+  while (waitpid(child, &status, 0) < 0) {
+    if (errno != EINTR) return false;
+  }
+  return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
 }  // namespace
 
 int main(int argc, char** argv) {
@@ -119,6 +154,8 @@ int main(int argc, char** argv) {
     Check(Hex(hash->data(), hash->size()) ==
           "0fa75c3373b71fc7c21ce0417258ea6545986d884c69c16f2ee8d6d9fefe00ff",
           "SHA-256 matches independent Python oracle");
+  Check(CryptoFailureIsTypedInIsolatedChild(*snapshot),
+        "unavailable OpenSSL provider returns typed crypto failure and restores properties");
 
   json shuffled = json::parse(input);
   std::reverse(shuffled["replica_slots"].begin(), shuffled["replica_slots"].end());
@@ -171,6 +208,23 @@ int main(int argc, char** argv) {
   auto strict = PolicyLoader::Load(invalid.dump());
   Check(std::holds_alternative<std::shared_ptr<const PolicySnapshot>>(strict),
         "strict mode omits per-tenant credit Q");
+
+  // Exercise the loader's own byte cap directly; the command-line integration
+  // driver also checks file size before calling Load.
+  std::string exact_limit = input;
+  if (exact_limit.size() < PolicyLoader::kMaxJsonBytes)
+    exact_limit.append(PolicyLoader::kMaxJsonBytes - exact_limit.size(), ' ');
+  Check(exact_limit.size() == PolicyLoader::kMaxJsonBytes,
+        "construct exactly 64 MiB policy JSON");
+  auto exact_limit_result = PolicyLoader::Load(exact_limit);
+  Check(std::holds_alternative<std::shared_ptr<const PolicySnapshot>>(exact_limit_result),
+        "exactly 64 MiB valid JSON is accepted");
+  const std::string over_limit(PolicyLoader::kMaxJsonBytes + 1, ' ');
+  auto over_limit_result = PolicyLoader::Load(over_limit);
+  const auto* over_limit_error = std::get_if<PolicyError>(&over_limit_result);
+  Check(over_limit_error != nullptr &&
+        over_limit_error->code == PolicyErrorCode::ResourceLimit,
+        "PolicyLoader itself rejects input one byte over 64 MiB");
 
   std::string deeply_nested;
   for (int i = 0; i < 33; ++i) deeply_nested.push_back('[');
