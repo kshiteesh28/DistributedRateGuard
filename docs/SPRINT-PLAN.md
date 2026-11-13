@@ -1,7 +1,7 @@
 # Agile Sprint Plan — DistributedRateGuard
 
 **Date:** 2026-11-12  
-**Status:** Sprint 0 / RG-001 in progress. Product Owner authorized development and testing on 2026-11-12.  
+**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 final verification; RG-003 assigned. Product Owner authorized development and testing on 2026-11-12.  
 **Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
 
 ## Team and control
@@ -77,10 +77,14 @@ Implement credits only after Release A acceptance. Keep fixed-Q grants, same-seq
 
 - A story is **Ready** only when its dependencies are accepted, its source requirements/design are linked, failure behavior is explicit, and acceptance evidence is identified.
 - A story is **Done** only when code is reviewed, required tests have actually run, independent evidence is recorded against the commit and environment, and the story/context status is updated. Planned tests or documentation alone are not evidence.
-- After the Product Owner’s proceed command, use a separate feature branch and PR for each coherent story or vertical slice, based on the current `main`. PRs include story IDs, PRD/SRD IDs, failure cases, evidence IDs, and observed results.
+- After the Product Owner’s proceed command, use a separate feature branch and PR for each coherent story or vertical slice, based on current `main` or a verified prerequisite feature branch for a stacked PR. Stacked PRs target that feature branch so their diff remains independent; main merge requires Product Owner authorization. Rebase/retarget and rerun checks after the base changes. PRs include story IDs, PRD/SRD IDs, failure cases, evidence IDs, and observed results.
 - Senior Dev reviews implementation and concurrency; Tester independently reviews acceptance; Scrum Master tracks dependencies and status; Master reviews integration. Do not merge or mark releases complete without the Product Owner’s authorization.
 - Track work as **Ready → In Progress → Review → Acceptance → Done**, or **Blocked** with the unmet dependency/evidence stated. Do not pull blocked credit work forward to fill capacity.
 
-## Current gates and explicit wait
+## Current gates and work log
 
-The design is specified, but implementation, tests, benchmarks, model checking, shared-clock proof, witness durability evidence, process-fencing evidence, and certificate fixtures are not claimed as completed. The actual target build environment and local Git checkout still need verification. The Product Owner issued the proceed command on 2026-11-12. RG-001 is in progress in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5). Later stories remain subject to the dependency and evidence gates above; merge requires Product Owner review.
+RG-001 API/helpers and the primary hosted Ubuntu package build are verified in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5); this is component acceptance. **Sprint 0 remains open for the actual Docker target, image digest and topology evidence**, owned by Master/Senior Dev. The optional gRPC source-build experiment remains unverified.
+
+RG-002 policy/arithmetic is implemented on a stacked branch in [PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6); its first combined clean builds passed and final extensions are under verification. RG-003 clock implementation is assigned separately. Pure foundations may proceed; enforcement cannot activate until its runtime prerequisites pass. Full-system tests, benchmarks, model checking, witness durability, process fencing and certificates remain pending.
+
+The [per-agent scrum work log](SCRUM-WORK-LOG.md) records handoffs, findings, failures, corrections and exact evidence. Earlier agent-minute estimates remain estimates; actual historical effort was not recorded. No release completion or main merge is claimed.
