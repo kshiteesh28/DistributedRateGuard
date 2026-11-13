@@ -168,3 +168,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Checks on handoff:** Parsed the live context JSON (14 unique parent story IDs), confirmed named RG-003-A input contracts and pending B/C/D owners, and checked changed Markdown fence balance.
 - **Current board:** API/build and policy/arithmetic components are review-ready; clock component is review-ready with full-story integration pending. All applicable deployment, enforcement and release gates remain open.
 - **Ongoing preparation:** Senior Dev is checking pinned gRPC API compatibility and security defaults for RG-004. No security implementation is represented as complete.
+
+### LOG-020 — 2026-11-13 03:18:18 UTC observation: Release A ownership correction
+
+- **Master:** Found that the earlier RG-003-D assignment solely to RG-013 (C) could postpone Release A's missing-provenance guard. Requested source recheck.
+- **Scrum audit agent:** Re-read PRD 8 and SRD 5 §7/D4; confirmed the guard already applies in A and acknowledged the earlier C-only assignment was too broad. This supersedes that portion of LOG-017 and prior dependency tables.
+- **Corrected contract:** RG-003-D is delivered in RG-011A, with RG-005 completeness, RG-006 participant provenance and RG-007/008 actual commit inputs. Senior Dev implements; Tester independently verifies valid evidence, known violations and missing/incomparable/incomplete evidence. UNKNOWN blocks strict safety PASS before RG-008 acceptance/Release A completion. RG-013 adds credit/formal checks in C.
+- **Master:** Updated story/context/sprint/evidence/LLD addendum and PR body. No clock code or product acceptance criterion changed. Fresh documentation-head CI required.
+- **Master publication finding:** A metadata store of undefined stopped the first correction batch after one story-document write. Re-read current blobs, completed the remaining edits, and will check the final document bundle. No implementation or main files were changed by the failed batch.
