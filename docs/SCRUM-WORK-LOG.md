@@ -14,7 +14,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 
 | Story | Owner/contributors | State | Remaining gate |
 | --- | --- | --- | --- |
-| RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Docker/service integration remains in later work |
+| RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | PR #6 draft; first combined CI passed | Resource-boundary and crypto-failure extensions, final CI, independent acceptance |
 | RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Preparation only; no implementation | Settle serialization/provenance details, then code and Linux evidence |
 | RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
@@ -74,3 +74,25 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Junior Dev:** Completed RG-003 read-only preparation: flagged global versus per-tenant backward-time detection and exact namespace probing as decisions. No clock code was written.
 - **Scrum audit agent:** Assigned an independent board/dependency/log audit. Audit findings are pending.
 - **Next gates:** Final RG-002 CI and reviewer acceptance; then RG-003 code on its own review branch. No release metrics or full-system safety are claimed.
+
+### LOG-008 — 2026-11-13 02:40 UTC: independent Scrum audit
+
+- **Scrum audit agent:** Independently checked current PR heads and successful CI, then identified stale STORIES/sprint/context/PR status. Confirmed that hosted-package evidence does not complete Sprint 0's Docker target/image gate.
+- **Master action:** Updating the board and recording stacked review rules. Docker topology/image-digest evidence remains an open deployment gate owned by Master/Senior Dev; no gate is waived.
+- **Process clarification:** PR #6 targets the verified RG-001 feature branch for independent review. Main merge stays under Product Owner control; dependent PRs require rebase/retarget and fresh checks after their base changes.
+
+### LOG-009 — 2026-11-13 02:40 UTC: RG-002 final extensions and one test defect
+
+- **Senior Dev:** Resumed, supplied factual work handoff, and authored explicit OpenSSL 3 provider-based hashing/failure test. The injected provider failure is isolated in a child process; parent crypto settings are unchanged.
+- **Tester:** Added coherent positive/negative collection caps, integer/identifier bounds, exact/over 64 MiB direct loader tests, and typed diagnostic expectations. Local sanity checked independent encodings only; root CI verifies production behavior.
+- **Master:** Published extensions through `6d3e55f42b144e4999aad571cfca039e8f74a086`; required OpenSSL 3 in CMake.
+- **Evidence:** [run 43353532557](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43353532557) compiled successfully. Crypto-failure and direct byte-cap C++ checks passed; integration suite reported one failing test.
+- **Finding / responsible owner:** Tester's unknown-field mutation supplied malformed JSON because it removed the fixture's trailing newline rather than its closing brace. Production correctly returned invalid_json. Tester replaced this with parsed-object mutation/serialization and audited the remaining raw mutations.
+- **Master handoff:** Published fixture correction `7640975031aee2af2ee7ae855ce88b76115f1569`; fresh CI pending. The failed run remains visible; no final acceptance is claimed from it.
+
+### LOG-010 — 2026-11-13 02:40 UTC: RG-003 preparation and design review
+
+- **Junior Dev:** Located binding clock requirements and raised comparison/provenance questions before coding.
+- **Senior Dev:** Reviewed global mutex sampling, tenant-to-clock lock order, sticky failures, manifest matching and runtime namespace restrictions. This was design review, not code review.
+- **Master:** Selected bounded startup provenance and serialized sticky-fail sampling. Upstream Linux review found that timens_offsets reads the namespace for children; design therefore compares current/children namespace device/inode before and after offsets. Production probing is leader-only before workers.
+- **Assignment:** Junior Dev implements the isolated clock component/tests in temporary working files; Senior Dev reviews it independently after handoff. No clock implementation or Docker/shared-process result has been published yet.
