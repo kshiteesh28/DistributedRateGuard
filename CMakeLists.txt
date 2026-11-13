@@ -165,6 +165,8 @@ add_test(NAME rateguard.policy_oracle
     "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/policy_loader_integration.py")
 set_tests_properties(rateguard.policy rateguard.policy_oracle PROPERTIES TIMEOUT 60)
 
+option(RATEGUARD_SANITIZE_CLOCK "Instrument clock library/tests with address and undefined-behavior sanitizers" OFF)
+
 # RG-003 verified Linux clock provenance and serialized sticky-fail sampling.
 find_package(Threads REQUIRED)
 add_library(rateguard_clock src/platform/clock_linux.cpp)
@@ -172,6 +174,13 @@ target_include_directories(rateguard_clock PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(rateguard_clock PUBLIC Threads::Threads)
 target_compile_options(rateguard_clock PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_CLOCK)
+  if(NOT CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    message(FATAL_ERROR "Clock sanitizer checks require a supported GCC/Clang compiler")
+  endif()
+  target_compile_options(rateguard_clock PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_clock INTERFACE -fsanitize=address,undefined)
+endif()
 add_executable(rateguard_clock_tests tests/clock_test.cpp)
 target_link_libraries(rateguard_clock_tests PRIVATE rateguard_clock)
 add_test(NAME rateguard.clock COMMAND rateguard_clock_tests)
