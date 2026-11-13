@@ -15,7 +15,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | Story | Owner/contributors | State | Remaining gate |
 | --- | --- | --- | --- |
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
-| RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | PR #6 draft; first combined CI passed | Resource-boundary and crypto-failure extensions, final CI, independent acceptance |
+| RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 draft pending lock-promotion CI | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: requirements/API preparation; Master/Senior Dev: design review | Preparation only; no implementation | Settle serialization/provenance details, then code and Linux evidence |
 | RG-004–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
@@ -96,3 +96,10 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Senior Dev:** Reviewed global mutex sampling, tenant-to-clock lock order, sticky failures, manifest matching and runtime namespace restrictions. This was design review, not code review.
 - **Master:** Selected bounded startup provenance and serialized sticky-fail sampling. Upstream Linux review found that timens_offsets reads the namespace for children; design therefore compares current/children namespace device/inode before and after offsets. Production probing is leader-only before workers.
 - **Assignment:** Junior Dev implements the isolated clock component/tests in temporary working files; Senior Dev reviews it independently after handoff. No clock implementation or Docker/shared-process result has been published yet.
+
+### LOG-011 — 2026-11-13 02:45 UTC: RG-002 verification and independent acceptance
+
+- **Master:** Inspected successful [run 43353832066](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43353832066) at corrected head `7640975031aee2af2ee7ae855ce88b76115f1569` / merge ref `9be7be9861ddc0f0bd04718e6d500781de5b18ca`; archived the original manifest in [RG-002 evidence](evidence/RG-002.md).
+- **Tester:** Independently fetched actual job logs and source. Confirmed 14 production policy integration methods, direct exact/over 64 MiB Load checks, real isolated-provider failure, 9 CTest groups in both clean builds, 16 Python unit checks, 12 generated-file matches and 16 actual C++20 translation units. No remaining RG-002 component blocker.
+- **Master:** Updated stories/context/sprint/evidence consistently. Promoting the exact eight-package lock from frozen-pending to validated based on this observed result; metadata/lock-promotion CI must still pass before PR #6 becomes ready.
+- **Scope:** Pure immutable policy, canonical identity and accounting only. Runtime trust-root validation remains RG-004; quota service, witness, Docker deployment and all release gates remain outstanding.
