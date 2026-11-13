@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <deque>
 #include <fstream>
+#include <fcntl.h>
 #include <iostream>
 #include <limits>
 #include <memory>
@@ -83,15 +84,38 @@ void ParserCases() {
   const int temp_fd = ::mkstemp(temp_path);
   Expect(temp_fd >= 0, "unique temporary file created");
   if (temp_fd < 0) return;
-  if (temp_fd >= 0) ::close(temp_fd);
-  const std::string path(temp_path);
-  { std::ofstream file(path, std::ios::binary | std::ios::trunc); file << std::string(64, 'x'); }
-  const auto exact_file = detail::ReadBoundedFile(path.c_str(),64);
+  auto set_bytes = [temp_fd](const std::string& bytes) {
+    if (::ftruncate(temp_fd, 0) != 0 || ::lseek(temp_fd, 0, SEEK_SET) < 0) return false;
+    std::size_t offset = 0;
+    while (offset < bytes.size()) {
+      const auto n = ::write(temp_fd, bytes.data() + offset, bytes.size() - offset);
+      if (n <= 0) return false;
+      offset += static_cast<std::size_t>(n);
+    }
+    return ::lseek(temp_fd, 0, SEEK_SET) == 0;
+  };
+  Expect(set_bytes(""), "empty bounded-reader fixture created");
+  const auto empty_file = detail::ReadBoundedFd(temp_fd, 0);
+  Expect(std::get_if<std::string>(&empty_file) && std::get<std::string>(empty_file).empty(),
+         "zero-byte bound accepts empty input");
+  Expect(set_bytes("x"), "one-byte bounded-reader fixture created");
+  Expect(IsError(detail::ReadBoundedFd(temp_fd,0),ClockFailureReason::InputTooLong),
+         "zero-byte bound detects one byte over");
+  Expect(set_bytes(std::string(64, 'x')), "exact-limit bounded-reader fixture created");
+  const auto exact_file = detail::ReadBoundedFd(temp_fd,64);
   Expect(std::get_if<std::string>(&exact_file) != nullptr, "bounded reader accepts exact limit");
-  { std::ofstream file(path, std::ios::binary | std::ios::trunc); file << std::string(65, 'x'); }
-  Expect(IsError(detail::ReadBoundedFile(path.c_str(),64),ClockFailureReason::InputTooLong),
+  Expect(set_bytes(std::string(65, 'x')), "over-limit bounded-reader fixture created");
+  Expect(IsError(detail::ReadBoundedFd(temp_fd,64),ClockFailureReason::InputTooLong),
          "bounded reader detects one byte over limit");
-  ::unlink(path.c_str());
+  Expect(IsError(detail::ReadBoundedFd(temp_fd,513),ClockFailureReason::InputTooLong),
+         "maximum bound itself is capped");
+  Expect(IsError(detail::ReadBoundedFd(-1,0),ClockFailureReason::PlatformRead),
+         "negative descriptor is a platform read failure");
+  Expect(::fcntl(temp_fd, F_GETFD) >= 0, "bounded reader leaves caller-owned fd open");
+  ::close(temp_fd);
+  Expect(IsError(detail::ReadBoundedFd(temp_fd,0),ClockFailureReason::PlatformRead),
+         "closed descriptor read is surfaced as platform failure");
+  ::unlink(temp_path);
 }
 
 void IdentityCases() {
