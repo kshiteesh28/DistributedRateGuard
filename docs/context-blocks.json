@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_component_verified_rg002_final_verification_rg003_assigned",
+    "implementation": "rg001_rg002_components_verified_rg003_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "No implementation merged to main. RG-001 component verified, full Sprint0 Docker deployment gate remains open. RG-002 first combined CI passed; final caps/crypto extensions and corrected test fixture require final CI. RG-003 isolated implementation assigned."
+    "note": "No implementation merged to main. RG-001 and RG-002 components verified; full Sprint0 Docker deployment gate remains open. RG-003 isolated implementation assigned."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -80,18 +80,18 @@
       "remaining": "Docker target/image-digest and runtime integration gates are not satisfied by hosted package tests"
     },
     "latest_rg002": {
-      "status": "final_verification_pending",
-      "first_combined_run": 43332249683,
-      "extended_run": 43353532557,
-      "extended_run_result": "one_test_fixture_failure_fixed_pending_rerun",
-      "corrected_head": "7640975031aee2af2ee7ae855ce88b76115f1569"
+      "status": "component_verified_independent_acceptance_passed",
+      "passed_run": 43353832066,
+      "tested_head": "7640975031aee2af2ee7ae855ce88b76115f1569",
+      "merge_ref": "9be7be9861ddc0f0bd04718e6d500781de5b18ca",
+      "evidence": "docs/evidence/RG-002.md",
+      "scope": "Pure policy/arithmetic; no quota service, runtime certificate or clock claims"
     }
   },
   "next_actions": [
-    "Finish RG-002 final CI and independent acceptance; preserve failure evidence.",
+    "Complete lock-promotion CI and submit RG-002 PR for review; main merge remains unauthorized.",
     "Continue RG-003 isolated component with independent review and Linux checks.",
-    "Keep actual Docker target/image-digest gate open; no enforcement activation.",
-    "Review PR #5/#6; no main merge without Product Owner authorization."
+    "Keep actual Docker target/image-digest gate open; no enforcement activation."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -208,7 +208,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-002",
       "link_type": "repository_story",
       "release": "A",
-      "status": "implemented_final_verification_pending",
+      "status": "component_accepted_review_pending",
       "depends_on": [
         "RG-001"
       ],
@@ -280,7 +280,7 @@
             "AT-01",
             "AT-04"
           ],
-          "status": "final_extension_verification_pending"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-002-AC02",
@@ -289,7 +289,7 @@
             "AT-02",
             "AT-03"
           ],
-          "status": "passed_component_arithmetic_final_review_pending"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-002-AC03",
@@ -297,14 +297,16 @@
           "evidence_ids": [
             "AT-21"
           ],
-          "status": "passed_component_arithmetic_final_review_pending"
+          "status": "passed_component_scope_see_evidence"
         }
       ],
       "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
       "implementation_evidence": {
+        "path": "docs/evidence/RG-002.md",
         "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/6",
-        "first_combined_run": 43332249683,
-        "scope": "Pure policy/encoding/arithmetic; final extensions under verification"
+        "run": 43353832066,
+        "tested_head": "7640975031aee2af2ee7ae855ce88b76115f1569",
+        "scope": "Pure policy/encoding/arithmetic; independent component acceptance"
       }
     },
     {
