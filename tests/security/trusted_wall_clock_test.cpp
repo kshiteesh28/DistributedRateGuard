@@ -26,9 +26,7 @@ void Check(bool condition, const char* label) {
   }
 }
 TrustedWallClockFailure Fail(TrustedWallClockFailureReason reason) {
-  return {{contract::ErrorCategory::Dependency, contract::ErrorCode::Unavailable,
-           contract::RetryDisposition::Never, contract::Commitment::NotCommitted},
-          reason};
+  return {reason};
 }
 
 class FakePlatform final : public ITrustedWallClockPlatform {
@@ -62,11 +60,27 @@ TrustedWallClockResult<std::unique_ptr<TrustedWallClock>> Create(
 
 bool HasFailure(const auto& result, TrustedWallClockFailureReason reason) {
   const auto* failure = std::get_if<TrustedWallClockFailure>(&result);
-  return failure && failure->reason == reason &&
-         failure->service_error.category == contract::ErrorCategory::Dependency &&
-         failure->service_error.code == contract::ErrorCode::Unavailable &&
-         failure->service_error.retry == contract::RetryDisposition::Never &&
-         failure->service_error.commitment == contract::Commitment::NotCommitted;
+  if (!failure || failure->reason != reason) return false;
+  const auto service = failure->ToServiceError(contract::Commitment::NotCommitted);
+  return service.category == contract::ErrorCategory::Dependency &&
+         service.code == contract::ErrorCode::Unavailable &&
+         service.retry == contract::RetryDisposition::Never &&
+         service.commitment == contract::Commitment::NotCommitted;
+}
+
+void TestCommitmentMapping() {
+  const TrustedWallClockFailure failure{
+      TrustedWallClockFailureReason::BackwardsRead};
+  for (const auto commitment : {contract::Commitment::NotCommitted,
+                                contract::Commitment::Possible,
+                                contract::Commitment::Committed}) {
+    const auto service = failure.ToServiceError(commitment);
+    Check(service.category == contract::ErrorCategory::Dependency &&
+              service.code == contract::ErrorCode::Unavailable &&
+              service.retry == contract::RetryDisposition::Never &&
+              service.commitment == commitment,
+          "clock error preserves caller-supplied operation commitment");
+  }
 }
 
 void TestAllowedAndRejectedStates() {
@@ -209,6 +223,7 @@ void TestInitialFailureAndConcurrency() {
 }  // namespace
 
 int main() {
+  TestCommitmentMapping();
   TestAllowedAndRejectedStates();
   TestStatusFlagsAndTypedErrors();
   TestRangeOrderingAndStickyFailure();
