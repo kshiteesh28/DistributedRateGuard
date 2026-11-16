@@ -114,6 +114,14 @@ jobs:
           print("NATIVE_UTC_READY_OBSERVATION" if result.returncode == 0 else "NATIVE_UTC_NOT_READY_DEPLOYMENT_BLOCKED")
           PY
 
+      - name: Observe constrained Docker time capabilities (not service deployment)
+        run: |
+          python3 tools/probes/docker_time_preflight.py \
+            --wall-probe "$(realpath build/trusted_wall_clock_probe)" \
+            --clock-probe "$(realpath build/rateguard_clock_linux_smoke)" \
+            --image ubuntu:24.04 > build/docker-time-preflight.json
+          cat build/docker-time-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
@@ -134,5 +142,9 @@ jobs:
           path: |
             build/build-manifest.json
             build/native-trusted-time.json
+            build/docker-time-preflight.json
+            build/Testing/Temporary/LastTest.log
+            build-clock-sanitized/Testing/Temporary/LastTest.log
+            build-security-sanitized/Testing/Temporary/LastTest.log
           if-no-files-found: error
           retention-days: 30
