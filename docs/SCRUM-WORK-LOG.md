@@ -185,3 +185,12 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Review input retained:** [Senior preparation and source links](reviews/RG-004-senior-preparation.md). Earlier questions are retained as historical input and linked to their selected defaults.
 - **Required next evidence:** Compile/handshake verifier APIs on frozen packages; prove reused/reconnected/resumed sessions either preserve exact peer pin verification or fail closed; validate real Docker adjtimex/synchronization preflight without claiming fake-time tests prove deployment. No authentication code, PKI provisioning or TLS acceptance is claimed.
 - **Handoff state:** PR #5/#6/#8 are review-ready component work; PR #7 contains this live scrum log and planning handoff. Main remains unchanged. The full service and releases remain incomplete.
+
+### LOG-022 — 2026-11-16 22:48:48 UTC observation: implementation resumed
+
+- **Master:** Re-read current main PRD 8 / SRD 5 / LLD 5, live security decisions/context/log, and PR #5/#6/#7/#8. All remain open/unmerged; main is still `71393cf11a0f8508cfb7e85b85538ccc22067f75`. No root AGENTS.md found in the current working directory or on main.
+- **Master:** Created `feature/RG-004-security-probes` from verified clock head `f656648c884ce9bbe6fcb917566898a2f01b4c0e`; copied reviewed security defaults before source work. No main write.
+- **Scrum Master:** Assigned independent readiness/AC/role planning for the security slice, with agent-minute estimates and component-versus-integration gates.
+- **Senior Dev:** Assigned real gRPC 1.51.1/OpenSSL 3 custom URI/DER leaf-pin verifier and ephemeral mTLS RPC compatibility probes. No quota handler or TLS success claimed yet.
+- **Tester:** Assigned independent negative/reuse/expiry acceptance matrix and tests. Junior will own trusted wall time after the Scrum readiness review frees the fourth execution slot.
+- **Environment:** Local host still has Clang but no CMake/Ninja/protoc/Docker/gh on PATH. Actual gRPC/OpenSSL compilation and Linux evidence must come from GitHub CI, not local stubs. Temporary local files are development staging; GitHub remains the shared review source.
