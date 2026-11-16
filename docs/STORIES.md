@@ -119,7 +119,7 @@ Acceptance criteria (not run):
 
 **Implement supervisor lifecycle and positive fencing** · Release A · Planned
 
-Dependencies: RG-002, RG-003, RG-004, RG-005.
+Dependencies: RG-002, RG-003-A, RG-005 and named RG-004-A/B inputs. RG-004-B is pending; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
 
 Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
