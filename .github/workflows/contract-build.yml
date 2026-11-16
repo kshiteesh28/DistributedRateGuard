@@ -90,6 +90,52 @@ jobs:
           cmake --build build-clock-sanitized --parallel 2 --target rateguard_clock_tests rateguard_clock_independent_tests rateguard_clock_linux_smoke
           ctest --test-dir build-clock-sanitized --output-on-failure -R '^rateguard[.]clock($|_independent$|_linux$)'
 
+      - name: Check security fixtures and trusted UTC under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-security-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_SECURITY=ON
+          cmake --build build-security-sanitized --parallel 2 --target rateguard_tls_compatibility_tests rateguard_trusted_wall_clock_tests rateguard_trusted_wall_clock_independent_tests
+          ctest --test-dir build-security-sanitized --output-on-failure -R '^rateguard[.](mtls_compatibility|trusted_wall_clock|trusted_wall_clock_independent)
+        run: |
+          python3 tools/capture_build_manifest.py \
+            --source-root . \
+            --build-dir build \
+            --codegen-tools build/codegen-tools.json \
+            --output build/build-manifest.json \
+            --build-result passed
+          cat build/build-manifest.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify exact observed toolchain against the frozen lock
+        run: python3 tools/verify_build_manifest.py --lock build-lock.json --manifest build/build-manifest.json
+
+      - name: Preserve the observed build manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rg001-build-manifest-${{ github.run_id }}
+          path: |
+            build/build-manifest.json
+            build/native-trusted-time.json
+          if-no-files-found: error
+          retention-days: 30
+
+
+      - name: Observe native trusted UTC source (not deployment acceptance)
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, subprocess
+          result = subprocess.run(["build/trusted_wall_clock_probe"], text=True, capture_output=True, timeout=10)
+          data = json.loads(result.stdout)
+          if result.returncode not in (0, 2) or data.get("trusted") is not (result.returncode == 0):
+              raise SystemExit("native UTC probe returned an inconsistent result")
+          record = {"scope": "GitHub hosted Linux only; Docker/target deployment gate remains separate",
+                    "exit_code": result.returncode, "observation": data}
+          pathlib.Path("build/native-trusted-time.json").write_text(json.dumps(record, indent=2) + "\n")
+          print(json.dumps(record))
+          print("NATIVE_UTC_READY_OBSERVATION" if result.returncode == 0 else "NATIVE_UTC_NOT_READY_DEPLOYMENT_BLOCKED")
+          PY
+
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
