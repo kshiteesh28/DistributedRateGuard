@@ -238,3 +238,24 @@ target_link_libraries(rateguard_trusted_wall_clock_independent_tests PRIVATE rat
 add_test(NAME rateguard.trusted_wall_clock_independent COMMAND rateguard_trusted_wall_clock_independent_tests)
 add_executable(trusted_wall_clock_probe tools/probes/trusted_wall_clock_probe.cpp)
 target_link_libraries(trusted_wall_clock_probe PRIVATE rateguard_trusted_wall_clock)
+
+# Test-only verifier bypass: never linked into the real security library.
+set(RG004_MUTANT_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/test-mutants/tls_certificate_verifier_bypass.cpp")
+add_custom_command(OUTPUT "${RG004_MUTANT_SOURCE}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/generate_mtls_verifier_bypass_mutant.py"
+    --source "${CMAKE_CURRENT_SOURCE_DIR}/src/security/tls_certificate_verifier.cpp"
+    --output "${RG004_MUTANT_SOURCE}"
+  DEPENDS src/security/tls_certificate_verifier.cpp tools/tests/generate_mtls_verifier_bypass_mutant.py
+  VERBATIM)
+add_library(rateguard_security_verifier_mutant STATIC "${RG004_MUTANT_SOURCE}")
+target_include_directories(rateguard_security_verifier_mutant PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_security_verifier_mutant PUBLIC gRPC::grpc++ OpenSSL::Crypto)
+target_compile_options(rateguard_security_verifier_mutant PRIVATE -Wall -Wextra -Werror -pedantic -Wno-unused-function)
+add_executable(rateguard_tls_bypass_mutant tests/security/ephemeral_pki.cpp tests/security/mtls_probe_test.cpp)
+target_include_directories(rateguard_tls_bypass_mutant PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_tls_bypass_mutant PRIVATE
+  rateguard_security_verifier_mutant rateguard_proto OpenSSL::Crypto Threads::Threads)
+add_test(NAME rateguard.mtls_verifier_bypass
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/mtls_verifier_bypass_mutation_test.py"
+    "$<TARGET_FILE:rateguard_tls_bypass_mutant>")
+set_tests_properties(rateguard.mtls_verifier_bypass PROPERTIES TIMEOUT 110)
