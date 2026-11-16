@@ -593,6 +593,25 @@
           "run": 43980308204,
           "scope": "Exact leaf pin/URI TLS compatibility, independent verifier-bypass detection, trusted UTC primitive; not production registry/authorization, connection-expiry or epoch fencing"
         }
+      ],
+      "integration_dependencies": [
+        {
+          "producer_story": "RG-006",
+          "contract": "epoch_manifest_and_positive_fencing",
+          "status": "pending",
+          "required_for": [
+            "RG-004-AC02"
+          ],
+          "purpose": "Fenced trust replacement; full-story acceptance follows supervisor lifecycle evidence"
+        },
+        {
+          "producer_story": "RG-005",
+          "contract": "real_event_and_export_privacy",
+          "status": "pending",
+          "required_for": [
+            "RG-004-AC03"
+          ]
+        }
       ]
     },
     {
@@ -693,7 +712,6 @@
       "depends_on": [
         "RG-002",
         "RG-003",
-        "RG-004",
         "RG-005"
       ],
       "prd_ids": [
@@ -798,6 +816,19 @@
           "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
           "evidence": "docs/evidence/RG-003.md",
           "purpose": "Verified clock for development; full RG-003 integration not waived"
+        },
+        {
+          "contract": "RG-004-A",
+          "producer_story": "RG-004",
+          "revision": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+          "status": "verified",
+          "purpose": "TLS pin verifier/trusted UTC development input; not full authentication acceptance"
+        },
+        {
+          "contract": "RG-004-B",
+          "producer_story": "RG-004",
+          "status": "pending_not_verified",
+          "purpose": "Validated immutable certificate registry input required for manifest/participant identity binding; no full RG-004 Done prerequisite"
         }
       ]
     },
