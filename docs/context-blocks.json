@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-003-clock-provenance",
-    "implementation_base_branch": "feature/RG-002-policy-arithmetic"
+    "implementation_branch": "feature/RG-004-security-probes",
+    "implementation_base_branch": "feature/RG-003-clock-provenance"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_rg002_components_verified_rg003_component_verified_integration_pending",
+    "implementation": "rg004_security_and_trusted_wall_clock_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Clock component verified; full story and deployment/service/checker/release gates remain pending. Main unchanged."
+    "note": "Verified prior components remain on unmerged review branches. RG-004 compatibility/clock implementation resumed 2026-11-16; no TLS or deployment acceptance yet."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -100,10 +100,10 @@
     }
   },
   "next_actions": [
-    "Run RG-004 compatibility probes under recorded security-v1 defaults before component implementation acceptance.",
-    "Keep RG-003-B/C and Release A RG-003-D integrations pending; RG-013 adds C extensions.",
-    "Review ready component PRs #5/#6/#8 and scrum documentation PR #7; main merge remains under Product Owner control.",
-    "Docker target/image-digest, enforcement, benchmarks and formal assurance remain open."
+    "Build/verify actual gRPC1.51/OpenSSL3 pin-verifier handshake probe and trusted wall-clock component on a stacked RG-004 branch.",
+    "Independent QA validates identity rejection, reuse/expiry and UTC trust failure paths; component input is not full story Done.",
+    "Keep RG-003-B/C and Release A RG-003-D integration gates pending; no enforcement activation.",
+    "Maintain live per-agent work log and review gates; no main merge without Product Owner command."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -479,7 +479,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "decisions_recorded_compatibility_probes_required",
+      "status": "in_progress_compatibility_and_trusted_time",
       "depends_on": [
         "RG-001",
         "RG-002"
