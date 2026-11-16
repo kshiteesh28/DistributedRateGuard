@@ -1,7 +1,7 @@
 # RG-004 security decisions — revision 2
 
 **Date:** 2026-11-16 · **Decision owner:** Master technical lead  
-**Status:** Selected v1 implementation defaults; compatibility and deployment evidence pending. No authentication implementation or passing TLS test is claimed.  
+**Status:** Selected v1 defaults. RG-004-A TLS/UTC compatibility input independently accepted; production authorization, connection lifecycle and epoch/deployment integration remain pending.  
 **Sources:** PRD 8; SRD 5 D1/D2/D9; LLD 5 A-02 / §§9,16,17; [policy-v1](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-002-policy-arithmetic/docs/contracts/policy-v1.md).  
 **Review:** Senior Dev performed requirements extraction and pinned-source review; Master selected the defaults below. This record adds internal configuration/provisioning detail without changing canonical policy-v1 or release gates.
 
@@ -23,7 +23,7 @@
 
 ## Pinned API evidence and remaining prototypes
 
-Senior Dev verified source support in **gRPC C++ v1.51.1**, not a successful build/handshake: experimental ExternalCertificateVerifier, TlsChannelCredentialsOptions and TlsServerCredentialsOptions expose URI SANs and peer leaf PEM. The custom verifier runs after TLS handshake before peer-check completion; rejection prevents proceeding to RPC dispatch. Full-chain PEM is not guaranteed. Keep server-certificate verification enabled and server client-certificate request policy REQUIRE_AND_VERIFY.
+Initial source review identified support in **gRPC C++ v1.51.1**: experimental ExternalCertificateVerifier, TlsChannelCredentialsOptions and TlsServerCredentialsOptions expose URI SANs and peer leaf PEM. The custom verifier runs after TLS handshake before peer-check completion; rejection prevents proceeding to RPC dispatch. Full-chain PEM is not guaranteed. Keep server-certificate verification enabled and server client-certificate request policy REQUIRE_AND_VERIFY.
 
 Primary sources: [certificate verifier API](https://github.com/grpc/grpc/blob/v1.51.1/include/grpcpp/security/tls_certificate_verifier.h), [TLS credentials options](https://github.com/grpc/grpc/blob/v1.51.1/include/grpcpp/security/tls_credentials_options.h), [TLS connector population and peer check](https://github.com/grpc/grpc/blob/v1.51.1/src/core/lib/security/security_connector/tls/tls_security_connector.cc), [adjtimex states and flags](https://man7.org/linux/man-pages/man2/adjtimex.2.html).
 
@@ -42,3 +42,7 @@ No remaining behavior is delegated to an unrecorded default. Prototype/operating
 
 - **Revision 2 (2026-11-16):** Senior review corrected the Master-assigned primitive commitment contract: operation commitment belongs to the caller, including after ALLOW. Clarified that the port's sticky trust-loss state is local; participant readiness and epoch-wide fencing remain service/supervisor integration. No PRD/SRD gate, canonical policy encoding, or quota algorithm changed.
 - **Revision 1 (2026-11-13):** Selected SEC-01–11 before compatibility implementation; source research did not claim a compiled TLS or deployment result.
+
+## Current evidence status (2026-11-16)
+
+[PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9) and [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204) close the initial compile/handshake compatibility prerequisite: exact URI/leaf pin rejection before handler execution, positive TLS controls, independent bypass detection and trusted UTC primitive checks passed. [Restricted Docker observations](../evidence/RG-004-A/docker-time-43980308204.json) matched; they are not actual service topology or epoch activation evidence. Items 2–4 and live-service/deployment parts of 5–6 remain open. Historical feature-branch copies precede this evidence update; the selected SEC-01–11 behavior is unchanged.
