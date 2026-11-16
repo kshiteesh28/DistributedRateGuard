@@ -20,17 +20,28 @@ void Expect(bool ok, const char* label) {
   if (!ok) { std::cerr << "FAIL: " << label << '\n'; ++failures; }
 }
 TrustedWallClockFailure Error(TrustedWallClockFailureReason reason) {
-  using namespace rateguard::v1::contract;
-  return {{ErrorCategory::Dependency, ErrorCode::Unavailable,
-           RetryDisposition::Never, Commitment::NotCommitted}, reason};
+  return {reason};
 }
 template <class T> bool FailedAs(const TrustedWallClockResult<T>& value,
                                 TrustedWallClockFailureReason reason) {
   const auto* e = std::get_if<TrustedWallClockFailure>(&value);
-  return e && e->reason == reason &&
-         e->service_error.category == rateguard::v1::contract::ErrorCategory::Dependency &&
-         e->service_error.code == rateguard::v1::contract::ErrorCode::Unavailable &&
-         e->service_error.commitment == rateguard::v1::contract::Commitment::NotCommitted;
+  return e && e->reason == reason;
+}
+
+void CommitmentMappingCases() {
+  using namespace rateguard::v1::contract;
+  const TrustedWallClockFailure failure{TrustedWallClockFailureReason::ClockErrorFlag};
+  for (const auto phase : {Commitment::NotCommitted, Commitment::Possible,
+                           Commitment::Committed}) {
+    const auto mapped = failure.ToServiceError(phase);
+    Expect(mapped.category == ErrorCategory::Dependency &&
+               mapped.code == ErrorCode::Unavailable &&
+               mapped.retry == RetryDisposition::Never && mapped.commitment == phase,
+           "wall-clock failures preserve explicitly supplied commitment phase");
+  }
+  const auto post_allow = failure.ToServiceError(Commitment::Committed);
+  Expect(post_allow.commitment == Commitment::Committed,
+         "post-ALLOW clock trust loss cannot erase known committed outcome");
 }
 
 class FakePlatform final : public ITrustedWallClockPlatform {
@@ -182,6 +193,7 @@ void ConcurrentSerializationCase() {
 }  // namespace
 
 int main() {
+  CommitmentMappingCases();
   StateAndFlagCases();
   InitialReadAndNumericCases();
   StickyAndOrderingCases();
