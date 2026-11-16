@@ -10,7 +10,6 @@
 
 namespace rateguard::security {
 namespace {
-using rateguard::v1::contract::Commitment;
 using rateguard::v1::contract::ErrorCategory;
 using rateguard::v1::contract::ErrorCode;
 using rateguard::v1::contract::RetryDisposition;
@@ -26,9 +25,7 @@ constexpr std::int32_t kTimeError = 5;
 constexpr std::int64_t kMaxNanoseconds = 999'999'999;
 
 TrustedWallClockFailure Failure(TrustedWallClockFailureReason reason) {
-  return {{ErrorCategory::Dependency, ErrorCode::Unavailable,
-           RetryDisposition::Never, Commitment::NotCommitted},
-          reason};
+  return {reason};
 }
 
 std::optional<TrustedWallClockFailureReason> CheckSynchronization(
@@ -53,6 +50,12 @@ std::optional<TrustedWallClockFailureReason> CheckSynchronization(
 }
 
 }  // namespace
+
+rateguard::v1::contract::ServiceError TrustedWallClockFailure::ToServiceError(
+    rateguard::v1::contract::Commitment phase_commitment) const noexcept {
+  return {ErrorCategory::Dependency, ErrorCode::Unavailable,
+          RetryDisposition::Never, phase_commitment};
+}
 
 TrustedWallClock::TrustedWallClock(
     std::unique_ptr<ITrustedWallClockPlatform> platform)
