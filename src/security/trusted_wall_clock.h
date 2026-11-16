@@ -46,8 +46,12 @@ enum class TrustedWallClockFailureReason : std::uint8_t {
 };
 
 struct TrustedWallClockFailure {
-  rateguard::v1::contract::ServiceError service_error;
   TrustedWallClockFailureReason reason;
+
+  // The clock cannot infer whether its caller has committed quota or may
+  // already have returned ALLOW. The operation layer supplies that phase.
+  [[nodiscard]] rateguard::v1::contract::ServiceError ToServiceError(
+      rateguard::v1::contract::Commitment phase_commitment) const noexcept;
 };
 
 template <class T>
