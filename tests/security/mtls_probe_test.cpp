@@ -139,6 +139,18 @@ int main() {
     const auto& unknown_ca_server = foreign_pki.Issue(sec::PeerRole::kReplica,
         "spiffe://rateguard.local/replica/1/0102030405060708090a0b0c0d0e0f10");
 
+    int server_purpose_error = 0;
+    int client_purpose_error = 0;
+    const bool valid_server_chain = pki.VerifyChain(server, true, &server_purpose_error);
+    const bool valid_client_chain = pki.VerifyChain(client, false, &client_purpose_error);
+    if (!valid_server_chain || !valid_client_chain) {
+      // Numeric OpenSSL verification codes only; never print certificates,
+      // private keys, or raw OpenSSL error strings.
+      std::cerr << "PKI_PREFLIGHT_FAIL server_error=" << server_purpose_error
+                << " client_error=" << client_purpose_error << '\n';
+      return 3;
+    }
+
     auto client_registry = std::make_shared<const sec::PeerRegistry>(
         std::vector<sec::RegisteredPeer>{server.registered});
     const sec::ExpectedPeer expected_server{server.registered.uri, server.registered.leaf_der_sha256,
