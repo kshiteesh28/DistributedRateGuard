@@ -10,6 +10,7 @@
 #include <openssl/params.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
+#include <openssl/x509_vfy.h>
 #include <openssl/x509v3.h>
 
 namespace rateguard::security::test {
@@ -56,15 +57,20 @@ X509Ptr MakeCert(EVP_PKEY* key, const std::string& uri, PeerRole role,
   X509_gmtime_adj(X509_getm_notAfter(cert.get()), not_after_delta);
   X509_set_pubkey(cert.get(), key);
   X509_NAME* name = X509_get_subject_name(cert.get());
+  const char* common_name = is_ca ? "RateGuard test root CA" : "RateGuard test leaf";
   X509_NAME_add_entry_by_txt(name, "CN", MBSTRING_ASC,
-                             reinterpret_cast<const unsigned char*>("RateGuard test"), -1, -1, 0);
+                             reinterpret_cast<const unsigned char*>(common_name), -1, -1, 0);
   X509_set_issuer_name(cert.get(), issuer ? X509_get_subject_name(issuer) : name);
   if (is_ca) {
     AddExtension(cert.get(), cert.get(), NID_basic_constraints, "critical,CA:TRUE,pathlen:0");
     AddExtension(cert.get(), cert.get(), NID_key_usage, "critical,keyCertSign,cRLSign");
+    AddExtension(cert.get(), cert.get(), NID_subject_key_identifier, "hash");
+    AddExtension(cert.get(), cert.get(), NID_authority_key_identifier, "keyid:always");
   } else {
     AddExtension(cert.get(), issuer, NID_basic_constraints, "critical,CA:FALSE");
     AddExtension(cert.get(), issuer, NID_key_usage, "critical,digitalSignature");
+    AddExtension(cert.get(), issuer, NID_subject_key_identifier, "hash");
+    AddExtension(cert.get(), issuer, NID_authority_key_identifier, "keyid:always");
     const char* eku = role == PeerRole::kReplica ? "clientAuth,serverAuth" :
                       role == PeerRole::kAdapter ? "clientAuth" : "serverAuth";
     AddExtension(cert.get(), issuer, NID_ext_key_usage, eku);
@@ -125,6 +131,36 @@ EphemeralPki::EphemeralPki() : impl_(new Impl) {
 }
 EphemeralPki::~EphemeralPki() { delete impl_; }
 const std::string& EphemeralPki::root_certificate_pem() const { return impl_->root_pem; }
+
+bool EphemeralPki::VerifyChain(const EphemeralIdentity& identity,
+                               bool server_purpose, int* error_code) const {
+  if (error_code) *error_code = X509_V_ERR_UNSPECIFIED;
+  Bio root_bio(BIO_new_mem_buf(impl_->root_pem.data(),
+                               static_cast<int>(impl_->root_pem.size())), BIO_free);
+  Bio leaf_bio(BIO_new_mem_buf(identity.certificate_pem.data(),
+                               static_cast<int>(identity.certificate_pem.size())), BIO_free);
+  if (!root_bio || !leaf_bio) return false;
+  X509* root_raw = PEM_read_bio_X509(root_bio.get(), nullptr, nullptr, nullptr);
+  X509* leaf_raw = PEM_read_bio_X509(leaf_bio.get(), nullptr, nullptr, nullptr);
+  X509Ptr root(root_raw, X509_free);
+  X509Ptr leaf(leaf_raw, X509_free);
+  if (!root || !leaf) return false;
+  X509_STORE* store_raw = X509_STORE_new();
+  if (!store_raw) return false;
+  std::unique_ptr<X509_STORE, decltype(&X509_STORE_free)> store(store_raw, X509_STORE_free);
+  if (X509_STORE_add_cert(store.get(), root.get()) != 1) return false;
+  X509_STORE_CTX* context_raw = X509_STORE_CTX_new();
+  if (!context_raw) return false;
+  std::unique_ptr<X509_STORE_CTX, decltype(&X509_STORE_CTX_free)> context(
+      context_raw, X509_STORE_CTX_free);
+  if (X509_STORE_CTX_init(context.get(), store.get(), leaf.get(), nullptr) != 1)
+    return false;
+  const int purpose = server_purpose ? X509_PURPOSE_SSL_SERVER : X509_PURPOSE_SSL_CLIENT;
+  if (X509_STORE_CTX_set_purpose(context.get(), purpose) != 1) return false;
+  const int verified = X509_verify_cert(context.get());
+  if (error_code) *error_code = X509_STORE_CTX_get_error(context.get());
+  return verified == 1;
+}
 
 const EphemeralIdentity& EphemeralPki::Issue(PeerRole role, std::string uri) {
   return IssueWithValidity(role, std::move(uri), -60, 24 * 60 * 60);
