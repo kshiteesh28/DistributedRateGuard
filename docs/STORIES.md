@@ -1,6 +1,6 @@
 # Implementation stories
 
-**Date:** 2026-11-12 · **Status:** RG-001 component verified; RG-002 component verified; RG-003 component verified; integration pending. Main merge pending; later stories remain planned.
+**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A compatibility input verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
@@ -75,7 +75,7 @@ Acceptance criteria (unchanged; disposition above):
 
 ## RG-004
 
-**Implement mTLS identity and operation authorization** · Release A · Planned
+**Implement mTLS identity and operation authorization** · Release A · In progress; RG-004-A input accepted
 
 Dependencies: RG-001, RG-002.
 
@@ -87,7 +87,9 @@ Classes: PeerAuthenticator, AuthorizationResolver.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
 
-Acceptance criteria (not run):
+Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. Production registry/manifest binding, authorization, connection-expiry guards and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
+
+Acceptance criteria (full integration not run):
 
 - **RG-004-AC01** — Wrong principal/role/SAN/EKU and spoofed overrides reject without quota allocation. Evidence: AT-04.
 - **RG-004-AC02** — Expired certificate on an existing connection is rejected; fenced new epoch is required for trust rotation. Evidence: AT-04, AT-14.
