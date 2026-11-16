@@ -24,6 +24,8 @@ class EphemeralPki final {
 
   const std::string& root_certificate_pem() const;
   const EphemeralIdentity& Issue(PeerRole role, std::string uri);
+  bool VerifyChain(const EphemeralIdentity& identity, bool server_purpose,
+                   int* error_code) const;
   const EphemeralIdentity& IssueWithValidity(PeerRole role, std::string uri,
                                               long not_before_seconds_from_now,
                                               long not_after_seconds_from_now);
