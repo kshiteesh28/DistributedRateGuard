@@ -194,3 +194,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Senior Dev:** Assigned real gRPC 1.51.1/OpenSSL 3 custom URI/DER leaf-pin verifier and ephemeral mTLS RPC compatibility probes. No quota handler or TLS success claimed yet.
 - **Tester:** Assigned independent negative/reuse/expiry acceptance matrix and tests. Junior will own trusted wall time after the Scrum readiness review frees the fourth execution slot.
 - **Environment:** Local host still has Clang but no CMake/Ninja/protoc/Docker/gh on PATH. Actual gRPC/OpenSSL compilation and Linux evidence must come from GitHub CI, not local stubs. Temporary local files are development staging; GitHub remains the shared review source.
+
+### LOG-023 — 2026-11-16 22:53:11 UTC observation: resumed slice readiness and role corrections
+
+- **Scrum Master:** Independently confirmed SEC-01–11 are specific enough for implementation; compatibility/integration evidence is still required. Suggested separate probe, registry, TLS wrapper, authorization, wall-time and deployment slices. Component acceptance cannot stand in for full RG-004 integration.
+- **Estimate note:** Scrum proposed 4,980 active agent-minutes for its expanded full-story breakdown, compared with the older RG-004 baseline of 720. Master has not adopted this as an additive baseline: scope overlap and calibration need reconciliation after the first probe. These are estimates, not elapsed-time promises or measured effort.
+- **Junior Dev:** Assigned trusted CLOCK_REALTIME/read-only adjtimex component with injected platform seam, sticky fail-closed health and mandatory initial trusted sample. Separate from CLOCK_MONOTONIC quota accounting.
+- **Tester process finding:** Returned a redundant RG-003 acceptance report already recorded previously, including an obsolete C-only UNKNOWN ownership statement. Master redirected QA to RG-004 and the corrected live Release A owner contract. No board or code was changed based on that stale report.
+- **Current artifacts:** Senior is authoring verifier/ephemeral PKI probe inputs; Tester prepared the independent security acceptance matrix. Production TLS compilation and actual trusted-time evidence remain pending.
