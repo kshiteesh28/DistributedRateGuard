@@ -18,7 +18,7 @@ template <typename T, void (*Free)(T*)>
 using OsslPtr = std::unique_ptr<T, decltype(Free)>;
 using Pkey = OsslPtr<EVP_PKEY, EVP_PKEY_free>;
 using X509Ptr = OsslPtr<X509, X509_free>;
-using Bio = OsslPtr<BIO, BIO_free>;
+using Bio = std::unique_ptr<BIO, decltype(&BIO_free)>;
 
 Pkey GenerateKey() {
   EVP_PKEY_CTX* raw = EVP_PKEY_CTX_new_from_name(nullptr, "EC", nullptr);
