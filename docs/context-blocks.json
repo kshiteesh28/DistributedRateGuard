@@ -636,6 +636,20 @@
             "RG-004-AC03"
           ]
         }
+      ],
+      "implemented_input_files": [
+        {
+          "path": "include/rateguard/security/certificate_registry.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        },
+        {
+          "path": "src/security/certificate_registry.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        }
       ]
     },
     {
