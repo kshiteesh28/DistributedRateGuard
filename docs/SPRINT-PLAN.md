@@ -1,7 +1,7 @@
 # Agile Sprint Plan — DistributedRateGuard
 
 **Date:** 2026-11-12  
-**Status:** Planning only. This plan authorizes no implementation or test execution.  
+**Status:** Sprint 0 / RG-001 in progress. Product Owner authorized development and testing on 2026-11-12.  
 **Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
 
 ## Team and control
@@ -83,4 +83,4 @@ Implement credits only after Release A acceptance. Keep fixed-Q grants, same-seq
 
 ## Current gates and explicit wait
 
-The design is specified, but implementation, tests, benchmarks, model checking, shared-clock proof, witness durability evidence, process-fencing evidence, and certificate fixtures are not claimed as completed. The actual target build environment and local Git checkout still need verification. This document and its planning metadata may be committed now; **all development and test work waits for the Product Owner’s explicit proceed command.**
+The design is specified, but implementation, tests, benchmarks, model checking, shared-clock proof, witness durability evidence, process-fencing evidence, and certificate fixtures are not claimed as completed. The actual target build environment and local Git checkout still need verification. The Product Owner issued the proceed command on 2026-11-12. RG-001 is in progress in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5). Later stories remain subject to the dependency and evidence gates above; merge requires Product Owner review.

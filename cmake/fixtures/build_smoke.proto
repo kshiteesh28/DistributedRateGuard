@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package rateguard.ci;
+
+message EchoRequest {
+  string request_id = 1;
+}
+
+message EchoReply {
+  string request_id = 1;
+  bool accepted = 2;
+}
+
+service BuildSmoke {
+  rpc Echo(EchoRequest) returns (EchoReply);
+}

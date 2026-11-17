@@ -1,0 +1,102 @@
+concurrency:
+  group: contract-build-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+name: contract-build
+
+on:
+  pull_request:
+    paths:
+      - "CMakeLists.txt"
+      - "cmake/**"
+      - "proto/**"
+      - "include/**"
+      - "src/**"
+      - "tests/**"
+      - "tools/**"
+      - "build-lock.json"
+      - ".github/workflows/contract-build.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: C++20 protobuf/gRPC contract build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Install pinned CMake and Ninja
+        uses: lukka/get-cmake@56d043d188c3612951d8755da8f4b709ec951ad6
+        with:
+          cmakeVersion: 3.31.6
+          ninjaVersion: 1.11.1
+
+      - name: Install distribution-matched Protobuf and gRPC tools
+        run: |
+          sudo apt-get update
+          python3 - <<'PY'
+          import json, subprocess
+          lock = json.load(open("build-lock.json"))
+          packages = [name + "=" + version for name, version in lock["dependencies"]["package_versions"].items()]
+          subprocess.run(["sudo", "apt-get", "install", "--yes", "python3", *packages], check=True)
+          PY
+          dpkg-query -W libgrpc++-dev libgrpc-dev libprotobuf-dev protobuf-compiler protobuf-compiler-grpc libssl-dev zlib1g-dev
+
+      - name: Check build-lock verifier rejection cases
+        run: python3 -m unittest discover -s tools/tests -v
+
+      - name: Configure C++20 build and protobuf/gRPC generation
+        run: >-
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DRATEGUARD_FETCH_GRPC=OFF
+          -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON
+
+      - name: Build code-generation smoke and available product contracts
+        run: cmake --build build --parallel 2
+
+      - name: Run contract tests
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Reproduce contracts from a second clean build directory
+        run: |
+          cmake -S . -B build-clean -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON
+          cmake --build build-clean --parallel 2
+          ctest --test-dir build-clean --output-on-failure
+          python3 - <<'PY'
+          import hashlib, pathlib
+          def generated(root):
+              base = pathlib.Path(root) / "generated"
+              return {str(p.relative_to(base)): hashlib.sha256(p.read_bytes()).hexdigest()
+                      for p in base.rglob("*") if p.is_file()}
+          first, second = generated("build"), generated("build-clean")
+          if not first or first != second:
+              raise SystemExit("Clean code-generation reproduction mismatch")
+          print(f"Clean reproduction: {len(first)} generated files match")
+          PY
+
+      - name: Capture observed build manifest
+        run: |
+          python3 tools/capture_build_manifest.py \
+            --source-root . \
+            --build-dir build \
+            --codegen-tools build/codegen-tools.json \
+            --output build/build-manifest.json \
+            --build-result passed
+          cat build/build-manifest.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify exact observed toolchain against the frozen lock
+        run: python3 tools/verify_build_manifest.py --lock build-lock.json --manifest build/build-manifest.json
+
+      - name: Preserve the observed build manifest
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: rg001-build-manifest-${{ github.run_id }}
+          path: build/build-manifest.json
+          if-no-files-found: error
+          retention-days: 30

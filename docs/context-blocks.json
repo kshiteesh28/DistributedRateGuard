@@ -13,7 +13,8 @@
     "local_checkout_verified": false,
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
-    "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present."
+    "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
+    "implementation_branch": "feature/RG-001-contract-bootstrap"
   },
   "document_revisions": {
     "PRD": 8,
@@ -23,10 +24,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "not_created_or_verified",
+    "implementation": "rg001_component_verified_review_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Implementation plan and active-minute estimates are published on main. Await the Product Owner's explicit proceed command before development or test execution. The local path remains documentation-only and is not a verified Git checkout."
+    "note": "RG-001 contract component passed independent review and Linux CI 43327798021. Main merge awaits Product Owner approval. Development/testing is authorized; dependent work may be stacked on the verified feature branch."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -71,18 +72,29 @@
       "Source revisions read from GitHub main before changes.",
       "Markdown table widths and code-fence balance checked.",
       "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
-    ]
+    ],
+    "latest_rg001": {
+      "passed": [
+        "Dependency-free C++20 transport helper test",
+        "Manifest Python syntax check",
+        "Unconfigured manifest smoke"
+      ],
+      "pending": [
+        "Generated protobuf C++ compilation and CTest",
+        "Verified Linux build and reproducible dependency lock",
+        "Full canonical policy fixtures and actual gRPC-client retry integration"
+      ]
+    }
   },
   "next_actions": [
-    "Wait for the Product Owner's explicit proceed command; do not begin development or test execution before it.",
-    "After proceed, verify/sync main into a Git checkout and inspect the target Linux build environment, then execute RG-001.",
-    "Re-estimate after RG-001 and the first two implementation PRs using observed environment and review effort."
+    "Review PR #5; do not merge to main without Product Owner approval.",
+    "Continue RG-002 on a separate stacked branch from the verified RG-001 code; preserve release and evidence gates."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
-    "implementation": "Not requested in this documentation task; context does not itself authorize deployment or claim implementation.",
+    "implementation": "RG-001 development and test execution in progress on a feature branch; merge remains subject to Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
-    "development_and_testing": "Wait for the user's explicit proceed command."
+    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation."
   },
   "stories": [
     {
@@ -91,7 +103,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-001",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "component_accepted_review_pending",
       "depends_on": [],
       "prd_ids": [
         "PRD-005",
@@ -104,19 +116,19 @@
       "planned_files": [
         {
           "path": "proto/rateguard/v1/admission.proto",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "proto/rateguard/v1/authority.proto",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "CMakeLists.txt",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "build-lock.json",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         }
       ],
       "classes": [
@@ -158,7 +170,7 @@
             "AT-04",
             "AT-06"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-001-AC02",
@@ -167,7 +179,7 @@
             "AT-13",
             "AT-20"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-001-AC03",
@@ -175,10 +187,17 @@
           "evidence_ids": [
             "AT-07"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_evidence": {
+        "path": "docs/evidence/RG-001.md",
+        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/5",
+        "run": 43327798021,
+        "tested_head": "4c924495a1303054a2c3b26edfae757430ea4d72",
+        "scope": "API/helpers/build/synthetic transport; no quota service"
+      }
     },
     {
       "id": "RG-002",
@@ -1480,7 +1499,7 @@
   "sprint_plan": {
     "path": "docs/SPRINT-PLAN.md",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SPRINT-PLAN.md",
-    "status": "planning_only_waiting_for_product_owner_proceed",
+    "status": "sprint_0_component_verified_review_pending",
     "estimates_unit": "active_agent_minutes",
     "baseline_total_minutes": 15250,
     "feasibility_spike_minutes": {
@@ -1488,6 +1507,6 @@
       "max": 240
     },
     "target_branch": "main",
-    "no_development_or_test_execution_before_proceed": true
+    "no_development_or_test_execution_before_proceed": false
   }
 }
