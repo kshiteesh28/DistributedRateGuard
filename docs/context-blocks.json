@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_date": "2026-11-12",
+  "generated_date": "2026-11-17",
   "recheck_mutable_state": true,
   "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
   "repository": {
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_b2_implementation_verified_documentation_ci_pending",
+    "implementation": "rg004_a_b1_b2_inputs_verified_full_integration_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "A/B1 and B2 implementation inputs independently verified on unmerged review branches. PR11 documentation-only head has a final CI check pending. Full authentication/service/release acceptance remains open."
+    "note": "A/B1/B2 input PRs9/10/11 are ready and unmerged. Full RG-004, deployment, quota/runtime and release gates remain open."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -124,30 +124,33 @@
     },
     "latest_rg004_b2": {
       "id": "RG-004-B2",
-      "status": "implementation_verified_final_documentation_check_pending",
+      "status": "verified_review_ready",
       "branch": "feature/RG-004-peer-authorization",
       "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
       "pull_request": 11,
-      "run": 44022842950,
+      "run": 44023785687,
       "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
       "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
       "documentation_run": 44023785687,
       "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
       "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+      "implementation_run": 44022842950,
+      "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
+      "pull_request_status": "ready_unmerged",
       "public_interfaces": [
         "PeerAuthenticator::Authenticate",
         "AuthorizationResolver::Create",
         "AuthorizationResolver::Resolve"
       ],
-      "acceptance": "independent_QA_and_senior_source_review_passed",
+      "acceptance": "independent_QA_and_senior_review_passed",
       "full_story_done": false
     }
   },
   "next_actions": [
-    "Finish PR11 documentation-only head check without changing its verified implementation.",
-    "Implement per-call client certificate guards and qualify reconnect/resumption; actual commit/forward gates stay with service/adapter stories.",
-    "Implement RG-005 event foundation, RG-006 positive fencing/manifest, RG-007 witness and RG-008/009 strict service/adapter using named inputs.",
-    "Keep full authentication and release gates open; main implementation merges remain Product Owner-controlled."
+    "Implement client per-call certificate/time guards and qualify reconnect/resumption; actual precommit/pregrant/preforward stays separately gated.",
+    "Implement RG-005 bounded events, then RG-006 manifest/positive fencing and RG-007 witness using named verified inputs.",
+    "Complete RG-008/009 strict service/adapter plus RG-011A independent strict oracle before Release A acceptance.",
+    "Maintain per-agent work/evidence logs; main implementation merges remain Product Owner-controlled."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -563,7 +566,10 @@
       ],
       "classes": [
         "PeerAuthenticator",
-        "AuthorizationResolver"
+        "AuthenticatedPeer",
+        "AuthorizationResolver",
+        "AuthorizedOperation",
+        "AuthorizedGrant"
       ],
       "code_design_notes": [
         "Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy.",
@@ -619,7 +625,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Finish documentation-head check, then per-call client guards/reconnect qualification and separately gated service/epoch integration.",
+      "first_action": "Implement client per-call certificate/time guards and qualify reconnect/resumption; actual precommit/pregrant/preforward stays separately gated.",
       "implementation_decisions": {
         "path": "docs/decisions/RG-004-security-v1.md",
         "revision": 2,
@@ -655,16 +661,19 @@
         },
         {
           "id": "RG-004-B2",
-          "status": "implementation_verified_final_documentation_check_pending",
+          "status": "verified_review_ready",
           "branch": "feature/RG-004-peer-authorization",
           "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
           "pull_request": 11,
-          "run": 44022842950,
+          "run": 44023785687,
           "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
           "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
           "documentation_run": 44023785687,
           "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
-          "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof"
+          "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+          "implementation_run": 44022842950,
+          "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
+          "pull_request_status": "ready_unmerged"
         }
       ],
       "integration_dependencies": [
@@ -723,7 +732,13 @@
           "branch": "feature/RG-004-peer-authorization",
           "head": "9d14bb74bd937401471e96e039f651c17c226c43"
         }
-      ]
+      ],
+      "authorization_contract": {
+        "path": "docs/contracts/peer-authorization-v1.md",
+        "revision": 1,
+        "branch": "feature/RG-004-peer-authorization",
+        "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/20210d5fbabcd891dbbb20ab89eca26f3a73a1db/docs/contracts/peer-authorization-v1.md"
+      }
     },
     {
       "id": "RG-005",
@@ -1797,7 +1812,7 @@
   "sprint_plan": {
     "path": "docs/SPRINT-PLAN.md",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SPRINT-PLAN.md",
-    "status": "sprint_0_component_verified_review_pending",
+    "status": "sprint_1_foundations_in_progress_sprint_0_deployment_gate_open",
     "estimates_unit": "active_agent_minutes",
     "baseline_total_minutes": 15250,
     "feasibility_spike_minutes": {
@@ -1812,5 +1827,6 @@
     "canonical_branch": "docs/scrum-work-log",
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
-  }
+  },
+  "generated_at_utc": "2026-11-17T05:30:26Z"
 }
