@@ -412,3 +412,79 @@ add_test(NAME rateguard.peer_authorization_mutation
     --pin-mutant-auth "$<TARGET_FILE:rateguard_peer_authenticator_pin_mutant>"
     --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
 set_tests_properties(rateguard.peer_authorization_mutation PROPERTIES TIMEOUT 500)
+
+# RG-004-B3 client trust inputs, not quota/forwarding implementations.
+add_library(rateguard_client_call_guard src/security/client_call_guard.cpp)
+target_include_directories(rateguard_client_call_guard PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_client_call_guard PUBLIC rateguard_certificate_registry)
+target_compile_options(rateguard_client_call_guard PRIVATE -Wall -Wextra -Werror -pedantic)
+add_library(rateguard_pinned_peer_rpc_client src/security/pinned_peer_rpc_client.cpp)
+target_include_directories(rateguard_pinned_peer_rpc_client PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_pinned_peer_rpc_client PUBLIC
+  rateguard_client_call_guard rateguard_proto gRPC::grpc++ OpenSSL::Crypto)
+target_compile_options(rateguard_pinned_peer_rpc_client PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_SECURITY)
+  foreach(rg_b3_target IN ITEMS rateguard_client_call_guard rateguard_pinned_peer_rpc_client)
+    target_compile_options(${rg_b3_target} PUBLIC
+      -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(${rg_b3_target} INTERFACE -fsanitize=address,undefined)
+  endforeach()
+endif()
+add_executable(rateguard_client_call_guard_tests
+  tests/security/client_call_guard_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_client_call_guard_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_client_call_guard_tests PRIVATE rateguard_client_call_guard)
+target_compile_options(rateguard_client_call_guard_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.client_call_guard COMMAND rateguard_client_call_guard_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+add_executable(rateguard_pinned_client_contract_tests
+  tests/security/pinned_peer_rpc_client_contract_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_pinned_client_contract_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_pinned_client_contract_tests PRIVATE rateguard_pinned_peer_rpc_client)
+target_compile_options(rateguard_pinned_client_contract_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.pinned_client_contract COMMAND rateguard_pinned_client_contract_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.client_call_guard rateguard.pinned_client_contract PROPERTIES TIMEOUT 90)
+
+# Independent sealed-client TLS checks and isolated preflight defect.
+add_executable(rateguard_pinned_client_rpc_tests
+  tools/tests/pinned_peer_rpc_client_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_pinned_client_rpc_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_pinned_client_rpc_tests PRIVATE rateguard_pinned_peer_rpc_client)
+target_compile_options(rateguard_pinned_client_rpc_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.pinned_client_rpc
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/pinned_client_test_runner.py"
+    --binary "$<TARGET_FILE:rateguard_pinned_client_rpc_tests>"
+    --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.pinned_client_rpc PROPERTIES TIMEOUT 140)
+set(RG_B3_MUTANT "${CMAKE_CURRENT_BINARY_DIR}/test-mutants/client_preflight_bypass.cpp")
+add_custom_command(OUTPUT "${RG_B3_MUTANT}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/generate_client_preflight_mutant.py"
+    --source "${CMAKE_CURRENT_SOURCE_DIR}/src/security/client_call_guard.cpp"
+    --output "${RG_B3_MUTANT}"
+  DEPENDS src/security/client_call_guard.cpp tools/tests/generate_client_preflight_mutant.py
+  VERBATIM)
+add_library(rateguard_pinned_client_preflight_mutant STATIC
+  "${RG_B3_MUTANT}" src/security/pinned_peer_rpc_client.cpp)
+target_include_directories(rateguard_pinned_client_preflight_mutant PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_pinned_client_preflight_mutant PUBLIC
+  rateguard_certificate_registry rateguard_proto gRPC::grpc++ OpenSSL::Crypto)
+target_compile_options(rateguard_pinned_client_preflight_mutant PRIVATE -Wall -Wextra -Werror -pedantic)
+add_executable(rateguard_pinned_client_preflight_mutant_tests
+  tools/tests/pinned_peer_rpc_client_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_pinned_client_preflight_mutant_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_pinned_client_preflight_mutant_tests PRIVATE
+  rateguard_pinned_client_preflight_mutant)
+add_test(NAME rateguard.pinned_client_preflight_mutation
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/pinned_client_test_runner.py"
+    --binary "$<TARGET_FILE:rateguard_pinned_client_rpc_tests>"
+    --mutant "$<TARGET_FILE:rateguard_pinned_client_preflight_mutant_tests>"
+    --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.pinned_client_preflight_mutation PROPERTIES TIMEOUT 270)

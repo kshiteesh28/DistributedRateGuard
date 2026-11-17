@@ -96,8 +96,15 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           cmake -S . -B build-security-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_SECURITY=ON
-          cmake --build build-security-sanitized --parallel 2 --target rateguard_tls_compatibility_tests rateguard_trusted_wall_clock_tests rateguard_trusted_wall_clock_independent_tests rateguard_certificate_registry_tests rateguard_certificate_registry_profile_tests rateguard_certificate_registry_independent_tests rateguard_peer_authenticator_tests rateguard_authorization_tests rateguard_peer_authorization_rpc_tests
-          ctest --test-dir build-security-sanitized --output-on-failure -R '^rateguard[.](mtls_compatibility|trusted_wall_clock|trusted_wall_clock_independent|certificate_registry|certificate_registry_profile|certificate_registry_independent|peer_authenticator|authorization|peer_authorization_rpc)$'
+          cmake --build build-security-sanitized --parallel 2 --target rateguard_tls_compatibility_tests rateguard_trusted_wall_clock_tests rateguard_trusted_wall_clock_independent_tests rateguard_certificate_registry_tests rateguard_certificate_registry_profile_tests rateguard_certificate_registry_independent_tests rateguard_peer_authenticator_tests rateguard_authorization_tests rateguard_peer_authorization_rpc_tests rateguard_client_call_guard_tests rateguard_pinned_client_contract_tests rateguard_pinned_client_rpc_tests
+          ctest --test-dir build-security-sanitized --output-on-failure -R '^rateguard[.](mtls_compatibility|trusted_wall_clock|trusted_wall_clock_independent|certificate_registry|certificate_registry_profile|certificate_registry_independent|peer_authenticator|authorization|peer_authorization_rpc|client_call_guard|pinned_client_contract|pinned_client_rpc)$'
+
+      - name: Observe pinned SDK TLS session qualification (production cache disabled)
+        run: |
+          python3 tools/tests/pinned_client_test_runner.py \
+            --binary "$(realpath build/rateguard_pinned_client_rpc_tests)" \
+            --fixture tests/fixtures/policy_v1.json \
+            --qualify --output build/b3-session-qualification.json
 
       - name: Observe native trusted UTC source (not deployment acceptance)
         run: |
@@ -143,6 +150,7 @@ jobs:
             build/build-manifest.json
             build/native-trusted-time.json
             build/docker-time-preflight.json
+            build/b3-session-qualification.json
             build/Testing/Temporary/LastTest.log
             build-clock-sanitized/Testing/Temporary/LastTest.log
             build-security-sanitized/Testing/Temporary/LastTest.log
