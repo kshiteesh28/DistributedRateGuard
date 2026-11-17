@@ -81,6 +81,54 @@ jobs:
           print(f"Clean reproduction: {len(first)} generated files match")
           PY
 
+      - name: Check clock and test fixtures under address/undefined sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-clock-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_CLOCK=ON
+          cmake --build build-clock-sanitized --parallel 2 --target rateguard_clock_tests rateguard_clock_independent_tests rateguard_clock_linux_smoke
+          ctest --test-dir build-clock-sanitized --output-on-failure -R '^rateguard[.]clock($|_independent$|_linux$)'
+
+      - name: Check security fixtures and trusted UTC under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-security-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_SECURITY=ON
+          cmake --build build-security-sanitized --parallel 2 --target rateguard_tls_compatibility_tests rateguard_trusted_wall_clock_tests rateguard_trusted_wall_clock_independent_tests rateguard_certificate_registry_tests rateguard_certificate_registry_profile_tests rateguard_certificate_registry_independent_tests rateguard_peer_authenticator_tests rateguard_authorization_tests rateguard_peer_authorization_rpc_tests rateguard_client_call_guard_tests rateguard_pinned_client_contract_tests rateguard_pinned_client_rpc_tests
+          ctest --test-dir build-security-sanitized --output-on-failure -R '^rateguard[.](mtls_compatibility|trusted_wall_clock|trusted_wall_clock_independent|certificate_registry|certificate_registry_profile|certificate_registry_independent|peer_authenticator|authorization|peer_authorization_rpc|client_call_guard|pinned_client_contract|pinned_client_rpc)$'
+
+      - name: Observe pinned SDK TLS session qualification (production cache disabled)
+        run: |
+          python3 tools/tests/pinned_client_test_runner.py \
+            --binary "$(realpath build/rateguard_pinned_client_rpc_tests)" \
+            --fixture tests/fixtures/policy_v1.json \
+            --qualify --output build/b3-session-qualification.json
+
+      - name: Observe native trusted UTC source (not deployment acceptance)
+        run: |
+          python3 - <<'PY'
+          import json, pathlib, subprocess
+          result = subprocess.run(["build/trusted_wall_clock_probe"], text=True, capture_output=True, timeout=10)
+          data = json.loads(result.stdout)
+          if result.returncode not in (0, 2) or data.get("trusted") is not (result.returncode == 0):
+              raise SystemExit("native UTC probe returned an inconsistent result")
+          record = {"scope": "GitHub hosted Linux only; Docker/target deployment gate remains separate",
+                    "exit_code": result.returncode, "observation": data}
+          pathlib.Path("build/native-trusted-time.json").write_text(json.dumps(record, indent=2) + "\n")
+          print(json.dumps(record))
+          print("NATIVE_UTC_READY_OBSERVATION" if result.returncode == 0 else "NATIVE_UTC_NOT_READY_DEPLOYMENT_BLOCKED")
+          PY
+
+      - name: Observe constrained Docker time capabilities (not service deployment)
+        run: |
+          python3 tools/probes/docker_time_preflight.py \
+            --wall-probe "$(realpath build/trusted_wall_clock_probe)" \
+            --clock-probe "$(realpath build/rateguard_clock_linux_smoke)" \
+            --image ubuntu:24.04 > build/docker-time-preflight.json
+          cat build/docker-time-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
@@ -98,6 +146,13 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: rg001-build-manifest-${{ github.run_id }}
-          path: build/build-manifest.json
+          path: |
+            build/build-manifest.json
+            build/native-trusted-time.json
+            build/docker-time-preflight.json
+            build/b3-session-qualification.json
+            build/Testing/Temporary/LastTest.log
+            build-clock-sanitized/Testing/Temporary/LastTest.log
+            build-security-sanitized/Testing/Temporary/LastTest.log
           if-no-files-found: error
           retention-days: 30
