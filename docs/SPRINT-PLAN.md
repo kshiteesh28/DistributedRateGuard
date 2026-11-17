@@ -1,7 +1,7 @@
 # Agile Sprint Plan — DistributedRateGuard
 
 **Date:** 2026-11-12  
-**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
+**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1 inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
 **Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
 
 ## Team and control
@@ -99,3 +99,6 @@ Implementation readiness depends on verified input deliverables rather than comp
 **RG-004-A** supplies the pin-verifier compatibility and trusted UTC primitive at `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, run 43980308204. It permits registry/authorization development; it does not permit enforcement activation or close RG-004 AC01–03. RG-004-B will validate the immutable certificate registry; RG-006 owns manifest/topology/epoch fencing; RG-008/009 own live commit/forward guard integration. SEC-01–11 revision 2 remains the selected default contract. The 4,980-minute expanded estimate overlaps other stories and is not adopted; neither it nor the historical 720-minute estimate is measured actual effort.
 
 **Dependency correction (2026-11-16):** RG-006 consumes named RG-004-A/B validated security inputs rather than full RG-004 Done. Full RG-004-AC02 consumes RG-006 manifest/fencing evidence and AC03 consumes RG-005 real export/privacy evidence. This removes the implicit story-level cycle; all integration and activation gates remain required. RG-004-B1 is typed public-certificate validation and an immutable metadata snapshot, with no manifest format, authorization or service readiness claim. Its 64 KiB/certificate and 64 MiB aggregate PEM caps are implementation bounds; the 10,000 principal cap comes from policy-v1, not SRD D6's tenant cap.
+
+
+**RG-004-B1** passed [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892) at `6366df84903049fde3fd92243b3aa7bd06c43986`; [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10) is ready and unmerged. [Independent evidence](evidence/RG-004-B1.md) covers typed public-certificate validation and owned metadata only. RG-006 may consume it for manifest development; B2 runtime authorization and all lifecycle/service activation gates remain open. References above to B1 implementation being pending are historical planning, superseded by this observed input status.
