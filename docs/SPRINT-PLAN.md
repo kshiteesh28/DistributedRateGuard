@@ -1,7 +1,7 @@
 # Agile Sprint Plan — DistributedRateGuard
 
 **Date:** 2026-11-12  
-**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1 inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
+**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1/B2 implementation inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
 **Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
 
 ## Team and control
@@ -102,3 +102,6 @@ Implementation readiness depends on verified input deliverables rather than comp
 
 
 **RG-004-B1** passed [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892) at `6366df84903049fde3fd92243b3aa7bd06c43986`; [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10) is ready and unmerged. [Independent evidence](evidence/RG-004-B1.md) covers typed public-certificate validation and owned metadata only. RG-006 may consume it for manifest development; B2 runtime authorization and all lifecycle/service activation gates remain open.
+
+
+**RG-004-B2** peer authentication/authorization passed run 44022842950 at `9d14bb74bd937401471e96e039f651c17c226c43`; QA and Senior accepted the scoped input. [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) is awaiting a final documentation-only check. [B2 evidence](evidence/RG-004-B2.md) covers actual TLS dispatch/spy/expiry and two isolated unsafe variants, not quota/commit/forward/fencing or reconnect/resumption. RG-006 retains A/B1 named prerequisites; B2 does not create a new lifecycle cycle. Remaining integration and full-story gates are unchanged.
