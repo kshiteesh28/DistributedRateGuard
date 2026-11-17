@@ -1,6 +1,6 @@
 # Implementation stories
 
-**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A compatibility input verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
+**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A/B1 inputs verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
@@ -89,6 +89,8 @@ Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-cl
 
 Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. Production registry/manifest binding, authorization, connection-expiry guards and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
 
+Registry input **RG-004-B1** is independently accepted in [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), head `6366df84903049fde3fd92243b3aa7bd06c43986`, [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892). Both 21-test builds and targeted sanitizers passed; the independent suite detects a separately compiled root-pin bypass. [Evidence](evidence/RG-004-B1.md). This permits typed-registry/manifest development, not service activation or full authentication acceptance.
+
 Acceptance criteria (full integration not run):
 
 - **RG-004-AC01** — Wrong principal/role/SAN/EKU and spoofed overrides reject without quota allocation. Evidence: AT-04.
@@ -119,7 +121,7 @@ Acceptance criteria (not run):
 
 **Implement supervisor lifecycle and positive fencing** · Release A · Planned
 
-Dependencies: RG-002, RG-003-A, RG-005 and named RG-004-A/B inputs. RG-004-B is pending; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
+Dependencies: RG-002, RG-003-A, RG-005 and named verified RG-004-A/B1 inputs. B1 supplies typed certificate metadata only; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
 
 Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
