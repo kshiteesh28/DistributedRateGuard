@@ -1,7 +1,7 @@
 # RG-004 security decisions — revision 2
 
 **Date:** 2026-11-16 · **Decision owner:** Master technical lead  
-**Status:** Selected v1 defaults. RG-004-A/B1/B2 implementation inputs independently accepted; full runtime service authorization, connection lifecycle and epoch/deployment integration remain pending.  
+**Status:** Selected v1 defaults. RG-004-A/B1/B2/B3 component inputs independently accepted, including client guards and scoped native SDK reconnect/resumption qualification. Actual runtime service commit/forward, credential provisioning, fenced rotation and epoch/deployment integration remain pending; full AC01–03 remain open.  
 **Sources:** PRD 8; SRD 5 D1/D2/D9; LLD 5 A-02 / §§9,16,17; [policy-v1](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-002-policy-arithmetic/docs/contracts/policy-v1.md).  
 **Review:** Senior Dev performed requirements extraction and pinned-source review; Master selected the defaults below. This record adds internal configuration/provisioning detail without changing canonical policy-v1 or release gates.
 

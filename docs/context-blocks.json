@@ -679,7 +679,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Implement client per-call certificate/time guards and reconnect/resumption qualification using verified A/B1/B2 inputs; keep actual commit/forward, manifest/fencing and full-story acceptance separate.",
+      "first_action": "Integrate verified security inputs at actual service precommit/pregrant/preforward points, with RG006 manifest/fencing and RG005 event/export privacy; full-story ACs remain unverified.",
       "implementation_decisions": {
         "path": "docs/decisions/RG-004-security-v1.md",
         "revision": 2,
@@ -687,8 +687,8 @@
         "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/decisions/RG-004-security-v1.md",
         "status": "selected_defaults_partial_implementation_verified",
         "remaining_evidence": [
-          "Production manifest binding and participant readiness/fencing",
-          "Client per-call server-certificate validation, actual precommit/pregrant/preforward guards, reconnect/resumption qualification",
+          "Production manifest binding, credential provisioning and participant readiness/fenced rotation",
+          "Actual service precommit/pregrant/preforward wiring and deadline/epoch checks; B3 supplies only reusable certificate/time primitives",
           "Real service no-allocation fault cases, event/export privacy and remaining full-story acceptance"
         ]
       },

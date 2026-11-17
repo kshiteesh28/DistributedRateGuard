@@ -374,3 +374,9 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Scrum Master:** Confirmed RG005 may start from RG001; it does not wait for full RG004 or RG006. Retained RG004 A/B1→RG006→final AC02 cycle break and RG011A strict UNKNOWN gate before RG008/Release A acceptance.
 - **Junior Dev:** Proposed typed event envelopes and reserve/publish/seal tests; identified cross-process run-wide budget ownership, producer roster and encoded-size accounting as decisions to freeze before RG005 code. Incorrect live-ref lookup was corrected by Master: branch docs/scrum-work-log exists; fetch files with that ref, not as a path.
 - **Scope:** Full RG004 AC01–03, live services, quota/witness/forwarding/fencing, deployment, benchmarks and model checking remain open. Main remains `71393cf11a0f8508cfb7e85b85538ccc22067f75`; no implementation merge.
+
+### LOG-042 — 2026-11-17 16:49 UTC observation: final scrum readback and handoff corrections
+
+- **Scrum Master:** Independently confirmed PR12 ready/unmerged, exact head/run/evidence, test-only resumption scope, cache disabled, full RG004 ACs open, RG005 next and RG011A Release A prerequisite. Found stale B3-pending wording in the story catalog, context first_action/remaining_evidence and security decision header.
+- **Master:** Corrected those handoff fields without touching tested implementation or binding specs. Readback confirmed 14 unique context stories, a valid dependency DAG, 41 unique prior log IDs, exact evidence JSON and unchanged main. PR7 summary now points through current B3 evidence.
+- **Next:** RG005 event component contract must fix producer roster, encoded byte accounting, reservations/publications/seals and one run-wide 1 GiB budget before code. Static disjoint producer partitions are being evaluated as a bounded option; no RG005 implementation or acceptance is claimed.

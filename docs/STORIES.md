@@ -1,6 +1,6 @@
 # Implementation stories
 
-**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A/B1/B2 implementation inputs verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
+**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A/B1/B2/B3 implementation inputs verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
@@ -75,23 +75,25 @@ Acceptance criteria (unchanged; disposition above):
 
 ## RG-004
 
-**Implement mTLS identity and operation authorization** · Release A · RG-004-A/B1/B2 implementation inputs accepted; full story in progress
+**Implement mTLS identity and operation authorization** · Release A · RG-004-A/B1/B2/B3 implementation inputs accepted; full story in progress
 
 Dependencies: RG-001, RG-002.
 
 Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
-Proposed files: `src/security/peer_authenticator.h`, `src/security/authorization.h`.
+Implemented component paths on review branches: `include/rateguard/security/{peer_authenticator,authorization_resolver,client_call_guard,pinned_peer_rpc_client}.h` and corresponding `src/security/*.cpp`. Service/lifecycle integration remains pending.
 
-Classes: PeerAuthenticator, AuthorizationResolver.
+Classes: PeerAuthenticator, AuthorizationResolver, ClientCallGuard, PinnedPeerRpcClient.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
 
-Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. Production registry/manifest binding, authorization, connection-expiry guards and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
+Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. This initial compatibility slice alone does not provide registry, authorization or connection-expiry guards; B1/B2/B3 supply the scoped inputs below. Manifest binding and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
 
 Registry input **RG-004-B1** is independently accepted in [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), head `6366df84903049fde3fd92243b3aa7bd06c43986`, [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892). Both 21-test builds and targeted sanitizers passed; the independent suite detects a separately compiled root-pin bypass. [Evidence](evidence/RG-004-B1.md). This permits typed-registry/manifest development, not service activation or full authentication acceptance.
 
-Peer/policy input **RG-004-B2** passed [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950) and independent QA/senior review: actual TLS handler/spy/dispatch-expiry and isolated permission/pin controls, 25 tests twice and 9 security sanitizer checks. [Evidence](evidence/RG-004-B2.md). [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) is ready and unmerged after final run 44023785687 at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`; no implementation has been merged. Client guards, commit/forward, reconnect/resumption, manifest/fencing and full service acceptance remain open.
+Peer/policy input **RG-004-B2** passed [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950) and independent QA/senior review: actual TLS handler/spy/dispatch-expiry and isolated permission/pin controls, 25 tests twice and 9 security sanitizer checks. [Evidence](evidence/RG-004-B2.md). [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) is ready and unmerged after final run 44023785687 at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`; no implementation has been merged. Actual commit/forward, manifest/fencing and full service acceptance remain open; B3 supplies the client primitives described next.
+
+Client input **RG-004-B3** passed [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) at `0a1b37b6147adb39c885459253d59c8561c9c5cc`; [PR #12](https://github.com/kshiteesh28/DistributedRateGuard/pull/12) is ready and unmerged. [Evidence](evidence/RG-004-B3.md) covers the sealed typed client, current root/own-client/server validity guards, pre-forward time/identity primitive, independent mTLS/mutation checks and native SDK resumption qualification. Production caching remains disabled. This is not actual ALLOW/forwarding, epoch lifecycle, provisioning or full-story acceptance.
 
 Acceptance criteria (full integration not run):
 
