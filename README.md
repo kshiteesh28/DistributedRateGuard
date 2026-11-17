@@ -1,6 +1,8 @@
 # DistributedRateGuard
 
-A proposed C++20/gRPC service for per-tenant API admission across replicas. It compares strict per-request authority checks with fixed-Q credits spent locally, measuring coordination cost against a bounded additional burst.
+## About
+
+DistributedRateGuard explores how replicated services can enforce per-tenant API quotas with less coordination. It compares strict authority checks with fixed-Q credits held by replicas, measuring the trade-off between authority traffic and bounded burst allowance. The project includes specifications for deterministic replay and correctness evaluation; quota enforcement and release-level guarantees are still in development.
 
 ## Current specification bundle
 
