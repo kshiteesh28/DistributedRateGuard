@@ -144,10 +144,19 @@ struct Fixture final {
           bool strict_policy = false) {
     auto document = nlohmann::json::parse(ReadFile(policy_path));
     document["trust_root_sha256"] = Hex(RootDigest(pki.root_certificate_pem()));
-    if (strict_policy) RemoveCreditBatchFields(document);
+    if (strict_policy) {
+      document["mode"] = "strict";
+      RemoveCreditBatchFields(document);
+    }
     auto loaded = pol::PolicyLoader::Load(document.dump());
     const auto* policy_value = std::get_if<std::shared_ptr<const pol::PolicySnapshot>>(&loaded);
-    Check(policy_value != nullptr, "fixture_policy_load");
+    if (policy_value == nullptr) {
+      // Fixed numeric error category only; never print policy/credential input.
+      const auto* error = std::get_if<pol::PolicyError>(&loaded);
+      Fail(error ? "fixture_policy_load_code_" +
+          std::to_string(static_cast<unsigned>(error->code)) :
+          "fixture_policy_load_unknown");
+    }
     policy = *policy_value;
     const auto digest_result = pol::CanonicalPolicyCodec::Digest(*policy);
     const auto* digest_value = std::get_if<pol::Digest32>(&digest_result);
