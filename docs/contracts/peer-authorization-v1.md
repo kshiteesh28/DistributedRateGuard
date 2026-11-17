@@ -14,6 +14,8 @@ No function creates quota state, performs RPC routing, forwards a request, debit
 
 ## Transport authentication
 
+Production callers must supply ServerContext::auth_context() from the trusted gRPC connector. Never manufacture it from request data or install an AuthMetadataProcessor that rewrites the protected TLS/URI/leaf properties. Synthetic contexts are internal test seams, not evidence of a real handshake.
+
 Require IsPeerAuthenticated() and exactly one of each property:
 
 | Property | Required value/bound |
