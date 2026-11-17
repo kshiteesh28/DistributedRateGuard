@@ -4,7 +4,7 @@
 
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
-**Review branches:** [RG-001 / PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6). No implementation has been merged to main.
+**Review branches:** [RG-001 / #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6), [RG-003-A / #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), [RG-004-A / #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), [RG-004-B1 / #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10). No implementation has been merged to main.
 
 ## Reading and logging rules
 
@@ -19,7 +19,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
-| RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1 inputs verified; PR #9/#10 ready, unmerged; full story in progress | Production registry/auth, connection-expiry/reconnect/resumption and epoch/service integration remain open |
+| RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1 inputs verified; PR #9/#10 ready, unmerged; full story in progress | Manifest binding, authorization, connection-expiry/reconnect/resumption and epoch/service integration remain open |
 | RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
@@ -269,3 +269,9 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Master:** Archived [B1 evidence](evidence/RG-004-B1.md), manifest and native/Docker observations. Docker matched clocks under restricted capabilities again; registry tests ran on hosted Linux, so this is not actual service/container topology or epoch proof.
 - **Master:** Marked PR #10 ready, kept it stacked on PR #9, and updated live board/context/input contracts. RG-006 consumes verified B1 metadata for manifest development, not full RG-004 Done. All full authentication ACs, operational guards, supervisor/witness/service integration and numerical release gates remain open.
 - **Handoff:** Next code slice is B2 peer/policy authorization, then live validity/reconnect guards. No implementation branch was merged to main; prior component PRs remain unmerged. Estimates are still estimates; no active-agent effort is inferred from these observation timestamps.
+
+### LOG-031 — 2026-11-17 04:32 UTC observation: final Scrum audit and handoff consistency
+
+- **Scrum Master:** Independently confirmed PR #9/#10 ready and unmerged, exact B1 evidence counts and unchanged main `71393cf`. Found no overstated full-story, Docker deployment or quota claims; the A/B1 -> RG-006 -> final security integration split is consistent.
+- **Master:** Addressed the audit's three metadata findings: story heading now names both verified inputs; board names remaining manifest/auth integration; context lists actual B1 header/source paths as verified only on the unmerged review branch. Reconciled stale sprint wording and retained historical findings in earlier log entries.
+- **Verification:** Re-reading JSON, unique story/log IDs, dependency references and changed Markdown fences before handoff. Full RG-004 AC01–03 stay open. Next implementation work is B2 authenticated peer/policy authorization; no merge or release completion.
