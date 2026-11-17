@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_a_b1_b2_inputs_verified_full_integration_pending",
+    "implementation": "rg004_b3_client_guards_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "A/B1/B2 input PRs9/10/11 are ready and unmerged. Full RG-004, deployment, quota/runtime and release gates remain open."
+    "note": "Verified A/B1/B2 inputs remain unmerged. PR12 B3 is draft; compiler rework is complete for the current head but runtime/session qualification is not accepted."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -147,10 +147,10 @@
     }
   },
   "next_actions": [
-    "Implement client per-call certificate/time guards and qualify reconnect/resumption; actual precommit/pregrant/preforward stays separately gated.",
-    "Implement RG-005 bounded events, then RG-006 manifest/positive fencing and RG-007 witness using named verified inputs.",
-    "Complete RG-008/009 strict service/adapter plus RG-011A independent strict oracle before Release A acceptance.",
-    "Maintain per-agent work/evidence logs; main implementation merges remain Product Owner-controlled."
+    "Finish PR12 pinned Linux compilation, independent runtime/mutation/sanitizer and session-qualification evidence.",
+    "Keep production session cache disabled; qualification must distinguish actual reuse from same-channel or uncached reconnect.",
+    "Then implement RG-005 events, RG-006 manifest/fencing and RG-007 witness before strict runtime/adapter/Release A acceptance.",
+    "Maintain per-agent logs and leave main implementation merges to Product Owner control."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -526,7 +526,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "a_b1_b2_inputs_verified_full_story_in_progress",
+      "status": "a_b1_b2_verified_b3_build_and_qualification_pending",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -674,6 +674,15 @@
           "implementation_run": 44022842950,
           "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
           "pull_request_status": "ready_unmerged"
+        },
+        {
+          "id": "RG-004-B3",
+          "status": "proposed_build_runtime_acceptance_pending",
+          "branch": "feature/RG-004-client-guards",
+          "head": "d45839a972386ae8da8186e56945e160fa5d8622",
+          "pull_request": 12,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
+          "scope": "Client trust guard/sealed typed calls and native session qualification; production caching disabled, no actual commit/forward/fencing"
         }
       ],
       "integration_dependencies": [
