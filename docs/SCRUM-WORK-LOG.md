@@ -4,7 +4,7 @@
 
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
-**Review branches:** [RG-001 / #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6), [RG-003-A / #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), [RG-004-A / #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), [RG-004-B1 / #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), [RG-004-B2 / #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11). No implementation has been merged to main.
+**Review branches:** [RG-001 / #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6), [RG-003-A / #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), [RG-004-A / #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), [RG-004-B1 / #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), [RG-004-B2 / #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11), [RG-004-B3 / #12](https://github.com/kshiteesh28/DistributedRateGuard/pull/12). No implementation has been merged to main.
 
 ## Reading and logging rules
 
@@ -19,7 +19,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
-| RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1/B2 inputs verified; PR #9/#10/#11 ready, unmerged; full story in progress | Client guards, real commit/forward, reconnect/resumption, manifest/fencing and service/export integration remain open |
+| RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1/B2 inputs verified; PR #9/#10/#11 ready, unmerged; PR #12 draft; full story in progress | Client guards, real commit/forward, reconnect/resumption, manifest/fencing and service/export integration remain open |
 | RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
@@ -356,3 +356,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Run 44125439681:** Production libraries compiled; QA compilation failed on two unsupported WallTime operator> comparisons and an unused expire_server parameter under -Werror. Tester/Senior independently fetched actual errors. Master changed comparisons to the supported ordering and asserted exactly one expiry case.
 - **Current head:** `d45839a972386ae8da8186e56945e160fa5d8622`. Master’s first text patch used an incorrect local parameter name and aborted before writing; the fresh-blob retry succeeded. Complete runtime, sanitizer and session evidence remains pending.
 - **Scope:** NotSent is local to the current attempt, Invoked retains raw uncertain transport/reply, and no component commits quota/forwards/fences. No B3/production/resumption pass or main merge is claimed.
+
+### LOG-040 — 2026-11-17 16:41 UTC observation: B3 runtime fixture correction
+
+- **Observed:** [run 44126127941](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44126127941) built all targets at `d45839a972386ae8da8186e56945e160fa5d8622`. Primary CTest passed 27/29 groups; normal B3 RPC and mutation controls failed at fixture_policy_load. Clean rebuild, sanitizers and session probe were skipped. This is not B3 acceptance.
+- **Tester:** Independently identified that the in-memory STRICT fixture omitted the mode change while removing credit_batch_units. An earlier hypothesis about missing replica permissions was withdrawn after checking PolicyLoader; those permissions are not a loader requirement. The terse failure marker does not establish which earlier subcases ran.
+- **Master:** Published `0a1b37b6147adb39c885459253d59c8561c9c5cc`, setting strict mode explicitly and adding a fixed numeric PolicyErrorCode diagnostic without policy/credential output. Golden fixture and production code are unchanged.
+- **Verification:** [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) is in progress. Senior Dev and Tester are reviewing current source/results independently; Scrum Master is checking dependency/handoff readiness and preparing RG-005 scope.
+- **Gate:** PR #12 remains draft. Production session caching remains disabled. Full RG-004 AC01–03, real commit/forward/fencing, deployment and release gates remain open; no main merge.
