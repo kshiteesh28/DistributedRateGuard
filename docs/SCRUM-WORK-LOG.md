@@ -1,4 +1,6 @@
-# Scrum Work Log
+# Scrum Work Log — historical branch snapshot
+
+Read the [canonical live log](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md) for current actions and status. The entries/board below are a historical snapshot.
 
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
