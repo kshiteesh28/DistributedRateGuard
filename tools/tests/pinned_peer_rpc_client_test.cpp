@@ -538,23 +538,23 @@ void RunExpiryCase(const std::string& policy_path, long adapter_delta,
         "forward_guard_rechecks_time_while_currently_valid_without_forwarding");
 
   sec::WallTime boundary{};
-  sec::ClientCallGuardFailureReason expected_reason{};
+  sec::ClientGuardFailureReason expected_reason{};
   if (expire_root) {
     boundary = fixture.registry->root_validity().not_after;
-    expected_reason = sec::ClientCallGuardFailureReason::RootExpired;
+    expected_reason = sec::ClientGuardFailureReason::RootExpired;
     Check(fixture.registry->Find(fixture.adapter->registered.uri)->validity.not_after > boundary &&
           fixture.registry->Find(fixture.replica->registered.uri)->validity.not_after > boundary,
           "root_expiry_isolated_from_leaf_expiry");
   } else if (expire_adapter) {
     boundary = fixture.registry->Find(fixture.adapter->registered.uri)->validity.not_after;
-    expected_reason = sec::ClientCallGuardFailureReason::ClientExpired;
+    expected_reason = sec::ClientGuardFailureReason::ClientExpired;
     Check(fixture.registry->root_validity().Contains(boundary) &&
           fixture.registry->Find(fixture.replica->registered.uri)->validity.Contains(
               OneNanosecondBefore(boundary)),
           "client_leaf_expiry_isolated_from_root_and_server_leaf");
   } else {
     boundary = fixture.registry->Find(fixture.replica->registered.uri)->validity.not_after;
-    expected_reason = sec::ClientCallGuardFailureReason::ServerExpired;
+    expected_reason = sec::ClientGuardFailureReason::ServerExpired;
     Check(fixture.registry->root_validity().Contains(boundary) &&
           fixture.registry->Find(fixture.adapter->registered.uri)->validity.Contains(
               OneNanosecondBefore(boundary)),
@@ -577,7 +577,7 @@ void RunExpiryCase(const std::string& policy_path, long adapter_delta,
   clock.Set(fixture.now);
   clock.SetHealthy(false);
   auto clock_failure = client.CheckAdmission(request, Deadline());
-  AssertNotSent(clock_failure, sec::ClientCallGuardFailureReason::ClockUntrusted,
+  AssertNotSent(clock_failure, sec::ClientGuardFailureReason::ClockUntrusted,
                 sec::ClientGuardDisposition::ApplicationUnavailable,
                 "clock_loss_is_local_unavailable_before_dispatch");
   Check(server.service.calls.load(std::memory_order_acquire) == 1,

@@ -412,7 +412,7 @@ std::variant<ClientCallGuardPassed, ClientCallGuardFailure>
 PinnedPeerRpcClient::ValidateBeforeForward(
     const Invoked<rateguard::v1::AdmissionDecision>& invocation) const noexcept {
   if (!impl_ || impl_->purpose != ClientCallPurpose::AdapterToReplicaAdmission) {
-    return ClientCallGuardFailure{ClientCallGuardFailureReason::ForeignPreparedCall,
+    return ClientCallGuardFailure{ClientGuardFailureReason::ForeignPreparedCall,
                                   ClientGuardDisposition::CredentialInvalid};
   }
   return impl_->guard.ValidateBeforeForward(invocation.payload_->proof);
