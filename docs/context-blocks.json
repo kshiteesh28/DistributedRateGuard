@@ -625,7 +625,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Implement client per-call certificate/time guards and qualify reconnect/resumption; actual precommit/pregrant/preforward stays separately gated.",
+      "first_action": "Implement client per-call certificate/time guards and reconnect/resumption qualification using verified A/B1/B2 inputs; keep actual commit/forward, manifest/fencing and full-story acceptance separate.",
       "implementation_decisions": {
         "path": "docs/decisions/RG-004-security-v1.md",
         "revision": 2,
