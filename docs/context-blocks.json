@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_a_compatibility_verified_full_authentication_pending",
+    "implementation": "rg004_b1_registry_ci_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "RG-001/002/003-A and RG-004-A compatibility inputs are verified on unmerged review branches. Full authentication, runtime enforcement, deployment and release gates remain open."
+    "note": "Prior verified inputs remain unmerged. PR10 adds proposed certificate-registry validation; Linux CI and final independent agent review pending. Full authentication/enforcement/release gates remain open."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -112,10 +112,10 @@
     }
   },
   "next_actions": [
-    "Implement bounded immutable certificate registry validation as a separately reviewed RG-004-B input; production manifest/fencing integration remains RG-006.",
-    "Complete peer-to-policy authorization, per-call root/leaf validity, reconnect/resumption proof and service guard integration without widening RG-004-A evidence.",
-    "Keep RG-003-B/C and Release A RG-003-D integration gates pending; no enforcement activation.",
-    "Maintain live per-agent log and review gates; no implementation merge to main without Product Owner command."
+    "Finish PR10 Linux/OpenSSL/ASan and independent QA evidence for RG-004-B1; preserve failures and scope limits.",
+    "Complete B2 authenticated peer/policy authorization, per-call validity and reconnect/resumption proof in separately reviewed increments.",
+    "Keep RG-003-B/C/D, supervisor manifest/fencing, witness/service/adapter integration and release gates pending.",
+    "Maintain live per-agent log; no main implementation merge without Product Owner command."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -491,7 +491,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "rg004_a_input_verified_full_story_in_progress",
+      "status": "rg004_a_verified_rg004_b1_review_in_progress",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -592,6 +592,16 @@
           "head": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
           "run": 43980308204,
           "scope": "Exact leaf pin/URI TLS compatibility, independent verifier-bypass detection, trusted UTC primitive; not production registry/authorization, connection-expiry or epoch fencing"
+        },
+        {
+          "id": "RG-004-B1",
+          "status": "implementation_proposed_ci_pending",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986",
+          "pull_request": 10,
+          "run": 44016873892,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/docs/contracts/certificate-registry-v1.md",
+          "scope": "Typed public-certificate validation and immutable metadata only; no manifest/auth/service readiness claim"
         }
       ],
       "integration_dependencies": [
