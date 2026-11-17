@@ -1,12 +1,12 @@
 # Implementation stories
 
-**Date:** 2026-11-12 · **Status:** Planned; no implementation or acceptance results claimed.
+**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A/B1/B2/B3 implementation inputs verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
 ## RG-001
 
-**Freeze wire contracts and build manifest** · Release A · Planned
+**Freeze wire contracts and build manifest** · Release A · Component accepted; PR review pending
 
 Dependencies: none.
 
@@ -18,7 +18,7 @@ Classes: AdmissionService, AuthorityService.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-005, PRD-021, FR-005, FR-020.
 
-Acceptance criteria (not run):
+Acceptance criteria: component PASS; see [RG-001 evidence](evidence/RG-001.md). Product/service integration remains assigned to later stories.
 
 - **RG-001-AC01** — Golden protobuf/encoding fixtures reject unspecified enums, invalid widths and malformed payloads without quota mutation. Evidence: AT-04, AT-06.
 - **RG-001-AC02** — Build manifest records exact tool/compiler/library versions and reproducible build commands; no runtime metric is claimed. Evidence: AT-13, AT-20.
@@ -26,7 +26,7 @@ Acceptance criteria (not run):
 
 ## RG-002
 
-**Implement immutable policy and checked arithmetic** · Release A · Planned
+**Implement immutable policy and checked arithmetic** · Release A · Component accepted; PR review pending
 
 Dependencies: RG-001.
 
@@ -38,7 +38,7 @@ Classes: PolicySnapshot, PolicyLoader, CanonicalPolicyCodec, BucketMath.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, FR-001, FR-002, FR-003.
 
-Acceptance criteria (not run):
+Acceptance criteria: component PASS after corrected [run 43353832066](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43353832066) and independent Tester review. See [RG-002 evidence](evidence/RG-002.md) and [scrum log](SCRUM-WORK-LOG.md). Runtime quota/identity/clock integration remains separately gated.
 
 - **RG-002-AC01** — Canonical byte fixtures produce identical digests regardless of input map order; duplicate IDs and invalid policy bounds reject. Evidence: AT-01, AT-04.
 - **RG-002-AC02** — At available=c*S admit; at c*S-1 limit. Maximum bounds, saturation, fractions and overflow fixtures agree with independent arithmetic. Evidence: AT-02, AT-03.
@@ -46,7 +46,7 @@ Acceptance criteria (not run):
 
 ## RG-003
 
-**Implement shared clock provenance and commit timing** · Release A · Planned
+**Implement shared clock provenance and commit timing** · Release A · Component verified; integration pending
 
 Dependencies: RG-001.
 
@@ -58,7 +58,16 @@ Classes: IClock, LinuxMonotonicClock.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-002, PRD-024, FR-001, FR-017.
 
-Acceptance criteria (not run):
+Component evidence: [RG-003](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, run 43355987772, independent acceptance. Full story is not Done.
+
+| Deliverable | Status / owner |
+| --- | --- |
+| RG-003-A clock API/startup/sampling | Verified input for RG-006/007/008 development |
+| RG-003-B participant topology | Pending RG-006; Master/Senior Dev |
+| RG-003-C actual commit/deadline mapping | Pending RG-007/008; Senior Dev/Tester; AC02 |
+| RG-003-D strict UNKNOWN evidence gate | Pending RG-011A with RG-005 completeness/runtime inputs; before RG-008 acceptance; AC03. RG-013 adds C credit/formal extensions |
+
+Acceptance criteria (unchanged; disposition above):
 
 - **RG-003-AC01** — Wrong namespace/boot/clock ID prevents readiness; backwards time or syscall failure stops transitions. Evidence: AT-01, AT-17.
 - **RG-003-AC02** — Clock samples and ordered state transitions have an auditable linearization mapping; late responses cannot move timestamps. Evidence: AT-02, AT-07.
@@ -66,19 +75,27 @@ Acceptance criteria (not run):
 
 ## RG-004
 
-**Implement mTLS identity and operation authorization** · Release A · Planned
+**Implement mTLS identity and operation authorization** · Release A · RG-004-A/B1/B2/B3 implementation inputs accepted; full story in progress
 
 Dependencies: RG-001, RG-002.
 
 Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
-Proposed files: `src/security/peer_authenticator.h`, `src/security/authorization.h`.
+Implemented component paths on review branches: `include/rateguard/security/{peer_authenticator,authorization_resolver,client_call_guard,pinned_peer_rpc_client}.h` and corresponding `src/security/*.cpp`. Service/lifecycle integration remains pending.
 
-Classes: PeerAuthenticator, AuthorizationResolver.
+Classes: PeerAuthenticator, AuthorizationResolver, ClientCallGuard, PinnedPeerRpcClient.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
 
-Acceptance criteria (not run):
+Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. This initial compatibility slice alone does not provide registry, authorization or connection-expiry guards; B1/B2/B3 supply the scoped inputs below. Manifest binding and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
+
+Registry input **RG-004-B1** is independently accepted in [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), head `6366df84903049fde3fd92243b3aa7bd06c43986`, [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892). Both 21-test builds and targeted sanitizers passed; the independent suite detects a separately compiled root-pin bypass. [Evidence](evidence/RG-004-B1.md). This permits typed-registry/manifest development, not service activation or full authentication acceptance.
+
+Peer/policy input **RG-004-B2** passed [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950) and independent QA/senior review: actual TLS handler/spy/dispatch-expiry and isolated permission/pin controls, 25 tests twice and 9 security sanitizer checks. [Evidence](evidence/RG-004-B2.md). [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) is ready and unmerged after final run 44023785687 at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`; no implementation has been merged. Actual commit/forward, manifest/fencing and full service acceptance remain open; B3 supplies the client primitives described next.
+
+Client input **RG-004-B3** passed [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) at `0a1b37b6147adb39c885459253d59c8561c9c5cc`; [PR #12](https://github.com/kshiteesh28/DistributedRateGuard/pull/12) is ready and unmerged. [Evidence](evidence/RG-004-B3.md) covers the sealed typed client, current root/own-client/server validity guards, pre-forward time/identity primitive, independent mTLS/mutation checks and native SDK resumption qualification. Production caching remains disabled. This is not actual ALLOW/forwarding, epoch lifecycle, provisioning or full-story acceptance.
+
+Acceptance criteria (full integration not run):
 
 - **RG-004-AC01** — Wrong principal/role/SAN/EKU and spoofed overrides reject without quota allocation. Evidence: AT-04.
 - **RG-004-AC02** — Expired certificate on an existing connection is rejected; fenced new epoch is required for trust rotation. Evidence: AT-04, AT-14.
@@ -108,7 +125,7 @@ Acceptance criteria (not run):
 
 **Implement supervisor lifecycle and positive fencing** · Release A · Planned
 
-Dependencies: RG-002, RG-003, RG-004, RG-005.
+Dependencies: RG-002, RG-003-A, RG-005 and named verified RG-004-A/B1 inputs. B1 supplies typed certificate metadata only; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
 
 Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 

@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package rateguard.v1;
+
+import "proto/rateguard/v1/admission.proto";
+
+enum GrantOutcome {
+  GRANT_OUTCOME_UNSPECIFIED = 0;
+  GRANT_OUTCOME_GRANTED = 1;
+  GRANT_OUTCOME_LIMITED = 2;
+  GRANT_OUTCOME_INVALID = 3;
+  GRANT_OUTCOME_UNAVAILABLE = 4;
+  GRANT_OUTCOME_OVERLOADED = 5;
+}
+
+message AcquireCreditRequest {
+  string tenant_id = 1;
+  uint32 slot = 2;
+  bytes incarnation_id = 3;  // exactly 16 bytes
+  bytes epoch_id = 4;        // exactly 16 bytes
+  bytes policy_digest = 5;   // exactly 32 bytes
+  uint64 sequence = 6;       // nonzero; never wraps
+  uint64 trigger_cost_units = 7;
+  string trigger_operation_id = 8;
+}
+
+// Canonical composite identity for one allocation. This is not an admission
+// ALLOW and cannot itself authorize forwarding.
+message CompositeGrantId {
+  bytes epoch_id = 1;        // exactly 16 bytes
+  string tenant_id = 2;
+  uint32 slot = 3;
+  bytes incarnation_id = 4;  // exactly 16 bytes
+  uint64 sequence = 5;
+}
+
+message AcquireCreditResponse {
+  GrantOutcome grant_outcome = 1;
+  uint64 sequence = 2;
+  CompositeGrantId composite_grant_id = 3;
+  optional uint64 grant_units = 4;
+  bytes epoch_id = 5;        // exactly 16 bytes
+  bytes policy_digest = 6;   // exactly 32 bytes
+}
+
+// This internal service is authenticated as a registered replica. The
+// authority derives the trigger cost from immutable policy and rejects a
+// mismatch. Same-sequence retries must preserve the exact request fingerprint.
+service AuthorityService {
+  rpc StrictCheck(CheckAdmissionRequest) returns (AdmissionDecision);
+  rpc AcquireCredit(AcquireCreditRequest) returns (AcquireCreditResponse);
+}
