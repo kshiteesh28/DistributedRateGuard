@@ -1,0 +1,13 @@
+{
+  "scope": "GitHub hosted Linux only; Docker/target deployment gate remains separate",
+  "exit_code": 0,
+  "observation": {
+    "platform": "linux",
+    "sync_state": 0,
+    "status_flags": 0,
+    "trusted": true,
+    "failure_reason": null,
+    "unix_seconds": 1794933930,
+    "nanoseconds": 808723839
+  }
+}

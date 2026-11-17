@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-004-security-probes",
-    "implementation_base_branch": "feature/RG-003-clock-provenance"
+    "implementation_branch": "feature/RG-004-client-guards",
+    "implementation_base_branch": "feature/RG-004-peer-authorization"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_b3_client_guards_in_progress",
+    "implementation": "rg004_b3_component_verified_rg005_next",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Verified A/B1/B2 inputs remain unmerged. PR12 B3 is draft; compiler rework is complete for the current head but runtime/session qualification is not accepted."
+    "note": "A/B1/B2/B3 component inputs verified on unmerged review branches. Full RG004/service/lifecycle/export acceptance remains open."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -144,12 +144,38 @@
       ],
       "acceptance": "independent_QA_and_senior_review_passed",
       "full_story_done": false
+    },
+    "latest_rg004_b3": {
+      "id": "RG-004-B3",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-client-guards",
+      "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc",
+      "pull_request": 12,
+      "run": 44128491936,
+      "merge_ref": "1fe328849653f92486fa69695e649a6049e961b0",
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B3.md",
+      "scope": "Client trust guard/sealed typed calls and native SDK session qualification only; production caching disabled; no actual commit/forward/fencing",
+      "acceptance": "independent_QA_and_senior_review_passed",
+      "session_qualification": {
+        "status": "qualified_test_fixture_only",
+        "actual_resumed": true,
+        "cache_capacity": 1,
+        "new_transport": true,
+        "client_leaf_pin": true,
+        "server_leaf_pin": true,
+        "client_verifier_delta": 1,
+        "server_verifier_delta": 1,
+        "production_session_cache_enabled": false
+      },
+      "full_story_done": false,
+      "pull_request_status": "ready_unmerged"
     }
   },
   "next_actions": [
-    "Finish PR12 pinned Linux compilation, independent runtime/mutation/sanitizer and session-qualification evidence.",
-    "Keep production session cache disabled; qualification must distinguish actual reuse from same-channel or uncached reconnect.",
-    "Then implement RG-005 events, RG-006 manifest/fencing and RG-007 witness before strict runtime/adapter/Release A acceptance.",
+    "Implement RG005 event/history component from verified RG001 input, freezing run-wide budget ownership/producer roster and artifact format before code.",
+    "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
+    "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
   ],
   "authorization": {
@@ -526,7 +552,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "a_b1_b2_verified_b3_build_and_qualification_pending",
+      "status": "a_b1_b2_b3_component_verified_full_integration_pending",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -562,6 +588,30 @@
           "status": "verified_on_unmerged_review_branch",
           "branch": "feature/RG-004-peer-authorization",
           "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/client_call_guard.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "src/security/client_call_guard.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "include/rateguard/security/pinned_peer_rpc_client.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "src/security/pinned_peer_rpc_client.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
         }
       ],
       "classes": [
@@ -569,7 +619,11 @@
         "AuthenticatedPeer",
         "AuthorizationResolver",
         "AuthorizedOperation",
-        "AuthorizedGrant"
+        "AuthorizedGrant",
+        "ClientCallGuard",
+        "PreparedClientCall",
+        "PinnedPeerRpcClient",
+        "Invoked"
       ],
       "code_design_notes": [
         "Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy.",
@@ -677,12 +731,29 @@
         },
         {
           "id": "RG-004-B3",
-          "status": "proposed_build_runtime_acceptance_pending",
+          "status": "verified_review_ready",
           "branch": "feature/RG-004-client-guards",
-          "head": "d45839a972386ae8da8186e56945e160fa5d8622",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc",
           "pull_request": 12,
+          "run": 44128491936,
+          "merge_ref": "1fe328849653f92486fa69695e649a6049e961b0",
           "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
-          "scope": "Client trust guard/sealed typed calls and native session qualification; production caching disabled, no actual commit/forward/fencing"
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B3.md",
+          "scope": "Client trust guard/sealed typed calls and native SDK session qualification only; production caching disabled; no actual commit/forward/fencing",
+          "acceptance": "independent_QA_and_senior_review_passed",
+          "session_qualification": {
+            "status": "qualified_test_fixture_only",
+            "actual_resumed": true,
+            "cache_capacity": 1,
+            "new_transport": true,
+            "client_leaf_pin": true,
+            "server_leaf_pin": true,
+            "client_verifier_delta": 1,
+            "server_verifier_delta": 1,
+            "production_session_cache_enabled": false
+          },
+          "full_story_done": false,
+          "pull_request_status": "ready_unmerged"
         }
       ],
       "integration_dependencies": [
@@ -1837,5 +1908,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-17T05:30:26Z"
+  "generated_at_utc": "2026-11-17T16:47:23Z"
 }

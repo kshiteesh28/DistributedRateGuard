@@ -50,3 +50,8 @@ No remaining behavior is delegated to an unrecorded default. Prototype/operating
 ## B1/B2 implementation evidence update (2026-11-17 UTC)
 
 [B1 evidence](../evidence/RG-004-B1.md) verifies typed certificate-registry validation. [B2 evidence](../evidence/RG-004-B2.md) verifies actual TLS peer extraction, fresh dispatch/resolver expiry, policy binding/cost/permission checks and selected compiled unsafe variants. [B2's implementation contract](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md) records exact request/status interpretations and the trusted-gRPC-context construction assumption. These inputs do not close full security component items 2–6: client guards, real commit/forward, reconnect/resumption, manifest/fenced replacement, actual service deployment and real export/retention remain separately gated. SEC-01–11 behavior, policy-v1 encoding and PRD/SRD release requirements are unchanged.
+
+
+## B3 implementation evidence update (2026-11-17 UTC)
+
+[B3 evidence](../evidence/RG-004-B3.md) and [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) verify the outgoing root/own-client/expected-server time guard, sealed typed client, reused-channel expiry and pre-forward recheck primitive. Separate SDK qualification observed actual resumption on a new transport with exact leaf pins and fresh verifier calls on both sides. Production session caching remains disabled. Prototype items 2–3 have scoped fixture evidence; actual commit/forward, manifest/fenced rotation, live-service Docker topology, provisioning and export privacy remain open. This update does not change SEC-01–11 or close full RG004 AC01–03.
