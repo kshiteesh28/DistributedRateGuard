@@ -322,3 +322,93 @@ add_test(NAME rateguard.certificate_registry_root_pin_mutation
     --mutant "$<TARGET_FILE:rateguard_certificate_registry_root_pin_mutant>"
     --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
 set_tests_properties(rateguard.certificate_registry_root_pin_mutation PROPERTIES TIMEOUT 250)
+
+# RG-004-B2 identity/permission inputs; no quota-state implementation.
+add_library(rateguard_peer_authenticator src/security/peer_authenticator.cpp)
+target_include_directories(rateguard_peer_authenticator PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_peer_authenticator PUBLIC rateguard_certificate_registry gRPC::grpc++)
+target_compile_options(rateguard_peer_authenticator PRIVATE -Wall -Wextra -Werror -pedantic)
+add_library(rateguard_authorization src/security/authorization_resolver.cpp)
+target_include_directories(rateguard_authorization PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_authorization PUBLIC rateguard_peer_authenticator rateguard_proto)
+target_compile_options(rateguard_authorization PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_SECURITY)
+  foreach(rg_auth_target IN ITEMS rateguard_peer_authenticator rateguard_authorization)
+    target_compile_options(${rg_auth_target} PUBLIC
+      -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(${rg_auth_target} INTERFACE -fsanitize=address,undefined)
+  endforeach()
+endif()
+add_executable(rateguard_peer_authenticator_tests
+  tests/security/peer_authenticator_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_peer_authenticator_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_peer_authenticator_tests PRIVATE rateguard_peer_authenticator)
+target_compile_options(rateguard_peer_authenticator_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.peer_authenticator COMMAND rateguard_peer_authenticator_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+add_executable(rateguard_authorization_tests
+  tests/security/authorization_resolver_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_authorization_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_authorization_tests PRIVATE rateguard_authorization)
+target_compile_options(rateguard_authorization_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.authorization COMMAND rateguard_authorization_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.peer_authenticator rateguard.authorization PROPERTIES TIMEOUT 90)
+
+# Independent real TLS fixture and isolated test-only unsafe variants.
+add_executable(rateguard_peer_authorization_rpc_tests
+  tools/tests/peer_authorization_rpc_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_peer_authorization_rpc_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_peer_authorization_rpc_tests PRIVATE rateguard_authorization)
+target_compile_options(rateguard_peer_authorization_rpc_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.peer_authorization_rpc
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/b2_mutation_test.py"
+    --normal-rpc "$<TARGET_FILE:rateguard_peer_authorization_rpc_tests>"
+    --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.peer_authorization_rpc PROPERTIES TIMEOUT 140)
+
+set(RG_B2_MUTANT_DIR "${CMAKE_CURRENT_BINARY_DIR}/test-mutants/b2")
+set(RG_B2_PAIR_MUTANT "${RG_B2_MUTANT_DIR}/authorization_resolver_pair_mutant.cpp")
+set(RG_B2_PIN_MUTANT "${RG_B2_MUTANT_DIR}/peer_authenticator_pin_mutant.cpp")
+add_custom_command(OUTPUT "${RG_B2_PAIR_MUTANT}" "${RG_B2_PIN_MUTANT}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/generate_b2_mutants.py"
+    --resolver-src "${CMAKE_CURRENT_SOURCE_DIR}/src/security/authorization_resolver.cpp"
+    --auth-src "${CMAKE_CURRENT_SOURCE_DIR}/src/security/peer_authenticator.cpp"
+    --out-dir "${RG_B2_MUTANT_DIR}"
+  DEPENDS src/security/authorization_resolver.cpp src/security/peer_authenticator.cpp
+    tools/tests/generate_b2_mutants.py
+  VERBATIM)
+add_library(rateguard_authorization_pair_mutant STATIC "${RG_B2_PAIR_MUTANT}")
+target_include_directories(rateguard_authorization_pair_mutant PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_authorization_pair_mutant PUBLIC
+  rateguard_peer_authenticator rateguard_proto)
+target_compile_options(rateguard_authorization_pair_mutant PRIVATE -Wall -Wextra -Werror -pedantic)
+add_executable(rateguard_peer_authorization_pair_mutant
+  tools/tests/peer_authorization_rpc_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_peer_authorization_pair_mutant PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_peer_authorization_pair_mutant PRIVATE rateguard_authorization_pair_mutant)
+add_library(rateguard_peer_auth_pin_mutant STATIC "${RG_B2_PIN_MUTANT}")
+target_include_directories(rateguard_peer_auth_pin_mutant PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_peer_auth_pin_mutant PUBLIC rateguard_certificate_registry gRPC::grpc++)
+target_compile_options(rateguard_peer_auth_pin_mutant PRIVATE -Wall -Wextra -Werror -pedantic)
+add_executable(rateguard_peer_authenticator_pin_mutant
+  tests/security/peer_authenticator_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_peer_authenticator_pin_mutant PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_peer_authenticator_pin_mutant PRIVATE rateguard_peer_auth_pin_mutant)
+add_test(NAME rateguard.peer_authorization_mutation
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/b2_mutation_test.py"
+    --normal-rpc "$<TARGET_FILE:rateguard_peer_authorization_rpc_tests>"
+    --pair-mutant-rpc "$<TARGET_FILE:rateguard_peer_authorization_pair_mutant>"
+    --normal-auth "$<TARGET_FILE:rateguard_peer_authenticator_tests>"
+    --pin-mutant-auth "$<TARGET_FILE:rateguard_peer_authenticator_pin_mutant>"
+    --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.peer_authorization_mutation PROPERTIES TIMEOUT 500)
