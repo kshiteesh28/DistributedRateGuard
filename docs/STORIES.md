@@ -75,7 +75,7 @@ Acceptance criteria (unchanged; disposition above):
 
 ## RG-004
 
-**Implement mTLS identity and operation authorization** · Release A · In progress; RG-004-A input accepted
+**Implement mTLS identity and operation authorization** · Release A · RG-004-A/B1 inputs accepted; full story in progress
 
 Dependencies: RG-001, RG-002.
 
