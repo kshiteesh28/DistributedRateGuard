@@ -25,7 +25,7 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_b1_input_verified_full_authentication_pending",
+    "implementation": "rg004_b2_auth_and_resolver_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "RG-004-A and B1 are independently accepted on ready, unmerged PRs9/10. Full authentication, service activation and release gates remain open."
@@ -503,7 +503,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "rg004_a_b1_inputs_verified_full_story_in_progress",
+      "status": "a_b1_verified_b2_ci_and_real_rpc_pending",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -616,6 +616,15 @@
           "scope": "Typed public-certificate validation and immutable metadata only; no manifest/auth/service readiness claim",
           "merge_ref": "e03a5291889bb7fc9078bd5bda6b822657ea3cc7",
           "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B1.md"
+        },
+        {
+          "id": "RG-004-B2",
+          "status": "proposed_independent_rpc_acceptance_pending",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "42eb82959e5e868456dbac1f7d120d4aedafafce",
+          "pull_request": 11,
+          "run": 44021072784,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md"
         }
       ],
       "integration_dependencies": [
