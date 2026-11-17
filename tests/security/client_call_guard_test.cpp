@@ -177,7 +177,7 @@ struct Fixture final {
 
 template <typename T>
 void CheckFailure(const T& result, sec::ClientGuardDisposition disposition,
-                  sec::ClientCallGuardFailureReason reason,
+                  sec::ClientGuardFailureReason reason,
                   std::string_view label) {
   const auto* failure = std::get_if<sec::ClientCallGuardFailure>(&result);
   Check(failure != nullptr, label);
@@ -222,7 +222,7 @@ void TestHappyPathAndBindings(const std::string& policy_path) {
     if (token != nullptr) {
       CheckFailure(guard->ValidateBeforeForward(*token),
           sec::ClientGuardDisposition::CredentialInvalid,
-          sec::ClientCallGuardFailureReason::ForeignPreparedCall,
+          sec::ClientGuardFailureReason::ForeignPreparedCall,
           "cross_guard_prepared_proof_rejected");
     }
   }
@@ -249,7 +249,7 @@ void TestHappyPathAndBindings(const std::string& policy_path) {
       if (second_prepared != nullptr) {
         CheckFailure(guard->ValidateBeforeForward(*second_prepared),
             sec::ClientGuardDisposition::CredentialInvalid,
-            sec::ClientCallGuardFailureReason::ForeignPreparedCall,
+            sec::ClientGuardFailureReason::ForeignPreparedCall,
             "different_registry_same_config_proof_rejected");
       }
     }
@@ -260,14 +260,14 @@ void TestHappyPathAndBindings(const std::string& policy_path) {
       fixture.uri_by_role.at(sec::PeerRole::kAdapter),
       fixture.uri_by_role.at(sec::PeerRole::kAuthority));
   CheckFailure(wrong_server, sec::ClientGuardDisposition::CredentialInvalid,
-      sec::ClientCallGuardFailureReason::ServerRoleMismatch,
+      sec::ClientGuardFailureReason::ServerRoleMismatch,
       "wrong_endpoint_role_rejected");
   auto unknown_local = sec::ClientCallGuard::Create(fixture.registry, clock,
       sec::ClientCallPurpose::AdapterToReplicaAdmission,
       "spiffe://rateguard.invalid/adapter/missing",
       fixture.uri_by_role.at(sec::PeerRole::kReplica));
   CheckFailure(unknown_local, sec::ClientGuardDisposition::CredentialInvalid,
-      sec::ClientCallGuardFailureReason::MissingClientCertificate,
+      sec::ClientGuardFailureReason::MissingClientCertificate,
       "unknown_local_identity_rejected");
 
 }
@@ -314,7 +314,7 @@ void TestClockFailuresAndFreshness(const std::string& policy_path) {
   clock.Set({fixture.now.unix_seconds - 1, 999'999'999U});
   CheckFailure(guard->ValidateBeforeForward(*prepared),
       sec::ClientGuardDisposition::ApplicationUnavailable,
-      sec::ClientCallGuardFailureReason::ClockUntrusted,
+      sec::ClientGuardFailureReason::ClockUntrusted,
       "pre_forward_rejects_time_before_pre_call_sample");
   clock.Set(fixture.now);
 
@@ -322,7 +322,7 @@ void TestClockFailuresAndFreshness(const std::string& policy_path) {
   const auto calls_before = clock.calls;
   CheckFailure(guard->ValidateBeforeForward(*prepared),
       sec::ClientGuardDisposition::ApplicationUnavailable,
-      sec::ClientCallGuardFailureReason::ClockUntrusted,
+      sec::ClientGuardFailureReason::ClockUntrusted,
       "pre_unhealthy_clock_rejected");
   Check(clock.calls == calls_before, "unhealthy_clock_checked_before_now");
 
@@ -337,7 +337,7 @@ void TestClockFailuresAndFreshness(const std::string& policy_path) {
   post_failure_clock.FailAfterSample();
   CheckFailure(post_guard->ValidateBeforeCall(),
       sec::ClientGuardDisposition::ApplicationUnavailable,
-      sec::ClientCallGuardFailureReason::ClockUntrusted,
+      sec::ClientGuardFailureReason::ClockUntrusted,
       "post_sample_unhealthy_clock_rejected");
 }
 
@@ -363,7 +363,7 @@ void TestExpiryBoundaries(const std::string& policy_path) {
     local_clock.Set(JustBefore(local_before));
     CheckFailure(local_guard->ValidateBeforeCall(),
         sec::ClientGuardDisposition::CredentialInvalid,
-        sec::ClientCallGuardFailureReason::ClientNotYetValid,
+        sec::ClientGuardFailureReason::ClientNotYetValid,
         "local_before_not_before_rejected");
     local_clock.Set(local_before);
     Check(std::holds_alternative<sec::PreparedClientCall>(
@@ -376,12 +376,12 @@ void TestExpiryBoundaries(const std::string& policy_path) {
     local_clock.Set(local_after);
     CheckFailure(local_guard->ValidateBeforeCall(),
         sec::ClientGuardDisposition::CredentialInvalid,
-        sec::ClientCallGuardFailureReason::ClientExpired,
+        sec::ClientGuardFailureReason::ClientExpired,
         "local_exact_not_after_rejected");
     if (local_prepared) {
       CheckFailure(local_guard->ValidateBeforeForward(*local_prepared),
           sec::ClientGuardDisposition::CredentialInvalid,
-          sec::ClientCallGuardFailureReason::ClientExpired,
+          sec::ClientGuardFailureReason::ClientExpired,
           "pre_forward_rechecks_local_expiry");
     }
   }
@@ -400,7 +400,7 @@ void TestExpiryBoundaries(const std::string& policy_path) {
     server_clock.Set(JustBefore(server_before));
     CheckFailure(server_guard->ValidateBeforeCall(),
         sec::ClientGuardDisposition::CredentialInvalid,
-        sec::ClientCallGuardFailureReason::ServerNotYetValid,
+        sec::ClientGuardFailureReason::ServerNotYetValid,
         "server_before_not_before_rejected");
     server_clock.Set(server_before);
     Check(std::holds_alternative<sec::PreparedClientCall>(
@@ -413,7 +413,7 @@ void TestExpiryBoundaries(const std::string& policy_path) {
     server_clock.Set(server_after);
     CheckFailure(server_guard->ValidateBeforeCall(),
         sec::ClientGuardDisposition::CredentialInvalid,
-        sec::ClientCallGuardFailureReason::ServerExpired,
+        sec::ClientGuardFailureReason::ServerExpired,
         "server_exact_not_after_rejected");
   }
 
@@ -431,7 +431,7 @@ void TestExpiryBoundaries(const std::string& policy_path) {
     root_clock.Set(root_after);
     CheckFailure(root_guard->ValidateBeforeCall(),
         sec::ClientGuardDisposition::CredentialInvalid,
-        sec::ClientCallGuardFailureReason::RootExpired,
+        sec::ClientGuardFailureReason::RootExpired,
         "root_exact_not_after_rejected");
   }
 }
