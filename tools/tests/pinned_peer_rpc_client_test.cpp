@@ -489,6 +489,8 @@ void RunClientFactoryValidationCases(const std::string& policy_path) {
 void RunExpiryCase(const std::string& policy_path, long adapter_delta,
                    long server_delta, bool expire_root, bool expire_adapter,
                    bool expire_server) {
+  Check((expire_root ? 1 : 0) + (expire_adapter ? 1 : 0) + (expire_server ? 1 : 0) == 1,
+        "exactly_one_expiry_case_selected");
   Fixture fixture(policy_path, adapter_delta, server_delta,
                   expire_root ? 48 * 60 * 60 : 48 * 60 * 60);
   MutableClock clock(fixture.now);
@@ -542,8 +544,8 @@ void RunExpiryCase(const std::string& policy_path, long adapter_delta,
   if (expire_root) {
     boundary = fixture.registry->root_validity().not_after;
     expected_reason = sec::ClientGuardFailureReason::RootExpired;
-    Check(fixture.registry->Find(fixture.adapter->registered.uri)->validity.not_after > boundary &&
-          fixture.registry->Find(fixture.replica->registered.uri)->validity.not_after > boundary,
+    Check(boundary < fixture.registry->Find(fixture.adapter->registered.uri)->validity.not_after &&
+          boundary < fixture.registry->Find(fixture.replica->registered.uri)->validity.not_after,
           "root_expiry_isolated_from_leaf_expiry");
   } else if (expire_adapter) {
     boundary = fixture.registry->Find(fixture.adapter->registered.uri)->validity.not_after;
