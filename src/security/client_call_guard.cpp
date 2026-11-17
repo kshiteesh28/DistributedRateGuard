@@ -8,7 +8,7 @@
 namespace rateguard::security {
 namespace {
 
-using Reason = ClientCallGuardFailureReason;
+using Reason = ClientGuardFailureReason;
 using Disposition = ClientGuardDisposition;
 using Failure = ClientCallGuardFailure;
 
