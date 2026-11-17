@@ -1,7 +1,7 @@
 # RG-004 security decisions — revision 2
 
 **Date:** 2026-11-16 · **Decision owner:** Master technical lead  
-**Status:** Selected v1 defaults. RG-004-A TLS/UTC compatibility input independently accepted; production authorization, connection lifecycle and epoch/deployment integration remain pending.  
+**Status:** Selected v1 defaults. RG-004-A/B1/B2 implementation inputs independently accepted; full runtime service authorization, connection lifecycle and epoch/deployment integration remain pending.  
 **Sources:** PRD 8; SRD 5 D1/D2/D9; LLD 5 A-02 / §§9,16,17; [policy-v1](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-002-policy-arithmetic/docs/contracts/policy-v1.md).  
 **Review:** Senior Dev performed requirements extraction and pinned-source review; Master selected the defaults below. This record adds internal configuration/provisioning detail without changing canonical policy-v1 or release gates.
 
@@ -46,3 +46,7 @@ No remaining behavior is delegated to an unrecorded default. Prototype/operating
 ## Current evidence status (2026-11-16)
 
 [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9) and [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204) close the initial compile/handshake compatibility prerequisite: exact URI/leaf pin rejection before handler execution, positive TLS controls, independent bypass detection and trusted UTC primitive checks passed. [Restricted Docker observations](../evidence/RG-004-A/docker-time-43980308204.json) matched; they are not actual service topology or epoch activation evidence. Items 2–4 and live-service/deployment parts of 5–6 remain open. Historical feature-branch copies precede this evidence update; the selected SEC-01–11 behavior is unchanged.
+
+## B1/B2 implementation evidence update (2026-11-17 UTC)
+
+[B1 evidence](../evidence/RG-004-B1.md) verifies typed certificate-registry validation. [B2 evidence](../evidence/RG-004-B2.md) verifies actual TLS peer extraction, fresh dispatch/resolver expiry, policy binding/cost/permission checks and selected compiled unsafe variants. [B2's implementation contract](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md) records exact request/status interpretations and the trusted-gRPC-context construction assumption. These inputs do not close full security component items 2–6: client guards, real commit/forward, reconnect/resumption, manifest/fenced replacement, actual service deployment and real export/retention remain separately gated. SEC-01–11 behavior, policy-v1 encoding and PRD/SRD release requirements are unchanged.
