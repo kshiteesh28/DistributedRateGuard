@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_b2_auth_and_resolver_in_progress",
+    "implementation": "rg004_b2_implementation_verified_documentation_ci_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "RG-004-A and B1 are independently accepted on ready, unmerged PRs9/10. Full authentication, service activation and release gates remain open."
+    "note": "A/B1 and B2 implementation inputs independently verified on unmerged review branches. PR11 documentation-only head has a final CI check pending. Full authentication/service/release acceptance remains open."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -121,13 +121,33 @@
       "scope": "Policy-bound typed certificate validation and immutable metadata only; no runtime authorization/readiness/fencing proof",
       "merge_ref": "e03a5291889bb7fc9078bd5bda6b822657ea3cc7",
       "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B1.md"
+    },
+    "latest_rg004_b2": {
+      "id": "RG-004-B2",
+      "status": "implementation_verified_final_documentation_check_pending",
+      "branch": "feature/RG-004-peer-authorization",
+      "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
+      "pull_request": 11,
+      "run": 44022842950,
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
+      "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
+      "documentation_run": 44023785687,
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
+      "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+      "public_interfaces": [
+        "PeerAuthenticator::Authenticate",
+        "AuthorizationResolver::Create",
+        "AuthorizationResolver::Resolve"
+      ],
+      "acceptance": "independent_QA_and_senior_source_review_passed",
+      "full_story_done": false
     }
   },
   "next_actions": [
-    "Implement B2 authenticated peer/policy authorization on a separate feature PR using verified A/B1 inputs.",
-    "Add fresh root/leaf validity and trusted-time guards at dispatch/commit/forward and verify reconnect/resumption.",
-    "Complete supervisor manifest/fencing, events, witness, strict service, adapter and Release A oracle integrations in dependency order.",
-    "Maintain live per-agent evidence/log; leave all main implementation merges to Product Owner control."
+    "Finish PR11 documentation-only head check without changing its verified implementation.",
+    "Implement per-call client certificate guards and qualify reconnect/resumption; actual commit/forward gates stay with service/adapter stories.",
+    "Implement RG-005 event foundation, RG-006 positive fencing/manifest, RG-007 witness and RG-008/009 strict service/adapter using named inputs.",
+    "Keep full authentication and release gates open; main implementation merges remain Product Owner-controlled."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
@@ -503,7 +523,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "a_b1_verified_b2_ci_and_real_rpc_pending",
+      "status": "a_b1_b2_inputs_verified_full_story_in_progress",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -517,12 +537,28 @@
       ],
       "planned_files": [
         {
-          "path": "src/security/peer_authenticator.h",
-          "status": "proposed_not_present"
+          "path": "include/rateguard/security/peer_authenticator.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
         },
         {
-          "path": "src/security/authorization.h",
-          "status": "proposed_not_present"
+          "path": "src/security/peer_authenticator.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/authorization_resolver.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/authorization_resolver.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
         }
       ],
       "classes": [
@@ -583,7 +619,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Implement B2 authenticated peer/policy authorization on a separate feature PR using verified A/B1 inputs.",
+      "first_action": "Finish documentation-head check, then per-call client guards/reconnect qualification and separately gated service/epoch integration.",
       "implementation_decisions": {
         "path": "docs/decisions/RG-004-security-v1.md",
         "revision": 2,
@@ -591,9 +627,9 @@
         "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/decisions/RG-004-security-v1.md",
         "status": "selected_defaults_partial_implementation_verified",
         "remaining_evidence": [
-          "Production certificate registry/manifest binding and tenant/operation authorization",
-          "Per-call expiry, reconnect/resumption and precommit/preforward integration",
-          "Actual service topology, epoch synchronization/fencing and export privacy"
+          "Production manifest binding and participant readiness/fencing",
+          "Client per-call server-certificate validation, actual precommit/pregrant/preforward guards, reconnect/resumption qualification",
+          "Real service no-allocation fault cases, event/export privacy and remaining full-story acceptance"
         ]
       },
       "component_inputs": [
@@ -619,12 +655,16 @@
         },
         {
           "id": "RG-004-B2",
-          "status": "proposed_independent_rpc_acceptance_pending",
+          "status": "implementation_verified_final_documentation_check_pending",
           "branch": "feature/RG-004-peer-authorization",
-          "head": "42eb82959e5e868456dbac1f7d120d4aedafafce",
+          "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
           "pull_request": 11,
-          "run": 44021072784,
-          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md"
+          "run": 44022842950,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
+          "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
+          "documentation_run": 44023785687,
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
+          "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof"
         }
       ],
       "integration_dependencies": [
@@ -658,6 +698,30 @@
           "status": "verified_on_unmerged_review_branch",
           "branch": "feature/RG-004-certificate-registry",
           "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        },
+        {
+          "path": "include/rateguard/security/peer_authenticator.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/peer_authenticator.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/authorization_resolver.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/authorization_resolver.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
         }
       ]
     },
