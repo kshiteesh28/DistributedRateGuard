@@ -544,3 +544,10 @@ Witness Validate pre-reserves a bounded journal queue slot and maximum record by
 PRD 8 / SRD 5 define the p99 population as all delivered attempts, including error responses; a missing response contributes the caller-deadline duration. The latency measurement begins at adapter receipt and ends at the first terminal application response or deadline. This prevents completion-only sampling from hiding timed-out calls.
 
 The implementation toolchain is intentionally not pre-pinned in this document: the current local path has documentation only and no verified Git checkout or Linux build environment. RG-001 must capture compiler, CMake, gRPC, Protocol Buffers, crypto, and model-tool versions from the actual supported build host and produce a successful reproducible build before the lock is treated as validated. This is a sequencing decision, not a guessed compatibility matrix. Clock, witness, fencing, and certificate tests remain required before activating enforcement services or claiming acceptance. No implementation or evidence is claimed here.
+
+
+## 19. RG-002 representation addendum — version 1
+
+[Canonical policy v1 revision 1](contracts/policy-v1.md) fixes the aggregate byte/JSON layout and finite startup parsing caps before codec implementation. It preserves D3 quotas, fixed membership, full-B initialization in §5, identity roles in §9, and release/deferred scope. The loader normalizes input order and rejects duplicates; a digest cannot depend on JSON iteration order. The public trust fingerprint belongs in canonical bytes; live CA/X.509 validation remains RG-004, so offline policy replay does not need exported certificates.
+
+The implementation uses immutable sorted vectors with binary-search lookups and no insertion for unknown IDs. This is a recorded implementation choice replacing the proposed hash-table estimate in §14: lookup is O(log T), with bounded T≤10,000; canonical bytes remain independent of this storage choice. Performance gates remain measurements, not assertions. The representation record is a versioned implementation decision; it does not claim the policy code or its acceptance evidence exists yet.

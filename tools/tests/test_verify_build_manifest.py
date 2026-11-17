@@ -11,6 +11,7 @@ from verify_build_manifest import verify  # noqa: E402
 def valid_inputs() -> tuple[dict, dict]:
     # Deliberately synthetic versions; these tests do not assert an environment.
     packages = {
+        "nlohmann-json3-dev": "3.11.3-fixture",
         "libgrpc++-dev": "1.51.1-3build1",
         "libgrpc-dev": "1.51.1-3build1",
         "libprotobuf-dev": "3.21.12-8.2ubuntu0.2",
@@ -29,7 +30,9 @@ def valid_inputs() -> tuple[dict, dict]:
             "architecture": "x86_64",
             "language_standard": "C++20",
             "dependency_mode": "ubuntu-packages",
-            "cmake": "3.31.6",
+        },
+        "tools": {
+            "cmake": "cmake version 3.31.6",
             "ninja": "1.11.1",
             "cxx_compiler": "c++ (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0",
             "protoc": "libprotoc 3.21.12",
@@ -58,6 +61,7 @@ def valid_inputs() -> tuple[dict, dict]:
             "protoc": "libprotoc 3.21.12",
         },
         "system_packages": {
+            "nlohmann_json_dev": packages["nlohmann-json3-dev"],
             "libgrpcpp_dev": packages["libgrpc++-dev"],
             "libgrpc_dev": packages["libgrpc-dev"],
             "libprotobuf_dev": packages["libprotobuf-dev"],
@@ -80,6 +84,11 @@ class VerifyBuildManifestTests(unittest.TestCase):
         lock, manifest = valid_inputs()
         manifest["system_packages"]["libgrpc_dev"] = "different-version"
         self.assertTrue(any("package version mismatch for libgrpc-dev" in e for e in verify(lock, manifest)))
+
+    def test_json_package_version_drift_fails(self) -> None:
+        lock, manifest = valid_inputs()
+        manifest["system_packages"]["nlohmann_json_dev"] = "different-version"
+        self.assertTrue(any("package version mismatch for nlohmann-json3-dev" in e for e in verify(lock, manifest)))
 
     def test_tool_version_drift_fails(self) -> None:
         lock, manifest = valid_inputs()
@@ -105,7 +114,7 @@ class VerifyBuildManifestTests(unittest.TestCase):
 
     def test_missing_expected_or_observed_values_fail(self) -> None:
         lock, manifest = valid_inputs()
-        del lock["target"]["cxx_compiler"]
+        del lock["tools"]["cxx_compiler"]
         manifest["system_packages"]["protobuf_compiler"] = None
         errors = verify(lock, manifest)
         self.assertTrue(any("tool version cxx_compiler is missing" in e for e in errors))

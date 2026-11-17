@@ -1,6 +1,6 @@
 # Implementation stories
 
-**Date:** 2026-11-12 · **Status:** RG-001 component acceptance passed; PR review pending. Later stories remain planned.
+**Date:** 2026-11-12 · **Status:** RG-001 component verified; RG-002 component verified; RG-003 implementation assigned. Main merge pending; later stories remain planned.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
@@ -26,7 +26,7 @@ Acceptance criteria: component PASS; see [RG-001 evidence](evidence/RG-001.md). 
 
 ## RG-002
 
-**Implement immutable policy and checked arithmetic** · Release A · Planned
+**Implement immutable policy and checked arithmetic** · Release A · Component accepted; PR review pending
 
 Dependencies: RG-001.
 
@@ -38,7 +38,7 @@ Classes: PolicySnapshot, PolicyLoader, CanonicalPolicyCodec, BucketMath.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, FR-001, FR-002, FR-003.
 
-Acceptance criteria (not run):
+Acceptance criteria: component PASS after corrected [run 43353832066](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43353832066) and independent Tester review. See [RG-002 evidence](evidence/RG-002.md) and [scrum log](SCRUM-WORK-LOG.md). Runtime quota/identity/clock integration remains separately gated.
 
 - **RG-002-AC01** — Canonical byte fixtures produce identical digests regardless of input map order; duplicate IDs and invalid policy bounds reject. Evidence: AT-01, AT-04.
 - **RG-002-AC02** — At available=c*S admit; at c*S-1 limit. Maximum bounds, saturation, fractions and overflow fixtures agree with independent arithmetic. Evidence: AT-02, AT-03.
@@ -46,7 +46,7 @@ Acceptance criteria (not run):
 
 ## RG-003
 
-**Implement shared clock provenance and commit timing** · Release A · Planned
+**Implement shared clock provenance and commit timing** · Release A · In Progress — isolated implementation assigned
 
 Dependencies: RG-001.
 

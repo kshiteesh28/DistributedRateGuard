@@ -170,6 +170,7 @@ def main() -> int:
         "system_packages": {
             "libssl_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libssl-dev"]),
             "zlib1g_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "zlib1g-dev"]),
+            "nlohmann_json_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "nlohmann-json3-dev"]),
             "libgrpc_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libgrpc-dev"]),
             "libgrpcpp_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libgrpc++-dev"]),
             "libprotobuf_dev": command_output(["dpkg-query", "-W", "-f=${Version}", "libprotobuf-dev"]),

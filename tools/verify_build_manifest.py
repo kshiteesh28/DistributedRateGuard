@@ -11,6 +11,7 @@ from typing import Any
 
 
 PACKAGE_FIELDS = {
+    "nlohmann-json3-dev": "nlohmann_json_dev",
     "libgrpc++-dev": "libgrpcpp_dev",
     "libgrpc-dev": "libgrpc_dev",
     "libprotobuf-dev": "libprotobuf_dev",
@@ -112,9 +113,9 @@ def verify(lock: dict[str, Any], manifest: dict[str, Any]) -> list[str]:
     if not isinstance(compile_count, int) or isinstance(compile_count, bool) or compile_count <= 0:
         errors.append("manifest.build_configuration.project_compile_commands_count must be a positive integer")
 
-    # The current lock keeps CMake/Ninja under target; a future top-level
-    # tools object is also accepted without weakening required values.
-    tools = lock.get("tools", target)
+    # Exact tool versions have one canonical location; legacy target fallback
+    # must not hide an absent or malformed lock.tools object.
+    tools = lock.get("tools")
     observed_tools = manifest.get("tools")
     if not isinstance(tools, dict):
         errors.append("lock.tools must contain exact cmake, ninja, cxx_compiler and protoc values")
