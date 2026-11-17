@@ -238,10 +238,6 @@ grpc::Status Reject(sec::PeerAuthDisposition disposition) {
   switch (disposition) {
     case sec::PeerAuthDisposition::Unauthenticated:
       return {grpc::StatusCode::UNAUTHENTICATED, "peer rejected"};
-    case sec::PeerAuthDisposition::InvalidArgument:
-      return {grpc::StatusCode::INVALID_ARGUMENT, "request rejected"};
-    case sec::PeerAuthDisposition::PermissionDenied:
-      return {grpc::StatusCode::PERMISSION_DENIED, "operation denied"};
     case sec::PeerAuthDisposition::ApplicationUnavailable:
       return grpc::Status::OK;
   }
@@ -367,7 +363,7 @@ class AuthorityProbe final : public rg::AuthorityService::Service {
   grpc::Status StrictCheck(grpc::ServerContext* context,
                            const rg::CheckAdmissionRequest* request,
                            rg::AdmissionDecision* response) override {
-    return Check(context, request, response, sec::RpcMethod::ReplicaStrictCheck);
+    return HandleStrictCheck(context, request, response, sec::RpcMethod::ReplicaStrictCheck);
   }
   grpc::Status AcquireCredit(grpc::ServerContext* context,
                              const rg::AcquireCreditRequest* request,
@@ -421,7 +417,7 @@ class AuthorityProbe final : public rg::AuthorityService::Service {
         std::string_view(uris.front().data(), uris.front().size()) == expected_uri_ &&
         std::string_view(leaves.front().data(), leaves.front().size()) == expected_leaf_pem_;
   }
-  grpc::Status Check(grpc::ServerContext* context,
+  grpc::Status HandleStrictCheck(grpc::ServerContext* context,
                      const rg::CheckAdmissionRequest* request,
                      rg::AdmissionDecision* response, sec::RpcMethod method) {
     handler_calls.fetch_add(1, std::memory_order_relaxed);
