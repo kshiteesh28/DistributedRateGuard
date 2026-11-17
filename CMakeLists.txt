@@ -322,3 +322,39 @@ add_test(NAME rateguard.certificate_registry_root_pin_mutation
     --mutant "$<TARGET_FILE:rateguard_certificate_registry_root_pin_mutant>"
     --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
 set_tests_properties(rateguard.certificate_registry_root_pin_mutation PROPERTIES TIMEOUT 250)
+
+# RG-004-B2 identity/permission inputs; no quota-state implementation.
+add_library(rateguard_peer_authenticator src/security/peer_authenticator.cpp)
+target_include_directories(rateguard_peer_authenticator PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_peer_authenticator PUBLIC rateguard_certificate_registry gRPC::grpc++)
+target_compile_options(rateguard_peer_authenticator PRIVATE -Wall -Wextra -Werror -pedantic)
+add_library(rateguard_authorization src/security/authorization_resolver.cpp)
+target_include_directories(rateguard_authorization PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_authorization PUBLIC rateguard_peer_authenticator rateguard_proto)
+target_compile_options(rateguard_authorization PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_SECURITY)
+  foreach(rg_auth_target IN ITEMS rateguard_peer_authenticator rateguard_authorization)
+    target_compile_options(${rg_auth_target} PUBLIC
+      -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(${rg_auth_target} INTERFACE -fsanitize=address,undefined)
+  endforeach()
+endif()
+add_executable(rateguard_peer_authenticator_tests
+  tests/security/peer_authenticator_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_peer_authenticator_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_peer_authenticator_tests PRIVATE rateguard_peer_authenticator)
+target_compile_options(rateguard_peer_authenticator_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.peer_authenticator COMMAND rateguard_peer_authenticator_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+add_executable(rateguard_authorization_tests
+  tests/security/authorization_resolver_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_authorization_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_authorization_tests PRIVATE rateguard_authorization)
+target_compile_options(rateguard_authorization_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.authorization COMMAND rateguard_authorization_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.peer_authenticator rateguard.authorization PROPERTIES TIMEOUT 90)
