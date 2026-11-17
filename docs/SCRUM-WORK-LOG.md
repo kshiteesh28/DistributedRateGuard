@@ -4,7 +4,7 @@
 
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
-**Review branches:** [RG-001 / #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6), [RG-003-A / #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), [RG-004-A / #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), [RG-004-B1 / #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10). No implementation has been merged to main.
+**Review branches:** [RG-001 / #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5), [RG-002 / #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6), [RG-003-A / #8](https://github.com/kshiteesh28/DistributedRateGuard/pull/8), [RG-004-A / #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), [RG-004-B1 / #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), [RG-004-B2 / #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11). No implementation has been merged to main.
 
 ## Reading and logging rules
 
@@ -19,7 +19,7 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | RG-001 contracts/build | Junior Dev: wire/helpers; Senior Dev: build; Tester: independent checks; Master: integration; earlier Scrum Master: acceptance review | Component verified; PR #5 ready, unmerged | Product Owner review; Sprint 0 Docker target/image-digest gate remains open (Master/Senior Dev); runtime integration has separate story gates |
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
-| RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1 inputs verified; PR #9/#10 ready, unmerged; full story in progress | Manifest binding, authorization, connection-expiry/reconnect/resumption and epoch/service integration remain open |
+| RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1/B2 inputs verified; PR #9/#10/#11 ready, unmerged; full story in progress | Client guards, real commit/forward, reconnect/resumption, manifest/fencing and service/export integration remain open |
 | RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
@@ -323,3 +323,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Senior Dev:** Independently reviewed exact source and observed complete CI; no material B2 code blocker. Flagged stale “evidence pending” text in the PR and contract.
 - **Master:** Archived [B2 evidence](evidence/RG-004-B2.md), manifest and native/Docker observations. Docker remains capability-only; no quota service, commit, forwarding, fencing, reconnect/resumption or release gate is accepted.
 - **Documentation promotion:** Updated only the contract status/link at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`. GitHub compare confirms one file, one added/deleted line, no implementation changes. PR body now distinguishes verified implementation evidence from the final documentation-head CI. The latter must finish before ready status; no further code change is planned without a new finding.
+
+### LOG-037 — 2026-11-17 05:30 UTC observation: final head green and B2 ready
+
+- **Final result:** [run 44023785687](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44023785687) passed at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`, merge `31084e66433126412a5e22457c13fde1f34350b1`: 25 CTest groups twice, 3 clock +9 security sanitizer checks, 16 Python methods, 12 generated-file matches, 53 C++20 commands and exact package lock. The implementation is unchanged from the independently accepted head.
+- **Master:** Marked [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) ready and unmerged, refreshed its body, archived final manifest/native/Docker observations and linked them from [B2 evidence](evidence/RG-004-B2.md). Docker again returned OBSERVATIONS_MATCHED; this is capability evidence only.
+- **Scrum Master:** Independently found current scope, dependencies, paths and full-story gates consistent, then flagged the work-log header/board still omitting B2. Master added PR #11 and narrowed the remaining-work wording to client guards and real service/lifecycle/export integrations.
+- **Handoff validation:** Context now points to actual public headers/sources and immutable tested revisions, with separate code and documentation-head evidence. Full RG-004 AC01–03, all deployment and numerical release gates remain open.
+- **Main:** Still `71393cf11a0f8508cfb7e85b85538ccc22067f75`; no implementation merge. No further feature-branch edit is needed for this scoped delivery.
