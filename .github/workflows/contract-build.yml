@@ -96,8 +96,8 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           cmake -S . -B build-security-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_SECURITY=ON
-          cmake --build build-security-sanitized --parallel 2 --target rateguard_tls_compatibility_tests rateguard_trusted_wall_clock_tests rateguard_trusted_wall_clock_independent_tests
-          ctest --test-dir build-security-sanitized --output-on-failure -R '^rateguard[.](mtls_compatibility|trusted_wall_clock|trusted_wall_clock_independent)$'
+          cmake --build build-security-sanitized --parallel 2 --target rateguard_tls_compatibility_tests rateguard_trusted_wall_clock_tests rateguard_trusted_wall_clock_independent_tests rateguard_certificate_registry_tests rateguard_certificate_registry_profile_tests rateguard_certificate_registry_independent_tests
+          ctest --test-dir build-security-sanitized --output-on-failure -R '^rateguard[.](mtls_compatibility|trusted_wall_clock|trusted_wall_clock_independent|certificate_registry|certificate_registry_profile|certificate_registry_independent)$'
 
       - name: Observe native trusted UTC source (not deployment acceptance)
         run: |

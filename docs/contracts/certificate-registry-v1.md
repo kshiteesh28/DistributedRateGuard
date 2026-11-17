@@ -18,7 +18,7 @@ The snapshot binds canonical policy digest, epoch/authority/slot identities, roo
 - Each directly signed leaf uses EC P-256/SHA-256, CA=false and digitalSignature. Apply strict chain validation and each role's required OpenSSL purpose. Accept no intermediates.
 - Require exact role EKUs: adapter clientAuth; authority serverAuth; replica both. Do not derive role from CN or request fields.
 - Require exactly one NUL-free URI SAN, matching one configured policy principal byte-for-byte. Reject missing/extra/duplicate principals and retain exact leaf DER SHA-256 pins.
-- Use an explicit trusted UTC sample, checked integer certificate-time conversion and `notBefore <= now < notAfter`, including fractional current seconds. Bind the resulting snapshot to unchanged canonical policy bytes/digest.
+- Use an explicit trusted UTC sample, checked integer certificate-time conversion (RFC 5280 UTCTime for 1950–2049; GeneralizedTime for 2050–9999) and `notBefore <= now < notAfter`, including fractional current seconds. Bind the resulting snapshot to unchanged canonical policy bytes/digest.
 - Invalid input, crypto/provider failure, allocation/resource failure or trusted-clock failure returns no snapshot. Immutable lookups do not insert or mutate state.
 
 ## Evidence and owners
@@ -26,3 +26,14 @@ The snapshot binds canonical policy digest, epoch/authority/slot identities, roo
 Senior Dev implements and supplies developer tests. Junior independently reviews integer time, lifetime and cap boundaries. Tester independently constructs positive/negative fixtures and defect controls against compiled production code. Master integrates a stacked PR and records actual Linux/OpenSSL/ASan results before review readiness.
 
 Full RG-004 AC01–03, live authorization, established-channel expiry, reconnect/resumption, end-to-end guards and export privacy remain open. A successful B1 test run will only validate this input contract.
+
+## Slice acceptance criteria
+
+| ID | Required evidence |
+| --- | --- |
+| RG-004-B1-AC01 | Real OpenSSL positive fixtures for adapter, replica and authority produce exact independently calculated pins, policy digest and epoch/authority bindings. Reordered input leaves preserve the same identity map. |
+| RG-004-B1-AC02 | Wrong root pin, issuer/signature/profile/EKU, unknown/duplicate/missing/extra URI and malformed PEM return no registry. |
+| RG-004-B1-AC03 | Injected clock failure and exact/fractional notBefore/notAfter boundaries fail or pass as specified, including expiry exactly at notAfter. |
+| RG-004-B1-AC04 | Exact/over certificate and aggregate bounds, principal-count bounds, immutable ownership and unknown lookup behavior are independently checked. Diagnostics contain bounded codes only; review confirms public metadata retention. |
+
+Linux CI and targeted ASan/UBSan must pass for the exact reviewed source. Full-story AT-04/14 and actual service privacy/rotation acceptance stay open.

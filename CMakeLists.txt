@@ -259,3 +259,66 @@ add_test(NAME rateguard.mtls_verifier_bypass
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/mtls_verifier_bypass_mutation_test.py"
     "$<TARGET_FILE:rateguard_tls_bypass_mutant>")
 set_tests_properties(rateguard.mtls_verifier_bypass PROPERTIES TIMEOUT 110)
+
+# RG-004-B1 typed certificate input; no manifest or request authorization.
+add_library(rateguard_certificate_registry src/security/certificate_registry.cpp)
+target_include_directories(rateguard_certificate_registry PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_certificate_registry PUBLIC
+  rateguard_security rateguard_trusted_wall_clock rateguard_policy OpenSSL::Crypto)
+target_compile_options(rateguard_certificate_registry PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_SECURITY)
+  target_compile_options(rateguard_certificate_registry PUBLIC
+    -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_certificate_registry INTERFACE -fsanitize=address,undefined)
+endif()
+add_executable(rateguard_certificate_registry_tests
+  tests/security/certificate_registry_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_certificate_registry_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_certificate_registry_tests PRIVATE rateguard_certificate_registry)
+target_compile_options(rateguard_certificate_registry_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.certificate_registry COMMAND rateguard_certificate_registry_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+add_executable(rateguard_certificate_registry_profile_tests
+  tests/security/certificate_registry_profile_test.cpp)
+target_link_libraries(rateguard_certificate_registry_profile_tests PRIVATE rateguard_certificate_registry)
+target_compile_options(rateguard_certificate_registry_profile_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.certificate_registry_profile COMMAND rateguard_certificate_registry_profile_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+add_executable(rateguard_certificate_registry_independent_tests
+  tools/tests/certificate_registry_independent_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_certificate_registry_independent_tests PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_certificate_registry_independent_tests PRIVATE rateguard_certificate_registry)
+target_compile_options(rateguard_certificate_registry_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.certificate_registry_independent COMMAND rateguard_certificate_registry_independent_tests
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.certificate_registry rateguard.certificate_registry_profile
+  rateguard.certificate_registry_independent PROPERTIES TIMEOUT 120)
+
+# This separate target deliberately violates one invariant for QA only.
+set(RG004_ROOT_PIN_MUTANT "${CMAKE_CURRENT_BINARY_DIR}/test-mutants/certificate_registry_root_pin.cpp")
+add_custom_command(OUTPUT "${RG004_ROOT_PIN_MUTANT}"
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/generate_wrong_root_pin_mutant.py"
+    --source "${CMAKE_CURRENT_SOURCE_DIR}/src/security/certificate_registry.cpp"
+    --output "${RG004_ROOT_PIN_MUTANT}"
+  DEPENDS src/security/certificate_registry.cpp tools/tests/generate_wrong_root_pin_mutant.py
+  VERBATIM)
+add_library(rateguard_certificate_registry_mutant STATIC "${RG004_ROOT_PIN_MUTANT}")
+target_include_directories(rateguard_certificate_registry_mutant PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(rateguard_certificate_registry_mutant PUBLIC
+  rateguard_security rateguard_trusted_wall_clock rateguard_policy OpenSSL::Crypto)
+target_compile_options(rateguard_certificate_registry_mutant PRIVATE -Wall -Wextra -Werror -pedantic)
+add_executable(rateguard_certificate_registry_root_pin_mutant
+  tools/tests/certificate_registry_independent_test.cpp tests/security/ephemeral_pki.cpp)
+target_include_directories(rateguard_certificate_registry_root_pin_mutant PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/tests/security")
+target_link_libraries(rateguard_certificate_registry_root_pin_mutant PRIVATE rateguard_certificate_registry_mutant)
+add_test(NAME rateguard.certificate_registry_root_pin_mutation
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/root_pin_mutation_test.py"
+    --normal "$<TARGET_FILE:rateguard_certificate_registry_independent_tests>"
+    --mutant "$<TARGET_FILE:rateguard_certificate_registry_root_pin_mutant>"
+    --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
+set_tests_properties(rateguard.certificate_registry_root_pin_mutation PROPERTIES TIMEOUT 250)
