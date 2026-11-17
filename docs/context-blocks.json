@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_date": "2026-11-12",
+  "generated_date": "2026-11-17",
   "recheck_mutable_state": true,
   "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
   "repository": {
@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-003-clock-provenance",
-    "implementation_base_branch": "feature/RG-002-policy-arithmetic"
+    "implementation_branch": "feature/RG-004-client-guards",
+    "implementation_base_branch": "feature/RG-004-peer-authorization"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg001_rg002_components_verified_rg003_component_verified_integration_pending",
+    "implementation": "rg004_b3_component_verified_rg005_next",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Clock component verified; full story and deployment/service/checker/release gates remain pending. Main unchanged."
+    "note": "A/B1/B2/B3 component inputs verified on unmerged review branches. Full RG004/service/lifecycle/export acceptance remains open."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -92,20 +92,98 @@
       "run": 43355987772,
       "tested_head": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
       "evidence": "docs/evidence/RG-003.md",
-      "excluded": "Participant topology, actual commit/deadline mapping, Release A strict UNKNOWN gate in RG-011A/005 and C extension in RG-013"
+      "excluded": "Participant topology, actual commit/deadline mapping, Release A strict UNKNOWN gate in RG-011A/005 and C extension in RG-013",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md",
+      "final_documentation_head": "f656648c884ce9bbe6fcb917566898a2f01b4c0e",
+      "final_documentation_run": 43358083253,
+      "pull_request_status": "ready_unmerged"
+    },
+    "latest_rg004": {
+      "status": "compatibility_input_independently_accepted",
+      "run": 43980308204,
+      "tested_head": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+      "merge_ref": "a24c820d98aea8916a23c49d6129a4b88d14504b",
+      "pull_request": 9,
+      "pull_request_status": "ready_unmerged",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-security-probes/docs/evidence/RG-004-A.md",
+      "docker_observation_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-A/docker-time-43980308204.json",
+      "docker_result": "OBSERVATIONS_MATCHED_capability_only",
+      "scope": "Exact leaf pin/URI TLS compatibility, independent verifier-bypass detection, trusted UTC primitive; not production registry/authorization, connection-expiry or epoch fencing"
+    },
+    "latest_rg004_b1": {
+      "id": "RG-004-B1",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-certificate-registry",
+      "head": "6366df84903049fde3fd92243b3aa7bd06c43986",
+      "pull_request": 10,
+      "run": 44016873892,
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/docs/contracts/certificate-registry-v1.md",
+      "scope": "Policy-bound typed certificate validation and immutable metadata only; no runtime authorization/readiness/fencing proof",
+      "merge_ref": "e03a5291889bb7fc9078bd5bda6b822657ea3cc7",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B1.md"
+    },
+    "latest_rg004_b2": {
+      "id": "RG-004-B2",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-peer-authorization",
+      "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
+      "pull_request": 11,
+      "run": 44023785687,
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
+      "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
+      "documentation_run": 44023785687,
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
+      "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+      "implementation_run": 44022842950,
+      "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
+      "pull_request_status": "ready_unmerged",
+      "public_interfaces": [
+        "PeerAuthenticator::Authenticate",
+        "AuthorizationResolver::Create",
+        "AuthorizationResolver::Resolve"
+      ],
+      "acceptance": "independent_QA_and_senior_review_passed",
+      "full_story_done": false
+    },
+    "latest_rg004_b3": {
+      "id": "RG-004-B3",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-client-guards",
+      "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc",
+      "pull_request": 12,
+      "run": 44128491936,
+      "merge_ref": "1fe328849653f92486fa69695e649a6049e961b0",
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B3.md",
+      "scope": "Client trust guard/sealed typed calls and native SDK session qualification only; production caching disabled; no actual commit/forward/fencing",
+      "acceptance": "independent_QA_and_senior_review_passed",
+      "session_qualification": {
+        "status": "qualified_test_fixture_only",
+        "actual_resumed": true,
+        "cache_capacity": 1,
+        "new_transport": true,
+        "client_leaf_pin": true,
+        "server_leaf_pin": true,
+        "client_verifier_delta": 1,
+        "server_verifier_delta": 1,
+        "production_session_cache_enabled": false
+      },
+      "full_story_done": false,
+      "pull_request_status": "ready_unmerged"
     }
   },
   "next_actions": [
-    "Review PR #8 clock component; full RG-003 integration remains explicitly pending.",
-    "Resolve and record RG-004 security decisions before authentication implementation.",
-    "Keep Docker target/image-digest and runtime/release gates open.",
-    "PR #5/#6 ready; no main merge without Product Owner command."
+    "Implement RG005 event/history component from verified RG001 input, freezing run-wide budget ownership/producer roster and artifact format before code.",
+    "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
+    "Keep production session caching disabled; native SDK qualification is test-only.",
+    "Maintain per-agent logs and leave main implementation merges to Product Owner control."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
     "implementation": "Development/testing authorized; main merge remains under Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
-    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation."
+    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation.",
+    "main_implementation_merge": "Product Owner controls current implementation merge to main; all implementation PRs remain unmerged."
   },
   "stories": [
     {
@@ -421,7 +499,8 @@
             "Docker participant provenance",
             "Service commit/deadline mapping",
             "Checker UNKNOWN classification"
-          ]
+          ],
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md"
         },
         {
           "id": "RG-003-B",
@@ -473,7 +552,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "a_b1_b2_b3_component_verified_full_integration_pending",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -487,17 +566,64 @@
       ],
       "planned_files": [
         {
-          "path": "src/security/peer_authenticator.h",
-          "status": "proposed_not_present"
+          "path": "include/rateguard/security/peer_authenticator.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
         },
         {
-          "path": "src/security/authorization.h",
-          "status": "proposed_not_present"
+          "path": "src/security/peer_authenticator.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/authorization_resolver.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/authorization_resolver.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/client_call_guard.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "src/security/client_call_guard.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "include/rateguard/security/pinned_peer_rpc_client.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "src/security/pinned_peer_rpc_client.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
         }
       ],
       "classes": [
         "PeerAuthenticator",
-        "AuthorizationResolver"
+        "AuthenticatedPeer",
+        "AuthorizationResolver",
+        "AuthorizedOperation",
+        "AuthorizedGrant",
+        "ClientCallGuard",
+        "PreparedClientCall",
+        "PinnedPeerRpcClient",
+        "Invoked"
       ],
       "code_design_notes": [
         "Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy.",
@@ -553,7 +679,146 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Integrate verified security inputs at actual service precommit/pregrant/preforward points, with RG006 manifest/fencing and RG005 event/export privacy; full-story ACs remain unverified.",
+      "implementation_decisions": {
+        "path": "docs/decisions/RG-004-security-v1.md",
+        "revision": 2,
+        "branch": "docs/scrum-work-log",
+        "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/decisions/RG-004-security-v1.md",
+        "status": "selected_defaults_partial_implementation_verified",
+        "remaining_evidence": [
+          "Production manifest binding, credential provisioning and participant readiness/fenced rotation",
+          "Actual service precommit/pregrant/preforward wiring and deadline/epoch checks; B3 supplies only reusable certificate/time primitives",
+          "Real service no-allocation fault cases, event/export privacy and remaining full-story acceptance"
+        ]
+      },
+      "component_inputs": [
+        {
+          "id": "RG-004-A",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-security-probes",
+          "head": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+          "run": 43980308204,
+          "scope": "Exact leaf pin/URI TLS compatibility, independent verifier-bypass detection, trusted UTC primitive; not production registry/authorization, connection-expiry or epoch fencing"
+        },
+        {
+          "id": "RG-004-B1",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986",
+          "pull_request": 10,
+          "run": 44016873892,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/docs/contracts/certificate-registry-v1.md",
+          "scope": "Typed public-certificate validation and immutable metadata only; no manifest/auth/service readiness claim",
+          "merge_ref": "e03a5291889bb7fc9078bd5bda6b822657ea3cc7",
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B1.md"
+        },
+        {
+          "id": "RG-004-B2",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
+          "pull_request": 11,
+          "run": 44023785687,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
+          "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
+          "documentation_run": 44023785687,
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
+          "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+          "implementation_run": 44022842950,
+          "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
+          "pull_request_status": "ready_unmerged"
+        },
+        {
+          "id": "RG-004-B3",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc",
+          "pull_request": 12,
+          "run": 44128491936,
+          "merge_ref": "1fe328849653f92486fa69695e649a6049e961b0",
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B3.md",
+          "scope": "Client trust guard/sealed typed calls and native SDK session qualification only; production caching disabled; no actual commit/forward/fencing",
+          "acceptance": "independent_QA_and_senior_review_passed",
+          "session_qualification": {
+            "status": "qualified_test_fixture_only",
+            "actual_resumed": true,
+            "cache_capacity": 1,
+            "new_transport": true,
+            "client_leaf_pin": true,
+            "server_leaf_pin": true,
+            "client_verifier_delta": 1,
+            "server_verifier_delta": 1,
+            "production_session_cache_enabled": false
+          },
+          "full_story_done": false,
+          "pull_request_status": "ready_unmerged"
+        }
+      ],
+      "integration_dependencies": [
+        {
+          "producer_story": "RG-006",
+          "contract": "epoch_manifest_and_positive_fencing",
+          "status": "pending",
+          "required_for": [
+            "RG-004-AC02"
+          ],
+          "purpose": "Fenced trust replacement; full-story acceptance follows supervisor lifecycle evidence"
+        },
+        {
+          "producer_story": "RG-005",
+          "contract": "real_event_and_export_privacy",
+          "status": "pending",
+          "required_for": [
+            "RG-004-AC03"
+          ]
+        }
+      ],
+      "implemented_input_files": [
+        {
+          "path": "include/rateguard/security/certificate_registry.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        },
+        {
+          "path": "src/security/certificate_registry.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        },
+        {
+          "path": "include/rateguard/security/peer_authenticator.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/peer_authenticator.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/authorization_resolver.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/authorization_resolver.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        }
+      ],
+      "authorization_contract": {
+        "path": "docs/contracts/peer-authorization-v1.md",
+        "revision": 1,
+        "branch": "feature/RG-004-peer-authorization",
+        "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/20210d5fbabcd891dbbb20ab89eca26f3a73a1db/docs/contracts/peer-authorization-v1.md"
+      }
     },
     {
       "id": "RG-005",
@@ -653,7 +918,6 @@
       "depends_on": [
         "RG-002",
         "RG-003",
-        "RG-004",
         "RG-005"
       ],
       "prd_ids": [
@@ -758,6 +1022,21 @@
           "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
           "evidence": "docs/evidence/RG-003.md",
           "purpose": "Verified clock for development; full RG-003 integration not waived"
+        },
+        {
+          "contract": "RG-004-A",
+          "producer_story": "RG-004",
+          "revision": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+          "status": "verified",
+          "purpose": "TLS pin verifier/trusted UTC development input; not full authentication acceptance"
+        },
+        {
+          "contract": "RG-004-B1",
+          "producer_story": "RG-004",
+          "status": "verified",
+          "purpose": "Validated immutable certificate metadata for manifest implementation; runtime authorization, service activation and final fencing gates remain separate",
+          "revision": "6366df84903049fde3fd92243b3aa7bd06c43986",
+          "run": 44016873892
         }
       ]
     },
@@ -1613,7 +1892,7 @@
   "sprint_plan": {
     "path": "docs/SPRINT-PLAN.md",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SPRINT-PLAN.md",
-    "status": "sprint_0_component_verified_review_pending",
+    "status": "sprint_1_foundations_in_progress_sprint_0_deployment_gate_open",
     "estimates_unit": "active_agent_minutes",
     "baseline_total_minutes": 15250,
     "feasibility_spike_minutes": {
@@ -1628,5 +1907,6 @@
     "canonical_branch": "docs/scrum-work-log",
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
-  }
+  },
+  "generated_at_utc": "2026-11-17T16:47:23Z"
 }

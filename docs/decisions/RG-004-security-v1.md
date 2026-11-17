@@ -1,7 +1,7 @@
 # RG-004 security decisions — revision 2
 
 **Date:** 2026-11-16 · **Decision owner:** Master technical lead  
-**Status:** Selected v1 implementation defaults; compatibility and deployment evidence pending. No authentication implementation or passing TLS test is claimed.  
+**Status:** Selected v1 defaults. RG-004-A/B1/B2/B3 component inputs independently accepted, including client guards and scoped native SDK reconnect/resumption qualification. Actual runtime service commit/forward, credential provisioning, fenced rotation and epoch/deployment integration remain pending; full AC01–03 remain open.  
 **Sources:** PRD 8; SRD 5 D1/D2/D9; LLD 5 A-02 / §§9,16,17; [policy-v1](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-002-policy-arithmetic/docs/contracts/policy-v1.md).  
 **Review:** Senior Dev performed requirements extraction and pinned-source review; Master selected the defaults below. This record adds internal configuration/provisioning detail without changing canonical policy-v1 or release gates.
 
@@ -23,7 +23,7 @@
 
 ## Pinned API evidence and remaining prototypes
 
-Senior Dev verified source support in **gRPC C++ v1.51.1**, not a successful build/handshake: experimental ExternalCertificateVerifier, TlsChannelCredentialsOptions and TlsServerCredentialsOptions expose URI SANs and peer leaf PEM. The custom verifier runs after TLS handshake before peer-check completion; rejection prevents proceeding to RPC dispatch. Full-chain PEM is not guaranteed. Keep server-certificate verification enabled and server client-certificate request policy REQUIRE_AND_VERIFY.
+Initial source review identified support in **gRPC C++ v1.51.1**: experimental ExternalCertificateVerifier, TlsChannelCredentialsOptions and TlsServerCredentialsOptions expose URI SANs and peer leaf PEM. The custom verifier runs after TLS handshake before peer-check completion; rejection prevents proceeding to RPC dispatch. Full-chain PEM is not guaranteed. Keep server-certificate verification enabled and server client-certificate request policy REQUIRE_AND_VERIFY.
 
 Primary sources: [certificate verifier API](https://github.com/grpc/grpc/blob/v1.51.1/include/grpcpp/security/tls_certificate_verifier.h), [TLS credentials options](https://github.com/grpc/grpc/blob/v1.51.1/include/grpcpp/security/tls_credentials_options.h), [TLS connector population and peer check](https://github.com/grpc/grpc/blob/v1.51.1/src/core/lib/security/security_connector/tls/tls_security_connector.cc), [adjtimex states and flags](https://man7.org/linux/man-pages/man2/adjtimex.2.html).
 
@@ -42,3 +42,16 @@ No remaining behavior is delegated to an unrecorded default. Prototype/operating
 
 - **Revision 2 (2026-11-16):** Senior review corrected the Master-assigned primitive commitment contract: operation commitment belongs to the caller, including after ALLOW. Clarified that the port's sticky trust-loss state is local; participant readiness and epoch-wide fencing remain service/supervisor integration. No PRD/SRD gate, canonical policy encoding, or quota algorithm changed.
 - **Revision 1 (2026-11-13):** Selected SEC-01–11 before compatibility implementation; source research did not claim a compiled TLS or deployment result.
+
+## Current evidence status (2026-11-16)
+
+[PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9) and [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204) close the initial compile/handshake compatibility prerequisite: exact URI/leaf pin rejection before handler execution, positive TLS controls, independent bypass detection and trusted UTC primitive checks passed. [Restricted Docker observations](../evidence/RG-004-A/docker-time-43980308204.json) matched; they are not actual service topology or epoch activation evidence. Items 2–4 and live-service/deployment parts of 5–6 remain open. Historical feature-branch copies precede this evidence update; the selected SEC-01–11 behavior is unchanged.
+
+## B1/B2 implementation evidence update (2026-11-17 UTC)
+
+[B1 evidence](../evidence/RG-004-B1.md) verifies typed certificate-registry validation. [B2 evidence](../evidence/RG-004-B2.md) verifies actual TLS peer extraction, fresh dispatch/resolver expiry, policy binding/cost/permission checks and selected compiled unsafe variants. [B2's implementation contract](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md) records exact request/status interpretations and the trusted-gRPC-context construction assumption. These inputs do not close full security component items 2–6: client guards, real commit/forward, reconnect/resumption, manifest/fenced replacement, actual service deployment and real export/retention remain separately gated. SEC-01–11 behavior, policy-v1 encoding and PRD/SRD release requirements are unchanged.
+
+
+## B3 implementation evidence update (2026-11-17 UTC)
+
+[B3 evidence](../evidence/RG-004-B3.md) and [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) verify the outgoing root/own-client/expected-server time guard, sealed typed client, reused-channel expiry and pre-forward recheck primitive. Separate SDK qualification observed actual resumption on a new transport with exact leaf pins and fresh verifier calls on both sides. Production session caching remains disabled. Prototype items 2–3 have scoped fixture evidence; actual commit/forward, manifest/fenced rotation, live-service Docker topology, provisioning and export privacy remain open. This update does not change SEC-01–11 or close full RG004 AC01–03.
