@@ -1,6 +1,6 @@
 # RG-004-B2 peer authentication and authorization contract
 
-**Revision:** 1 · **Date:** 2026-11-17 UTC · **Status:** Selected implementation contract; execution evidence pending.  
+**Revision:** 1 · **Date:** 2026-11-17 UTC · **Status:** Selected implementation contract. Current verification is tracked in [B2 evidence](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md); full RG-004 remains incomplete.  
 **Branch:** `feature/RG-004-peer-authorization`, based on B1 head `6366df84903049fde3fd92243b3aa7bd06c43986`.  
 **Sources:** PRD 8 PRD-008/024; SRD 5 FR-003/D1/D2/D9; LLD 5 A-02/A-05/§17; [SEC-01–11 revision 2](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/decisions/RG-004-security-v1.md); frozen [admission](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/proto/rateguard/v1/admission.proto) and [authority](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/proto/rateguard/v1/authority.proto) messages. PRD/SRD/protobuf fields are unchanged.
 
