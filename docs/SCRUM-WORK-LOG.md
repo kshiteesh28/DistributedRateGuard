@@ -315,3 +315,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Master:** Removed impossible peer-auth switch cases and renamed HandleStrictCheck at head `9d14bb74bd937401471e96e039f651c17c226c43`. Production authentication/resolver code is unchanged.
 - **Observed rerun:** [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950) compiled successfully and passed the primary test step, including the real RPC and isolated mutant controls. The clean rebuild and sanitizer lanes are still pending at this observation.
 - **Gate:** PR #11 stays draft. A passing primary suite is not a completed workflow or final independent acceptance. No quota or release pass is claimed.
+
+### LOG-036 — 2026-11-17 05:24 UTC observation: independent B2 acceptance and documentation promotion
+
+- **Observed:** [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950), head `9d14bb74bd937401471e96e039f651c17c226c43` / merge `d1027f6a455284b6a4b626d4f6de15f1771cd2f8`, passed 25 CTest groups twice, clock 3/3 and security 9/9 sanitizer checks, 16 Python methods (13 manifest +3 policy), 12 generated matches and 53 C++20 compilation commands with exact package lock.
+- **Tester:** Independently fetched source/logs and accepted actual TLS property, policy/state-spy, dispatch-expiry and isolated pair/pin controls. Rejected TLS clients do not reach handlers. No remaining scoped test blocker.
+- **Senior Dev:** Independently reviewed exact source and observed complete CI; no material B2 code blocker. Flagged stale “evidence pending” text in the PR and contract.
+- **Master:** Archived [B2 evidence](evidence/RG-004-B2.md), manifest and native/Docker observations. Docker remains capability-only; no quota service, commit, forwarding, fencing, reconnect/resumption or release gate is accepted.
+- **Documentation promotion:** Updated only the contract status/link at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`. GitHub compare confirms one file, one added/deleted line, no implementation changes. PR body now distinguishes verified implementation evidence from the final documentation-head CI. The latter must finish before ready status; no further code change is planned without a new finding.
