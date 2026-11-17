@@ -307,3 +307,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Master integration:** Used the frozen no-retry enforcement-channel factory for fixture channels. Added bounded stdout/stderr file limits, 120-second process timeouts and generic PEM-armor scanning; child output is withheld. Preserved QA's normal-positive-first controls and exact unsafe failure markers.
 - **Unsafe variants:** Separate compiled libraries remove only the CheckAdmission permission guard or the per-call leaf-pin comparison. Normal production targets have no bypass flags. The permission variant leaves the independent credit guard unchanged; no credit-mutation coverage is claimed.
 - **Publication:** Atomic head `a0a072eb9992fac45439d46ab07e52410984bd57` adds the real fixture/mutants and sanitizer wiring. Its CI is pending; first-bundle green does not accept this new head. PR #11 stays draft and main is untouched.
+
+### LOG-035 — 2026-11-17 05:18 UTC observation: RPC compile findings fixed; primary run green
+
+- **Observed failure:** [run 44022535591](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022535591), job `133835097642`, failed compiling the new RPC test. It referenced InvalidArgument/PermissionDenied members removed from PeerAuthDisposition; AuthorityProbe's local Check helper also hid the assertion function. No new RPC/mutation runtime test ran in this failed build.
+- **Tester:** Independently fetched actual compiler logs and identified both fixture issues.
+- **Master:** Removed impossible peer-auth switch cases and renamed HandleStrictCheck at head `9d14bb74bd937401471e96e039f651c17c226c43`. Production authentication/resolver code is unchanged.
+- **Observed rerun:** [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950) compiled successfully and passed the primary test step, including the real RPC and isolated mutant controls. The clean rebuild and sanitizer lanes are still pending at this observation.
+- **Gate:** PR #11 stays draft. A passing primary suite is not a completed workflow or final independent acceptance. No quota or release pass is claimed.
