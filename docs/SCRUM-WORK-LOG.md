@@ -1,6 +1,6 @@
 # Scrum Work Log
 
-**Live log:** [docs/scrum-work-log branch](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md). This is the canonical ongoing log; feature-branch copies are snapshots.
+**Live log:** This file follows the implementation on `feature/distributed-rateguard`. Story branches append entries for integration. Earlier entries record the branch state at their observation time.
 
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
@@ -380,3 +380,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Scrum Master:** Independently confirmed PR12 ready/unmerged, exact head/run/evidence, test-only resumption scope, cache disabled, full RG004 ACs open, RG005 next and RG011A Release A prerequisite. Found stale B3-pending wording in the story catalog, context first_action/remaining_evidence and security decision header.
 - **Master:** Corrected those handoff fields without touching tested implementation or binding specs. Readback confirmed 14 unique context stories, a valid dependency DAG, 41 unique prior log IDs, exact evidence JSON and unchanged main. PR7 summary now points through current B3 evidence.
 - **Next:** RG005 event component contract must fix producer roster, encoded byte accounting, reservations/publications/seals and one run-wide 1 GiB budget before code. Static disjoint producer partitions are being evaluated as a bounded option; no RG005 implementation or acceptance is claimed.
+
+### LOG-043 — RG-005 implementation starts (2026-11-21 UTC)
+
+- **Master:** Continued from PR #13's feature head `c3f9bbf`. [PR #14](https://github.com/kshiteesh28/DistributedRateGuard/pull/14) targets that feature. Published the [strict history contract](contracts/strict-event-history.md) in `f54e226` and the seven-day local export cleanup in `69a533b`. Its isolated boundary test passed, including unrelated files and symlink preservation. The exporter must invoke cleanup when it starts using the private output directory.
+- **Senior developer:** Owns typed per-producer reservations, bounded run accounting, publication and sealing.
+- **Junior developer:** Owns structural snapshot validation against the independent expected producer plan.
+- **Tester:** Owns reserve races, exhaustion, evidence corruption and missing-seal checks against the implementation. Test results will be recorded after execution.
+- **Scope:** RG-005 implementation is underway. Durability, runtime traffic stops, retention integration and release acceptance remain open.
