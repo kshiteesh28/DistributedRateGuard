@@ -303,7 +303,7 @@ inline bool ValidatePlan(const RunPlan& plan, std::uint64_t& planned_bytes) noex
         !CheckedMultiplyAdd(planned_bytes, spec.event_capacity, kEventSlotEncodedBytes) ||
         !CheckedAdd(planned_bytes, kProducerSealEncodedBytes)) return false;
   }
-  return planned_bytes <= plan.budget_bytes && planned_bytes <= kMaxRunBudgetBytes;
+  return planned_bytes <= plan.budget_bytes && planned_bytes < kMaxRunBudgetBytes;
 }
 
 }  // namespace detail

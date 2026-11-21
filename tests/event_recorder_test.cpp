@@ -145,6 +145,11 @@ void TestBudgetBoundaries() {
   }
   auto below = EventRecorder::Create(Plan({{ProducerOwner::Authority, 0, 1}}, exact - 1));
   CHECK(IsError(below, RecorderError::InvalidPlan));
+  // 97 + 7*39 + 21,053,754*51 = 1 GiB. Reject before allocating slots.
+  std::vector<ProducerSpec> at_cap;
+  for (unsigned i = 0; i < 7; ++i)
+    at_cap.push_back({ProducerOwner::Replica, i, i == 0 ? 21053748ULL : 1ULL});
+  CHECK(IsError(EventRecorder::Create(Plan(std::move(at_cap))), RecorderError::InvalidPlan));
   auto too_large_budget = EventRecorder::Create(Plan({{ProducerOwner::Authority, 0, 1}}, kMaxRunBudgetBytes + 1));
   CHECK(IsError(too_large_budget, RecorderError::InvalidPlan));
   auto duplicate_roster = EventRecorder::Create(Plan({{ProducerOwner::Authority, 0, 1},
