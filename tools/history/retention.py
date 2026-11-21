@@ -10,7 +10,7 @@ from pathlib import Path
 
 RETENTION_SECONDS = 7 * 24 * 60 * 60
 # Exporters choose the creation second once and keep it when a file is copied.
-LOCAL_HISTORY = re.compile(r"rg-history-v1-([0-9]{1,12})-[0-9a-f]{32}\.bin", re.ASCII)
+LOCAL_HISTORY = re.compile(r"rg-history-v1-([0-9]{1,12})-[0-9a-f]{32}\.bin(?:\.partial)?", re.ASCII)
 
 
 def expire_local_exports(directory: Path, now_seconds: int) -> int:

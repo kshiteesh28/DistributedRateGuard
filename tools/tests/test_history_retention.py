@@ -18,14 +18,17 @@ class RetentionTest(unittest.TestCase):
 
             expired, recent = managed(100, "a"), managed(101, "a")
             unrelated, link, directory = root / "report.json", managed(99, "b"), managed(99, "c")
-            for file in (expired, recent, unrelated):
+            partial = Path(str(managed(100, "d")) + ".partial")
+            fresh_partial = Path(str(managed(101, "d")) + ".partial")
+            unrelated_partial = root / "notes.bin.partial"
+            for file in (expired, recent, unrelated, partial, fresh_partial, unrelated_partial):
                 file.write_bytes(b"synthetic")
             link.symlink_to(unrelated)
             directory.mkdir()
             now = 100 + retention.RETENTION_SECONDS
-            self.assertEqual(retention.expire_local_exports(root, now), 1)
+            self.assertEqual(retention.expire_local_exports(root, now), 2)
             self.assertFalse(expired.exists())
-            self.assertEqual(set(root.iterdir()), {recent, unrelated, link, directory})
+            self.assertEqual(set(root.iterdir()), {recent, fresh_partial, unrelated, unrelated_partial, link, directory})
             self.assertEqual(retention.expire_local_exports(root, now), 0)
 
 
