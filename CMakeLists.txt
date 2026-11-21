@@ -488,3 +488,10 @@ add_test(NAME rateguard.pinned_client_preflight_mutation
     --mutant "$<TARGET_FILE:rateguard_pinned_client_preflight_mutant_tests>"
     --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
 set_tests_properties(rateguard.pinned_client_preflight_mutation PROPERTIES TIMEOUT 270)
+
+# RG-005 component checks. Use std::thread for the last-slot contention case.
+add_executable(rateguard_event_recorder_tests tests/event_recorder_test.cpp)
+target_include_directories(rateguard_event_recorder_tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_options(rateguard_event_recorder_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+target_link_libraries(rateguard_event_recorder_tests PRIVATE Threads::Threads)
+add_test(NAME rateguard.event_recorder COMMAND rateguard_event_recorder_tests)
