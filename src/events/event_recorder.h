@@ -116,7 +116,7 @@ struct RunPlan final {
   EpochId epoch_id{};
   PolicyDigest policy_digest{};
   std::vector<ProducerSpec> producers;
-  // Smaller test budgets are valid. Exact-boundary plans are accepted.
+  // An exact fit is valid for a smaller test budget. The 1 GiB ceiling is exclusive.
   std::uint64_t budget_bytes{kMaxRunBudgetBytes};
 };
 
