@@ -1,6 +1,6 @@
 #pragma once
 
-// Proposed RG-005 Release A in-memory correctness-event recorder.
+// RG-005 Release A in-memory correctness-event recorder.
 // This header is self-contained C++20 and deliberately records no arbitrary payload.
 
 #include <algorithm>
@@ -145,7 +145,6 @@ struct EventSnapshotV1 final {
   EpochId epoch_id{};
   PolicyDigest policy_digest{};
   // Exact fixed-width encoded extent, including every unused allowance slot.
-  // Exact serialized extent for the fixed partition plan, including unused slots.
   std::uint64_t planned_bytes{0};
   std::uint64_t budget_bytes{0};
   bool complete{false};
@@ -294,28 +293,22 @@ inline bool ValidatePlan(const RunPlan& plan, std::uint64_t& planned_bytes) noex
   const auto producer_min = kProducerEnvelopeEncodedBytes + kProducerSealEncodedBytes +
                             kEventSlotEncodedBytes;
   if (plan.producers.size() > (plan.budget_bytes - planned_bytes) / producer_min) return false;
-  std::vector<std::pair<std::uint8_t, std::uint32_t>> keys;
-  try { keys.reserve(plan.producers.size()); } catch (...) { return false; }
   for (std::size_t i = 0; i < plan.producers.size(); ++i) {
     const auto& spec = plan.producers[i];
     if (!IsKnownOwner(spec.owner) || spec.event_capacity == 0 ||
         spec.event_capacity > static_cast<std::uint64_t>(std::numeric_limits<std::size_t>::max())) return false;
-    keys.emplace_back(static_cast<std::uint8_t>(spec.owner), spec.producer_index);
+    if (i != 0 && plan.producers[i - 1].owner == spec.owner &&
+        plan.producers[i - 1].producer_index == spec.producer_index) return false;
     if (!CheckedAdd(planned_bytes, kProducerEnvelopeEncodedBytes) ||
         !CheckedMultiplyAdd(planned_bytes, spec.event_capacity, kEventSlotEncodedBytes) ||
         !CheckedAdd(planned_bytes, kProducerSealEncodedBytes)) return false;
   }
-  std::sort(keys.begin(), keys.end());
-  if (std::adjacent_find(keys.begin(), keys.end()) != keys.end()) return false;
   return planned_bytes <= plan.budget_bytes && planned_bytes <= kMaxRunBudgetBytes;
 }
 
 }  // namespace detail
 
 class EventRecorder final {
- private:
-  struct SharedTag {};
-
  public:
   class ProducerHandle;
 
@@ -482,12 +475,12 @@ class EventRecorder final {
 
   [[nodiscard]] static Result<EventRecorder> Create(RunPlan plan) noexcept {
     std::uint64_t planned_bytes = 0;
+    std::sort(plan.producers.begin(), plan.producers.end(), [](const auto& a, const auto& b) {
+      return a.owner < b.owner || (a.owner == b.owner && a.producer_index < b.producer_index);
+    });
     if (!detail::ValidatePlan(plan, planned_bytes)) return RecorderError::InvalidPlan;
     try {
       auto run = std::make_shared<detail::RunState>();
-      std::sort(plan.producers.begin(), plan.producers.end(), [](const auto& a, const auto& b) {
-        return a.owner < b.owner || (a.owner == b.owner && a.producer_index < b.producer_index);
-      });
       run->epoch_id = plan.epoch_id;
       run->policy_digest = plan.policy_digest;
       run->planned_bytes = planned_bytes;
