@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-004-client-guards",
-    "implementation_base_branch": "feature/RG-004-peer-authorization"
+    "implementation_branch": "feature/distributed-rateguard",
+    "implementation_base_branch": "main"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_b3_component_verified_rg005_next",
+    "implementation": "rg005_event_history_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "A/B1/B2/B3 component inputs verified on unmerged review branches. Full RG004/service/lifecycle/export acceptance remains open."
+    "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -826,7 +826,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-005",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "in_progress",
       "depends_on": [
         "RG-001"
       ],
@@ -1904,9 +1904,9 @@
   },
   "work_log": {
     "path": "docs/SCRUM-WORK-LOG.md",
-    "canonical_branch": "docs/scrum-work-log",
+    "canonical_branch": "feature/distributed-rateguard",
     "historical_actual_effort": "unknown_not_recorded",
-    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
   "generated_at_utc": "2026-11-17T16:47:23Z"
 }
