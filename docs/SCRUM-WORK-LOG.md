@@ -458,3 +458,10 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Tester:** Independently exercised contention, token lifetime, inherited PID, restoration after taint, initialization/crash boundaries, root-path normalization and claim concurrency. Root checked child pipe writes before publication so fortified GCC can enforce their outcomes.
 - **Evidence:** [Runtime ownership](evidence/RG-006-C.md). Local syntax tests pass. Shim-linked local POSIX/sanitizer checks are excluded from cryptographic acceptance; real OpenSSL/Linux CI is pending.
 - **Remaining:** The configured-root guarantee does not cover alternate misconfigured roots. A fenced successor-epoch authorization protocol and actual process control remain open; root recreation cannot substitute for recovery.
+
+### LOG-053 — Runtime ownership verified on Linux (2026-11-23 23:20 UTC)
+
+- **Master:** [Run 45286150998](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45286150998) passed at `abd4a1bb30eecbc3d8eae3f5f582e5c5660d6780` (PR merge ref 79eb61f): 44 CTest groups twice, 17 Python tests, 12 matching generated files, three manifest / two owner / two lifecycle / three clock / eight history / twelve security sanitizer groups. Real OpenSSL evidence supersedes shim-only local smoke.
+- **Correction:** After pre-mutex fork rejection was added, the independent child fixture still expected the older RecoveryRequired enum. Updated it to OwnerProcessChanged; no failed run is counted as acceptance.
+- **Scrum Master:** Confirmed scope and staged startup ordering; flagged missing new-class detail in LLD and stale tracking metadata. Those documentation corrections are being recorded, with successor-epoch recovery explicitly open.
+- **Integration:** PR18 is ready for feature integration after readback. PR19 depends on it and adds initial bootstrap inventory/persistence. Full RG006 process control, authenticated activation and positive-fencing acceptance remain pending; PR13 remains final promotion to main.
