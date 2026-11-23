@@ -490,11 +490,16 @@ add_test(NAME rateguard.pinned_client_preflight_mutation
 set_tests_properties(rateguard.pinned_client_preflight_mutation PROPERTIES TIMEOUT 270)
 
 # RG-005 component checks. Use std::thread for the last-slot contention case.
+option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
   add_executable(${target} ${source})
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(${target} PRIVATE Threads::Threads)
   target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -pedantic)
+  if(RATEGUARD_SANITIZE_HISTORY)
+    target_compile_options(${target} PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+    target_link_options(${target} PRIVATE -fsanitize=address,undefined)
+  endif()
   add_test(NAME rateguard.${name} COMMAND ${target})
 endfunction()
 add_history_test(rateguard_event_recorder_tests tests/event_recorder_test.cpp event_recorder)
