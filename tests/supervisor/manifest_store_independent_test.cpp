@@ -566,6 +566,19 @@ void TestLegalPhaseGraphAndOperationIds() {
   CHECK(store->snapshot().phase == ManifestPhase::Closed);
 }
 
+void TestNonRegularManifestDoesNotBlock() {
+  TempRoot root;
+  const auto directory = root.path() / "named-pipe";
+  auto owner = Create(directory);
+  owner.reset();
+  const auto manifest_path = directory / "manifest.json";
+  CHECK(::unlink(manifest_path.c_str()) == 0);
+  CHECK(::mkfifo(manifest_path.c_str(), 0600) == 0);
+  auto result = ManifestStore::OpenExisting(directory.string());
+  CHECK(std::get_if<ManifestStoreError>(&result) != nullptr);
+  CHECK(std::get<ManifestStoreError>(result) == ManifestStoreError::InvalidManifestFile);
+}
+
 void TestInProcessTransitionSerialization() {
   TempRoot root;
   auto pause = std::make_unique<BlockAt>(ManifestIoPoint::WriteTemp, 2);
@@ -605,6 +618,7 @@ int main() {
   TestCreationFailureDoesNotTurnExistingPathIntoNewEpoch();
   TestGenerationBoundsAndIndependentDirectoryLocks();
   TestLegalPhaseGraphAndOperationIds();
+  TestNonRegularManifestDoesNotBlock();
   TestInProcessTransitionSerialization();
   std::cout << "independent manifest store checks passed\n";
 }

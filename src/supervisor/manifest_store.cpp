@@ -157,7 +157,7 @@ bool ReadAll(int fd, std::string& out, std::size_t size) {
 std::variant<std::pair<ManifestV1, std::array<std::uint8_t, 32>>, ManifestStoreError>
 ReadManifest(int dirfd, IManifestFileOps* hooks) {
   if (Fail(hooks, ManifestIoPoint::OpenManifest)) return ManifestStoreError::ReadFailure;
-  const int fd = ::openat(dirfd, kManifestName, O_RDONLY | O_CLOEXEC | O_NOFOLLOW);
+  const int fd = ::openat(dirfd, kManifestName, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
   if (fd < 0) {
     if (errno == ENOENT) return ManifestStoreError::MissingManifest;
     return ManifestStoreError::ReadFailure;
@@ -443,7 +443,7 @@ ManifestStoreOpenResult ManifestStore::OpenExisting(
     if (Fail(hooks, ManifestIoPoint::OpenLock)) {
       return ManifestStoreError::InvalidLock;
     }
-    UniqueFd lockfd(::openat(dirfd.get(), kLockName, O_RDWR | O_CLOEXEC | O_NOFOLLOW));
+    UniqueFd lockfd(::openat(dirfd.get(), kLockName, O_RDWR | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK));
     if (lockfd.get() < 0) return ManifestStoreError::InvalidLock;
     struct stat st {};
     if (::fstat(lockfd.get(), &st) != 0 || !ValidRegularFile(st, 0600))
