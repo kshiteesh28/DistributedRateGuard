@@ -81,6 +81,15 @@ jobs:
           print(f"Clean reproduction: {len(first)} generated files match")
           PY
 
+      - name: Check local supervisor lifecycle under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-supervisor-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_SUPERVISOR=ON
+          cmake --build build-supervisor-sanitized --parallel 2 --target rateguard_epoch_gate_tests
+          ctest --test-dir build-supervisor-sanitized --output-on-failure -R '^rateguard[.]epoch_gate$'
+
       - name: Check clock and test fixtures under address/undefined sanitizers
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1

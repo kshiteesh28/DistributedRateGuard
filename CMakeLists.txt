@@ -489,6 +489,22 @@ add_test(NAME rateguard.pinned_client_preflight_mutation
     --fixture "${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures/policy_v1.json")
 set_tests_properties(rateguard.pinned_client_preflight_mutation PROPERTIES TIMEOUT 270)
 
+# RG-006 per-epoch local lifecycle logic. Real process/manifest integration is pending.
+option(RATEGUARD_SANITIZE_SUPERVISOR "Instrument lifecycle tests with ASan and UBSan" OFF)
+add_library(rateguard_epoch_gate INTERFACE)
+target_include_directories(rateguard_epoch_gate INTERFACE
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_epoch_gate INTERFACE Threads::Threads)
+if(RATEGUARD_SANITIZE_SUPERVISOR)
+  target_compile_options(rateguard_epoch_gate INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_epoch_gate INTERFACE -fsanitize=address,undefined)
+endif()
+add_executable(rateguard_epoch_gate_tests tests/supervisor/epoch_gate_test.cpp)
+target_link_libraries(rateguard_epoch_gate_tests PRIVATE rateguard_epoch_gate)
+target_compile_options(rateguard_epoch_gate_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.epoch_gate COMMAND rateguard_epoch_gate_tests)
+set_tests_properties(rateguard.epoch_gate PROPERTIES TIMEOUT 30)
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
