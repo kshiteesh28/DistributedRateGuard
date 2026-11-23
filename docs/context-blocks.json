@@ -20,12 +20,12 @@
   "document_revisions": {
     "PRD": 8,
     "SRD": 5,
-    "HLD": 4,
-    "LLD": 5
+    "HLD": 5,
+    "LLD": 6
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg005_components_verified_rg006_local_gate_in_progress",
+    "implementation": "rg006_runtime_ownership_bootstrap_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
@@ -205,7 +205,7 @@
     }
   },
   "next_actions": [
-    "Verify the durable manifest increment, then implement trusted global ownership and a staged launch-intent/bootstrap identity protocol before full supervisor/controller integration. Existing manifests remain recovery-only.",
+    "Qualify runtime-root ownership and durable bootstrap inventory, then implement actual process control, readiness/activation acknowledgements and fenced successor claims. Existing ownership remains RecoveryRequired.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -274,13 +274,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -381,13 +381,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -476,13 +476,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -674,13 +674,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -929,13 +929,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1025,6 +1025,14 @@
         {
           "path": "src/supervisor/manifest_store.cpp",
           "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/runtime_owner.h",
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "src/supervisor/runtime_owner.cpp",
+          "status": "implemented_component_in_review"
         }
       ],
       "classes": [
@@ -1051,13 +1059,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1089,7 +1097,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Verify the local gate CI and review explicit component limits/topology. Implement durable manifest, exclusive supervisor ownership and real controller evidence before claiming cross-epoch fencing or full RG006 acceptance.",
+      "first_action": "Qualify runtime-root ownership and durable bootstrap inventory, then implement actual process control, readiness/activation acknowledgements and fenced successor claims. Existing ownership remains RecoveryRequired.",
       "input_dependency_contracts": [
         {
           "contract": "RG-003-A",
@@ -1114,7 +1122,8 @@
         }
       ],
       "component_evidence": "docs/evidence/RG-006-A.md",
-      "manifest_evidence": "docs/evidence/RG-006-B.md"
+      "manifest_evidence": "docs/evidence/RG-006-B.md",
+      "runtime_ownership_evidence": "docs/evidence/RG-006-C.md"
     },
     {
       "id": "RG-007",
@@ -1184,13 +1193,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1280,13 +1289,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1396,13 +1405,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1505,13 +1514,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1607,13 +1616,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1714,13 +1723,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1813,13 +1822,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1911,13 +1920,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 6,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1984,5 +1993,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-23T15:45:00Z"
+  "generated_at_utc": "2026-11-23T16:52:00Z"
 }

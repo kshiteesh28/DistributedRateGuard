@@ -16,7 +16,7 @@ Proposed files: `proto/rateguard/v1/admission.proto`, `proto/rateguard/v1/author
 
 Classes: AdmissionService, AuthorityService.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-005, PRD-021, FR-005, FR-020.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-005, PRD-021, FR-005, FR-020.
 
 Acceptance criteria: component PASS; see [RG-001 evidence](evidence/RG-001.md). Product/service integration remains assigned to later stories.
 
@@ -36,7 +36,7 @@ Proposed files: `src/policy/policy_snapshot.h`, `src/policy/policy_loader.h`, `s
 
 Classes: PolicySnapshot, PolicyLoader, CanonicalPolicyCodec, BucketMath.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, FR-001, FR-002, FR-003.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, FR-001, FR-002, FR-003.
 
 Acceptance criteria: component PASS after corrected [run 43353832066](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43353832066) and independent Tester review. See [RG-002 evidence](evidence/RG-002.md) and [scrum log](SCRUM-WORK-LOG.md). Runtime quota/identity/clock integration remains separately gated.
 
@@ -56,7 +56,7 @@ Proposed files: `src/platform/clock.h`, `src/platform/clock_linux.h`.
 
 Classes: IClock, LinuxMonotonicClock.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-002, PRD-024, FR-001, FR-017.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-002, PRD-024, FR-001, FR-017.
 
 Component evidence: [RG-003](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, run 43355987772, independent acceptance. Full story is not Done.
 
@@ -85,7 +85,7 @@ Implemented component paths on review branches: `include/rateguard/security/{pee
 
 Classes: PeerAuthenticator, AuthorizationResolver, ClientCallGuard, PinnedPeerRpcClient.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
 
 Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. This initial compatibility slice alone does not provide registry, authorization or connection-expiry guards; B1/B2/B3 supply the scoped inputs below. Manifest binding and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
 
@@ -113,7 +113,7 @@ Component files include `src/events/` and `tools/history/`. See [RG-005 evidence
 
 Classes: EventRecorder, HistoryExporter.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-009, PRD-015, FR-009, FR-010.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-009, PRD-015, FR-009, FR-010.
 
 Component verification passed in Linux run 45126587562. Full acceptance remains pending service/supervisor wiring and the RG-011A provenance gate.
 
@@ -135,7 +135,7 @@ Proposed files: `src/supervisor/epoch_gate.h`, `src/supervisor/manifest_store.h`
 
 Classes: EpochGate, ManifestStore, IProcessController, EpochSupervisor, DockerProcessController.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-024, PRD-025, FR-001, FR-007, FR-008, FR-022.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-024, PRD-025, FR-001, FR-007, FR-008, FR-022.
 
 Acceptance criteria (not run):
 
@@ -155,7 +155,7 @@ Proposed files: `src/authority/witness_port.h`, `src/supervisor/witness_state.h`
 
 Classes: IStateWitness, WitnessStateMachine, JournalWriter, LocalStateWitnessClient, WitnessServer.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-015, PRD-024, FR-008, FR-010.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-015, PRD-024, FR-008, FR-010.
 
 Acceptance criteria (not run):
 
@@ -175,7 +175,7 @@ Proposed files: `tools/replay/reference_model.h`, `tools/replay/main.cpp`.
 
 Classes: ReplayModel.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-006, FR-011, FR-012.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-006, FR-011, FR-012.
 
 Acceptance criteria (not run):
 
@@ -195,7 +195,7 @@ Proposed files: `src/authority/tenant_ledger.h`, `src/authority/tenant_reservati
 
 Classes: TenantLedger, TenantReservation, AuthorityEngine, AuthorityService, AdmissionService, GrpcAuthorityClient.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, PRD-005, FR-002, FR-005, FR-006.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, PRD-005, FR-002, FR-005, FR-006.
 
 Acceptance criteria (not run):
 
@@ -215,7 +215,7 @@ Proposed files: `adapter/forward_attempt.h`, `adapter/sample_adapter.h`.
 
 Classes: ForwardAttempt, SampleAdapter.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-004, PRD-005, FR-004, FR-006.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-004, PRD-005, FR-004, FR-006.
 
 Acceptance criteria (not run):
 
@@ -235,7 +235,7 @@ Proposed files: `src/credits/tenant_credits.h`, `src/credits/credit_manager.h`, 
 
 Classes: ReplicaTenantCredits, CreditManager, IAuthorityClient.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-016, PRD-017, PRD-018, PRD-019, FR-014, FR-015, FR-016, FR-017, FR-018.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-016, PRD-017, PRD-018, PRD-019, FR-014, FR-015, FR-016, FR-017, FR-018.
 
 Acceptance criteria (not run):
 
@@ -255,7 +255,7 @@ Proposed files: `tools/loadgen/trace_generator.h`, `tools/loadgen/runner.h`, `to
 
 Classes: TraceGenerator, BenchmarkRunner.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-020, PRD-022, PRD-026, FR-013, FR-019, FR-023, NFR-002, NFR-003, NFR-004, NFR-005, NFR-006, NFR-007, NFR-009.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-020, PRD-022, PRD-026, FR-013, FR-019, FR-023, NFR-002, NFR-003, NFR-004, NFR-005, NFR-006, NFR-007, NFR-009.
 
 Acceptance criteria (not run):
 
@@ -275,7 +275,7 @@ Proposed files: `model/runner`, `model/RateGuard.tla`, `tools/history_checker/ch
 
 Classes: HistoryChecker, ModelHarness.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-018, PRD-021, PRD-023, FR-017, FR-020, FR-021.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-018, PRD-021, PRD-023, FR-017, FR-020, FR-021.
 
 Acceptance criteria (not run):
 
@@ -295,7 +295,7 @@ Proposed files: `docs/releases/manifest.json`, `docs/releases/requirements-evide
 
 Classes: release artifacts and runner integration.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-021, PRD-023, FR-013, FR-020, FR-021, NFR-001, NFR-006.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 6](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-021, PRD-023, FR-013, FR-020, FR-021, NFR-001, NFR-006.
 
 Acceptance criteria (not run):
 

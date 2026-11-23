@@ -1,6 +1,6 @@
 # DistributedRateGuard — High-Level Design
 
-**Revision:** 4 · **Date:** 2026-11-12 · **Status:** Proposed; not implemented or verified  
+**Revision:** 5 · **Date:** 2026-11-23 · **Status:** Proposed architecture; component implementation/evidence tracked separately  
 **Sources:** [PRD revision 8](PRD.md) and [SRD revision 5](SRD.md), read from main.
 
 ## 1. Purpose, scope, and decision status
@@ -127,7 +127,7 @@ On authority crash, state-integrity failure or identity change, the epoch enters
 
 A strict replica restart may rejoin only if SRD restart conditions and intact authority state are verified; a credit replica cannot reuse its old slot in the epoch. Adapter restart must not introduce a second forward for an attempt; exact idempotence evidence is an LLD decision. Clock mismatch blocks readiness. Transparent promotion or restoration of an old epoch is unsupported.
 
-**A-03 — lifecycle recovery:** One supervisor holds an exclusive local runtime lock and durably records exact container IDs, boot identity and PID start identities before launching each participant. No participant is unregistered or automatically restarted. Confirm stop with runtime inspect plus OS exit evidence for the recorded identity; a reused PID or an absent response is not proof. Supervisor death does not permit a new supervisor to resume service: recovery loads the last inventory, fences/stops every recorded participant including the old authority and witness, confirms exit, then creates a new epoch. On host reboot, verified changed kernel boot identity proves old kernel processes cannot survive, but the supervisor still inventories/stops any newly auto-started containers before activation. Unreadable or untrusted inventory blocks reset until a controlled complete VM shutdown provides positive fencing evidence. A stop command is monotonic and idempotent by operation ID; activation is never inferred from a partially written manifest.
+**A-03 — lifecycle recovery:** One supervisor holds the exclusive lock for the deployment's single trusted runtime root across epoch creation, serving and recovery. Before starting a participant, durably record its exact created/stopped container ID, role, slot/incarnation, epoch and policy binding in a launch-intent artifact. OS creation enters a non-serving bootstrap phase. After start, obtain and verify the exact host PID, PID-start identity, boot/time-namespace provenance and container identity while admission remains disabled. Persist those observations before acknowledging activation. Complete inventory, policy, clock, trust and witness readiness are required before the epoch becomes ACTIVE; adapters activate last. No participant is unregistered or automatically restarted. Recovery from supervisor loss reads every recorded intent, including containers whose process identity was never completed, stops each exact container/process and verifies exit before any successor epoch. Existing ownership or manifest acquisition never adopts serving state. Host reboot requires verified changed boot identity plus inventory and cessation of any auto-started containers. Missing or untrusted intent/inventory blocks reset until controlled complete-VM shutdown supplies positive fencing evidence. Stop operations remain monotonic and idempotent by operation ID; partial writes never authorize activation.
 
 ## 7. Security and trust
 
@@ -237,3 +237,36 @@ Implementation planning: [LLD class design](LLD.md#17-class-design-and-construct
 The capacity gate uses the all-delivered-attempt latency population defined in PRD 8 / SRD 5: adapter receipt to terminal response, with errors included and the caller-deadline duration used when no response arrives. The separate timely ALLOW/LIMITED and generator-delivery gates remain mandatory.
 
 The authority/witness path remains a single availability failure domain. Its journal flush cost must be measured on the actual Docker Linux VM; no performance claim or shortcut around integrity is permitted. The design documents specify the mechanisms, while shared-clock provenance, durable journal failure behavior, positive process-exit evidence, certificate handling, and the build/dependency lock remain implementation evidence gates. Pin versions from the actual build environment in RG-001; this document does not invent tested versions. This revision does not claim implementation, benchmark results, or release readiness.
+
+## Startup ordering clarification — 2026-11-23
+
+Revision 5 of the HLD and revision 6 of the LLD clarify A-03 without changing PRD 8 or SRD 5. A PID-start identity becomes available after OS process creation. The previous pre-launch wording could not be implemented literally. The selected sequence preserves durable registration before execution and complete verified identity before serving.
+
+1. Hold ownership of the one configured runtime root. Fresh initialization requires a new root; existing acquisition enters recovery.
+2. Create stopped containers and persist the complete fixed launch plan before any container start.
+3. Start registered containers with admission disabled. Record exact runtime-observed identity and common clock provenance.
+4. Persist every identity. A failed or uncertain write keeps startup unavailable and requires recovery.
+5. Construct the complete epoch manifest and validate policy/trust/witness/clock readiness. Activate the epoch and acknowledge participants, with adapters last.
+6. After failure, fence every recorded container, including pending-identity entries. An omitted/missing record cannot be replaced by an empty inventory.
+
+```mermaid
+sequenceDiagram
+    participant S as Supervisor
+    participant D as Durable artifacts
+    participant R as Container runtime
+    participant P as Bootstrap participant
+    S->>R: Create stopped registered containers
+    R-->>S: Exact container IDs
+    S->>D: Persist fixed launch intents
+    D-->>S: Durable result
+    S->>R: Start non-serving bootstrap
+    R->>P: Create process
+    S->>R: Inspect exact process and clock identity
+    R-->>S: Verified identity observations
+    S->>D: Persist identity-complete inventory
+    D-->>S: Durable result
+    S->>S: Validate all epoch readiness gates
+    S->>P: Activate matching epoch and policy
+```
+
+Runtime ownership is global across epoch directories within the deployment's one trusted configured root. Different configured roots require deployment-level reconciliation before serving; changing that root while an old epoch may act cannot bypass fencing. A fresh ownership claim alone supplies no launch or durability proof. Bootstrap models supply no actual OS observation, authenticated control-channel or persistence guarantee. Those guarantees require the corresponding controller, durable store and participant integration tests.

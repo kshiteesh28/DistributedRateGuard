@@ -22,8 +22,8 @@ A bounded temporary file is written and file-synced before atomic rename. Direct
 
 Developer and independent tests must cover generation/digest conflicts, unchanged inventory, interrupted writes, file/directory sync errors, missing/replaced files, locking and reopen behavior. Fake I/O tests establish transition/error handling. Real local filesystem tests establish observed write/lock behavior. Neither proves Docker process termination or power-loss durability on every storage device.
 
-## Launcher integration gap
+## Launcher ordering clarification
 
-LLD A-03 asks for exact PID-start identity to be durably recorded before launching each participant. The PID-start identity becomes available after process creation. Before implementing a launcher, resolve this with a durable launch-intent record plus a non-serving bootstrap identity barrier, or an equivalent explicit staged protocol. This store accepts a complete supplied inventory; it does not satisfy that launch-order clause by itself.
+LLD A-03 asks for exact PID-start identity to be durably recorded before launching each participant. The PID-start identity becomes available after process creation. HLD 5 / LLD 6 A-03 resolves this with durable stopped-container launch intents followed by non-serving bootstrap and persisted exact identity before activation. The actual launcher must implement that sequence. This store accepts a complete supplied inventory; it does not satisfy that launch-order clause by itself.
 
 Global supervisor ownership, validated launch intents, actual OS/runtime observations, no-restart enforcement, channel closure, fenced recovery and successor activation remain full RG-006 work.
