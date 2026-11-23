@@ -1,10 +1,17 @@
 #include "supervisor/epoch_gate.h"
 
-#include <cassert>
+#include <cstdlib>
 #include <iostream>
 #include <map>
 #include <string>
 #include <vector>
+
+#define CHECK(expression) do { \
+  if (!(expression)) { \
+    std::cerr << "check failed at line " << __LINE__ << ": " #expression << '\\n'; \
+    std::exit(EXIT_FAILURE); \
+  } \
+} while (false)
 
 using namespace rateguard::supervisor;
 
@@ -77,19 +84,19 @@ int main() {
   for (const auto& p : candidate.participants)
     controller.states[p.participant_id] = ProcessState::Running;
   auto created = EpochGate::Create(candidate, controller);
-  assert(std::holds_alternative<std::shared_ptr<EpochGate>>(created));
+  CHECK(std::holds_alternative<std::shared_ptr<EpochGate>>(created));
   auto gate = std::get<std::shared_ptr<EpochGate>>(created);
-  assert(gate->phase() == EpochPhase::PreActivation);
-  assert(std::holds_alternative<GateError>(gate->TryAcquireCommitPermit(candidate.epoch_id)));
-  assert(std::holds_alternative<std::monostate>(gate->Activate()));
+  CHECK(gate->phase() == EpochPhase::PreActivation);
+  CHECK(std::holds_alternative<GateError>(gate->TryAcquireCommitPermit(candidate.epoch_id)));
+  CHECK(std::holds_alternative<std::monostate>(gate->Activate()));
   auto lease_result = gate->TryAcquireCommitPermit(candidate.epoch_id);
-  assert(std::holds_alternative<CommitLease>(lease_result));
-  assert(std::holds_alternative<std::monostate>(gate->BeginDrain(Op(), DrainCause::Requested)));
-  assert(IsError(gate->FenceAndClose(Op()), GateError::InFlightCommit));
+  CHECK(std::holds_alternative<CommitLease>(lease_result));
+  CHECK(std::holds_alternative<std::monostate>(gate->BeginDrain(Op(), DrainCause::Requested)));
+  CHECK(IsError(gate->FenceAndClose(Op()), GateError::InFlightCommit));
   lease_result.emplace<GateError>(GateError::Busy);
-  assert(std::holds_alternative<std::monostate>(gate->FenceAndClose(Op())));
-  assert(gate->phase() == EpochPhase::Closed);
-  assert(std::holds_alternative<std::monostate>(gate->FenceAndClose(Op())));
+  CHECK(std::holds_alternative<std::monostate>(gate->FenceAndClose(Op())));
+  CHECK(gate->phase() == EpochPhase::Closed);
+  CHECK(std::holds_alternative<std::monostate>(gate->FenceAndClose(Op())));
 
   // Readiness failure remains preactivation but can be explicitly drained and fenced.
   FakeController not_ready;
@@ -97,11 +104,11 @@ int main() {
     not_ready.states[p.participant_id] = p.role == ParticipantRole::Adapter
                                              ? ProcessState::Unknown : ProcessState::Running;
   auto second_created = EpochGate::Create(candidate, not_ready);
-  assert(std::holds_alternative<std::shared_ptr<EpochGate>>(second_created));
+  CHECK(std::holds_alternative<std::shared_ptr<EpochGate>>(second_created));
   auto second = std::get<std::shared_ptr<EpochGate>>(second_created);
-  assert(IsError(second->Activate(), GateError::NotRunning));
-  assert(std::holds_alternative<std::monostate>(second->BeginDrain(Op(), DrainCause::Requested)));
-  assert(std::holds_alternative<std::monostate>(second->FenceAndClose(Op())));
+  CHECK(IsError(second->Activate(), GateError::NotRunning));
+  CHECK(std::holds_alternative<std::monostate>(second->BeginDrain(Op(), DrainCause::Requested)));
+  CHECK(std::holds_alternative<std::monostate>(second->FenceAndClose(Op())));
 
   // A controller exception cannot activate or close an epoch.
   FakeController throwing;
@@ -110,11 +117,11 @@ int main() {
   auto third_created = EpochGate::Create(candidate, throwing);
   auto third = std::get<std::shared_ptr<EpochGate>>(third_created);
   throwing.throw_on_inspect = true;
-  assert(IsError(third->Activate(), GateError::ControllerFailure));
-  assert(third->phase() == EpochPhase::PreActivation);
-  assert(std::holds_alternative<std::monostate>(third->BeginDrain(Op(), DrainCause::Requested)));
-  assert(IsError(third->FenceAndClose(Op()), GateError::ControllerFailure));
-  assert(third->phase() == EpochPhase::Draining);
+  CHECK(IsError(third->Activate(), GateError::ControllerFailure));
+  CHECK(third->phase() == EpochPhase::PreActivation);
+  CHECK(std::holds_alternative<std::monostate>(third->BeginDrain(Op(), DrainCause::Requested)));
+  CHECK(IsError(third->FenceAndClose(Op()), GateError::ControllerFailure));
+  CHECK(third->phase() == EpochPhase::Draining);
 
   // An unconfirmed ingress process blocks authority/witness stop and closure.
   FakeController partial;
@@ -122,26 +129,26 @@ int main() {
     partial.states[p.participant_id] = ProcessState::Running;
   auto partial_created = EpochGate::Create(candidate, partial);
   auto partial_gate = std::get<std::shared_ptr<EpochGate>>(partial_created);
-  assert(std::holds_alternative<std::monostate>(partial_gate->Activate()));
-  assert(std::holds_alternative<std::monostate>(
+  CHECK(std::holds_alternative<std::monostate>(partial_gate->Activate()));
+  CHECK(std::holds_alternative<std::monostate>(
       partial_gate->BeginDrain(Op(), DrainCause::AuthorityFailure)));
   partial.fail_stop_id = "adapter-a";
-  assert(IsError(partial_gate->FenceAndClose(Op()), GateError::NotExited));
-  assert(partial_gate->phase() == EpochPhase::Draining);
-  assert(std::find(partial.calls.begin(), partial.calls.end(), "stop:replica-zero") !=
+  CHECK(IsError(partial_gate->FenceAndClose(Op()), GateError::NotExited));
+  CHECK(partial_gate->phase() == EpochPhase::Draining);
+  CHECK(std::find(partial.calls.begin(), partial.calls.end(), "stop:replica-zero") !=
          partial.calls.end());
-  assert(std::find(partial.calls.begin(), partial.calls.end(), "stop:authority") ==
+  CHECK(std::find(partial.calls.begin(), partial.calls.end(), "stop:authority") ==
          partial.calls.end());
-  assert(std::find(partial.calls.begin(), partial.calls.end(), "stop:witness") ==
+  CHECK(std::find(partial.calls.begin(), partial.calls.end(), "stop:witness") ==
          partial.calls.end());
 
   // Inventory catches reused container/PID identity and duplicate replica slot.
   auto duplicate = Candidate();
   duplicate.participants.back().process.container_id = duplicate.participants[4].process.container_id;
-  assert(std::holds_alternative<GateError>(EpochGate::Create(duplicate, controller)));
+  CHECK(std::holds_alternative<GateError>(EpochGate::Create(duplicate, controller)));
   duplicate = Candidate();
   duplicate.participants[3].slot_id = duplicate.participants[2].slot_id;
-  assert(std::holds_alternative<GateError>(EpochGate::Create(duplicate, controller)));
+  CHECK(std::holds_alternative<GateError>(EpochGate::Create(duplicate, controller)));
 
   // A lease owns the in-flight state even if the gate object is released first.
   FakeController lifetime_controller;
@@ -149,9 +156,9 @@ int main() {
   auto fourth = std::get<std::shared_ptr<EpochGate>>(fourth_created);
   for (const auto& p : candidate.participants)
     lifetime_controller.states[p.participant_id] = ProcessState::Running;
-  assert(std::holds_alternative<std::monostate>(fourth->Activate()));
+  CHECK(std::holds_alternative<std::monostate>(fourth->Activate()));
   auto survivor = fourth->TryAcquireCommitPermit(candidate.epoch_id);
-  assert(std::holds_alternative<CommitLease>(survivor));
+  CHECK(std::holds_alternative<CommitLease>(survivor));
   fourth.reset();
   survivor.emplace<GateError>(GateError::Busy);
 
