@@ -179,6 +179,22 @@ void TestConflictDoesNotPoisonStore() {
         BootstrapStoreError::None);
 }
 
+void TestMismatchCanBeDurablyRecordedWithoutBecomingReady() {
+  TempRoot temp;
+  const auto plan = MakePlan();
+  auto store = OpenStore(temp.root, plan);
+  const auto before = store->Snapshot();
+  auto mismatched = Observe(plan, 0, 840);
+  mismatched.participant.container_id.back() = 'z';
+  const auto update = store->RecordIdentity(before->revision(), Digest(*before), mismatched);
+  CHECK(update.store_error == BootstrapStoreError::None);
+  CHECK(update.visibility == BootstrapVisibility::Durable);
+  CHECK(update.transition_status == BootstrapError::IdentityMismatch);
+  CHECK(update.snapshot->revision() == before->revision() + 1);
+  CHECK(update.snapshot->recovery_required());
+  CHECK(std::get<BootstrapStoreError>(store->ReadyCandidate()) == BootstrapStoreError::RecoveryRequired);
+}
+
 void TestDurabilityFailureLatchesStoreUnready() {
   TempRoot temp;
   const auto plan = MakePlan();
@@ -329,6 +345,7 @@ void TestInvalidClaimBindingAndNoExistingChildReuse() {
 int main() {
   TestDurableProgressAndReadyCandidate();
   TestConflictDoesNotPoisonStore();
+  TestMismatchCanBeDurablyRecordedWithoutBecomingReady();
   TestDurabilityFailureLatchesStoreUnready();
   TestPreRenameFailureIsNotVisibleAndDoesNotPublish();
   TestPostRenameUncertaintyLeavesDiskAheadButNeverReady();
