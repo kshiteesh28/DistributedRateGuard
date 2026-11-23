@@ -579,3 +579,16 @@ add_test(NAME rateguard.history_inspector
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/history_inspector_integration.py"
     "$<TARGET_FILE:rateguard_history_inspect>")
 set_tests_properties(rateguard.history_inspector PROPERTIES TIMEOUT 60)
+
+# RG-006 staged bootstrap inventory. Serving and process control remain separate.
+option(RATEGUARD_SANITIZE_BOOTSTRAP "Instrument bootstrap components with ASan and UBSan" OFF)
+add_library(rateguard_bootstrap_inventory src/supervisor/bootstrap_inventory.cpp)
+target_include_directories(rateguard_bootstrap_inventory PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_bootstrap_inventory PRIVATE nlohmann_json::nlohmann_json OpenSSL::Crypto)
+target_link_libraries(rateguard_bootstrap_inventory PUBLIC Threads::Threads)
+target_compile_options(rateguard_bootstrap_inventory PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_BOOTSTRAP)
+  target_compile_options(rateguard_bootstrap_inventory PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_bootstrap_inventory PUBLIC -fsanitize=address,undefined)
+endif()
