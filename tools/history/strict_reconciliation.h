@@ -221,7 +221,10 @@ inline ReconciliationReport ReconcileStrictHistory(
       if (responded && !Add(report.response_sends, row.counts[StageIndex(Stage::Responded)])) { report.evidence = EvidenceState::Invalid; return report; }
       if (row.counts[responded_stage] == 1 && row.counts[received_stage] == 0)
         ++report.response_sent_unreceived;
-      if (responded && received && responded->outcome != received->outcome) {
+      if (responded && received &&
+          (responded->outcome == Outcome::Allow || responded->outcome == Outcome::Limited) &&
+          (received->outcome == Outcome::Allow || received->outcome == Outcome::Limited) &&
+          responded->outcome != received->outcome) {
         ++report.decision_response_mismatches;
         report.violations.push_back(Violation::DecisionResponseMismatch);
       }

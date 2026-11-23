@@ -93,6 +93,7 @@ void TestLostResponseAndNoResponseLimited() {
   CHECK(r.terminal_errors==1 && r.decision_response_mismatches==0); // committed ALLOW may receive an application error
   CHECK(Find(r,3)->state==AttemptState::CommittedUnanswered);
   CHECK(Find(r,4)->state==AttemptState::CommittedUnanswered);
+  CHECK(Find(r,3)->committed && !Find(r,4)->committed);
   CHECK(Find(r,9)->state==AttemptState::TerminalError);
 }
 void TestDuplicateStageAndUncommittedAllow() {
