@@ -14,8 +14,8 @@
     "current_source_branch": "main",
     "last_review_branch": "docs/spec-contract-closure-v1",
     "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
-    "implementation_branch": "feature/RG-004-client-guards",
-    "implementation_base_branch": "feature/RG-004-peer-authorization"
+    "implementation_branch": "feature/distributed-rateguard",
+    "implementation_base_branch": "main"
   },
   "document_revisions": {
     "PRD": 8,
@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg004_b3_component_verified_rg005_next",
+    "implementation": "rg005_event_history_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "A/B1/B2/B3 component inputs verified on unmerged review branches. Full RG004/service/lifecycle/export acceptance remains open."
+    "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -170,10 +170,18 @@
       },
       "full_story_done": false,
       "pull_request_status": "ready_unmerged"
+    },
+    "latest_rg005": {
+      "status": "component_verified_runtime_pending",
+      "tested_head": "da19ea21800c303acae4646d6159f67a1607a3b1",
+      "run": 45126587562,
+      "evidence": "docs/evidence/RG-005.md",
+      "pull_request": 14,
+      "full_story_done": false
     }
   },
   "next_actions": [
-    "Implement RG005 event/history component from verified RG001 input, freezing run-wide budget ownership/producer roster and artifact format before code.",
+    "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -826,7 +834,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-005",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "in_progress",
       "depends_on": [
         "RG-001"
       ],
@@ -841,11 +849,35 @@
       "planned_files": [
         {
           "path": "src/events/event_recorder.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/events/history_exporter.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/events/history_validator.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/events/file_publisher.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/events/aggregate_metrics.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/history_reader.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/strict_reconciliation.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/retention.py",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -886,7 +918,7 @@
             "AT-10",
             "AT-11"
           ],
-          "status": "not_run"
+          "status": "component_verified_runtime_pending"
         },
         {
           "id": "RG-005-AC02",
@@ -894,7 +926,7 @@
           "evidence_ids": [
             "AT-11"
           ],
-          "status": "not_run"
+          "status": "component_verified_runtime_pending"
         },
         {
           "id": "RG-005-AC03",
@@ -903,10 +935,11 @@
             "AT-10",
             "AT-13"
           ],
-          "status": "not_run"
+          "status": "component_verified_runtime_pending"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
+      "component_evidence": "docs/evidence/RG-005.md"
     },
     {
       "id": "RG-006",
@@ -1904,9 +1937,9 @@
   },
   "work_log": {
     "path": "docs/SCRUM-WORK-LOG.md",
-    "canonical_branch": "docs/scrum-work-log",
+    "canonical_branch": "feature/distributed-rateguard",
     "historical_actual_effort": "unknown_not_recorded",
-    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md"
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-17T16:47:23Z"
+  "generated_at_utc": "2026-11-23T06:44:00Z"
 }

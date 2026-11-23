@@ -1,6 +1,6 @@
 # Scrum Work Log
 
-**Live log:** [docs/scrum-work-log branch](https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/SCRUM-WORK-LOG.md). This is the canonical ongoing log; feature-branch copies are snapshots.
+**Live log:** This file follows the implementation on `feature/distributed-rateguard`. Story branches append entries for integration. Earlier entries record the branch state at their observation time.
 
 **Owner:** Master agent (`/root`) · **Started:** 2026-11-13 02:33 UTC  
 **Repository:** DistributedRateGuard · **Source contracts:** PRD 8 / SRD 5 / HLD 4 / LLD 5.  
@@ -20,7 +20,8 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
 | RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1/B2/B3 inputs verified; PR #9/#10/#11/#12 ready, unmerged; full story in progress | Real commit/forward, manifest/fencing and service/export integration remain open; native SDK resumption fixture qualified, production caching disabled |
-| RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
+| RG-005 | Senior Dev / Junior Dev / Tester | In progress; components verified, runtime pending | [Evidence](evidence/RG-005.md) |
+| RG-006–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
 
@@ -380,3 +381,26 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Scrum Master:** Independently confirmed PR12 ready/unmerged, exact head/run/evidence, test-only resumption scope, cache disabled, full RG004 ACs open, RG005 next and RG011A Release A prerequisite. Found stale B3-pending wording in the story catalog, context first_action/remaining_evidence and security decision header.
 - **Master:** Corrected those handoff fields without touching tested implementation or binding specs. Readback confirmed 14 unique context stories, a valid dependency DAG, 41 unique prior log IDs, exact evidence JSON and unchanged main. PR7 summary now points through current B3 evidence.
 - **Next:** RG005 event component contract must fix producer roster, encoded byte accounting, reservations/publications/seals and one run-wide 1 GiB budget before code. Static disjoint producer partitions are being evaluated as a bounded option; no RG005 implementation or acceptance is claimed.
+
+### LOG-043 — RG-005 implementation starts (2026-11-21 UTC)
+
+- **Master:** Continued from PR #13's feature head `c3f9bbf`. [PR #14](https://github.com/kshiteesh28/DistributedRateGuard/pull/14) targets that feature. Published the [strict history contract](contracts/strict-event-history.md) in `f54e226` and the seven-day local export cleanup in `69a533b`. Its isolated boundary test passed, including unrelated files and symlink preservation. The exporter must invoke cleanup when it starts using the private output directory.
+- **Senior developer:** Owns typed per-producer reservations, bounded run accounting, publication and sealing.
+- **Junior developer:** Owns structural snapshot validation against the independent expected producer plan.
+- **Tester:** Owns reserve races, exhaustion, evidence corruption and missing-seal checks against the implementation. Test results will be recorded after execution.
+- **Scope:** RG-005 implementation is underway. Durability, runtime traffic stops, retention integration and release acceptance remain open.
+
+### LOG-044 — RG-005 components and independent review (2026-11-23 UTC)
+
+- **Master:** Resumed the existing story branch, read PR13/14 state and failed Actions logs, corrected CMake declaration syntax in `0e5ff3f`, checksum-fixture integer portability in `122a17d`, generated workflow content in `a67e47e`, and temporary test include path in `39224fc`. Added separate commits for Linux sanitizer coverage, durable publication and stage reconciliation. Latest code checkpoint is `0710354`. No whole-story acceptance is claimed.
+- **Senior developer:** Finished POSIX streaming file publication with bounded output, private directory checks, exclusive temporary creation, file sync, no-overwrite hard-link publication, temporary removal and directory sync. Reported uncertain directory durability separately. Root review added exception cleanup and EINTR-safe fsync handling. Local publisher tests passed under Clang ASan/UBSan.
+- **Junior developer (prior session):** Delivered independent structural validation and bounded aggregate counters with concurrency/saturation tests. A later CLI assignment ended at the agent usage limit and produced no accepted CLI deliverable.
+- **Tester:** Finished independent strict reconciliation and regressions for lost/late/equal-deadline outcomes, duplicate stages, orphan evidence and forwarding. Root requested corrections to LIMITED/debit distinction, missing-offer detection and forwarding authorization; the tester addressed them and root reran the suite under ASan/UBSan.
+- **Master verification:** Ran seven local C++20 component suites and the Python retention fixture. Added a Linux sanitizer lane. Earlier failed CI is preserved and excluded from passing evidence. See [RG-005 evidence](evidence/RG-005.md) for scope and pending runtime work.
+- **Remaining:** Supervisor/process wiring, actual service event recording, traffic stop propagation, cleanup invocation, persisted incomplete summaries, CLI and RG-011A provenance/semantic checks. Review branches target the integration feature; PR13 remains the final promotion to main.
+
+### LOG-045 — Linux verification and component integration (2026-11-23 UTC)
+
+- **Master:** Fixed GCC's misleading-indentation rejection in the reconciliation fixture at `da19ea2`. [Run 45126587562](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45126587562) then passed on that exact head: 17 Python tests, 36 CTest groups twice, 12 matching generated files, three clock sanitizer groups, seven history sanitizer groups and twelve security sanitizer groups.
+- **Scrum Master:** Independently confirmed PR14's scope/evidence and context wording leave runtime/story acceptance open. Flagged stale Planned labels in the story catalog and board; Master synchronized them to In progress.
+- **Integration:** PR14 is ready to merge into `feature/distributed-rateguard` after documentation readback. PR13 remains the final promotion to main. Full RG004 and RG005 acceptance remains open. Next dependency order remains runtime owner/traffic-stop integration, RG006 lifecycle/fencing and RG007 witness, then RG011A evidence before strict RG008 acceptance.
