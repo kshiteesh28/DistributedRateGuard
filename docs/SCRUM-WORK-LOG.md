@@ -485,3 +485,11 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Design:** LLD 7 records the exact implemented ownership/bootstrap classes, corrects existing EpochGate/ManifestStore APIs and adds their class diagram. HLD remains 5; PRD 8 and SRD 5 are unchanged. Source/link/JSON/DAG checks pass; no class-design claim closes the remaining integration gates.
 - **Scrum audit:** Confirmed candidate-only data handoff and no serving/fencing overclaim. Root made the absent EpochSupervisor-owned recovery reader explicit and qualified RuntimeOwner::OpenExisting; these are not recovery or successor-epoch capabilities.
 - **Integration:** PR19 is ready for feature integration after readback. Only documentation follows the tested source. PR13 remains the pending final promotion to main. RG006 remains In progress; recovery reader/controller/activation/fencing work continues.
+
+### LOG-056 — Existing-intent recovery reader started (2026-11-23 UTC)
+
+- **Master:** PR18/19 are merged into the feature (90399f6 / cb98d78) with real Linux component evidence. Opened a separate recovery-reader branch from cb98d78; main remains unchanged and PR13 is the final promotion.
+- **Senior developer:** Proposed a recovery-mode-only diagnostic reader with immutable per-epoch records, exact ownership/domain/basename validation and bounded scans. No serving/candidate/successor API is proposed.
+- **Junior developer:** Independently identified that RuntimeOwner::OpenExisting does not enumerate root contents; reviewed mkdir/initial publication/update crash windows and required retaining pending-container IDs while blocking incomplete inventories.
+- **Tester:** Preparing separate adversarial filesystem, identity, input-limit and mutation fixtures against the reviewed header. Local shim checks remain excluded from real cryptographic acceptance.
+- **Master decisions:** Accepted finite reader-only caps in [contract](contracts/bootstrap-recovery-v1.md), typed diagnostic outcomes, all-entry bounds, immutable known-target retention and conservative attempted-byte charging. A structurally complete scan cannot prove historic durability or process cessation. Implementation and Linux verification are pending.
