@@ -649,3 +649,11 @@ target_link_libraries(rateguard_bootstrap_recovery_reader PUBLIC
   rateguard_bootstrap_inventory rateguard_runtime_owner)
 target_compile_options(rateguard_bootstrap_recovery_reader PRIVATE -Wall -Wextra -Werror -pedantic)
 
+add_executable(rateguard_bootstrap_recovery_reader_tests
+  tests/supervisor/bootstrap_recovery_reader_test.cpp)
+target_link_libraries(rateguard_bootstrap_recovery_reader_tests PRIVATE
+  rateguard_bootstrap_recovery_reader rateguard_bootstrap_store)
+target_compile_options(rateguard_bootstrap_recovery_reader_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_recovery_reader COMMAND rateguard_bootstrap_recovery_reader_tests)
+
+set_tests_properties(rateguard.bootstrap_recovery_reader PROPERTIES TIMEOUT 120)
