@@ -237,7 +237,6 @@ void TestInitialIntentAppearingBeforePublishIsNotOverwritten() {
   auto claim_result = owner->ClaimInitialEpoch(plan.epoch_id);
   CHECK(std::holds_alternative<InitialEpochClaim>(claim_result));
   const auto child = temp.root + "/epoch-11111111111111111111111111111111";
-  CHECK(std::filesystem::create_directory(child));
   const auto intent = child + "/intent.json";
   ReplaceAtRename mutate(intent, 1);
   auto result = BootstrapStore::CreateNew(std::move(std::get<InitialEpochClaim>(claim_result)), plan, &mutate);
