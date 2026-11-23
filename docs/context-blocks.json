@@ -194,6 +194,14 @@
       "evidence": "docs/evidence/RG-006-A.md",
       "pull_request": 16,
       "full_story_done": false
+    },
+    "latest_rg006_manifest": {
+      "status": "local_persistence_verified_runtime_pending",
+      "tested_head": "ba2d14731b3f2e9e996049e67b9e4d702a2218d8",
+      "run": 45207019201,
+      "evidence": "docs/evidence/RG-006-B.md",
+      "pull_request": 17,
+      "full_story_done": false
     }
   },
   "next_actions": [
@@ -992,7 +1000,7 @@
         },
         {
           "path": "src/supervisor/manifest_store.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/supervisor/process_controller.h",
@@ -1008,15 +1016,15 @@
         },
         {
           "path": "src/supervisor/manifest_codec.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/supervisor/manifest_codec.cpp",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/supervisor/manifest_store.cpp",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -1976,5 +1984,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-23T15:31:00Z"
+  "generated_at_utc": "2026-11-23T15:45:00Z"
 }

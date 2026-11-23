@@ -438,3 +438,10 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Interruption/recovery:** Prior Senior/Tester turns hit provider usage limits. After the user's continuation, Master resumed at 15:27 UTC, rechecked GitHub head and completed integration review. The elapsed interruption is not logged as developer effort.
 - **Verification scope:** Local strict syntax checks pass. Local digest-stub smoke is excluded from real SHA-256 acceptance. Complete Linux store runtime results are pending. See [evidence](evidence/RG-006-B.md).
 - **Open integration:** A store lock covers one directory. Durable global supervisor ownership and launcher bootstrap are still required. LLD's literal PID-start-before-launch wording needs an explicit staged launch-intent/identity-barrier resolution before launcher implementation. No existing ACTIVE manifest may resume service.
+
+### LOG-050 — Manifest persistence verified on Linux (2026-11-23 15:45 UTC)
+
+- **Master:** Linux [run 45207019201](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45207019201) passed at `ba2d14731b3f2e9e996049e67b9e4d702a2218d8`: 42 CTest groups twice, 17 Python tests, 12 matching generated files, three manifest / two lifecycle / three clock / eight history / twelve security sanitizer groups.
+- **Corrections after initial CI:** Checked subprocess-pipe write results for fortified GCC. Added nonblocking manifest/lock opens and a named-pipe regression so invalid file types cannot block before validation. Real Linux runtime supersedes local syntax/stub smoke; earlier failed runs do not count as acceptance.
+- **Audit:** Scrum Master independently confirmed scope/source revisions and no full-fencing, activation, authentication or rollback-freshness claims. The launch-order gap is recorded in the contract before any real launcher implementation.
+- **Integration:** PR17 is ready for feature integration after documentation readback. PR13 remains the final promotion to main. Durable global supervisor ownership, bootstrap intents/identity barrier, actual process control and recovery still block full RG006.
