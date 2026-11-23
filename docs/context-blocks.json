@@ -173,7 +173,7 @@
     }
   },
   "next_actions": [
-    "Implement RG005 event/history component from verified RG001 input, freezing run-wide budget ownership/producer roster and artifact format before code.",
+    "Read docs/evidence/RG-005.md and confirm PR14 Linux results. Wire the components into supervisor/runtime, output-directory retention lifecycle and RG-011A before claiming full story acceptance.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -841,11 +841,35 @@
       "planned_files": [
         {
           "path": "src/events/event_recorder.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_in_review"
         },
         {
           "path": "src/events/history_exporter.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "src/events/history_validator.h",
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "src/events/file_publisher.h",
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "src/events/aggregate_metrics.h",
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "tools/history/history_reader.h",
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "tools/history/strict_reconciliation.h",
+          "status": "implemented_component_in_review"
+        },
+        {
+          "path": "tools/history/retention.py",
+          "status": "implemented_component_in_review"
         }
       ],
       "classes": [
@@ -886,7 +910,7 @@
             "AT-10",
             "AT-11"
           ],
-          "status": "not_run"
+          "status": "component_evidence_in_review_runtime_pending"
         },
         {
           "id": "RG-005-AC02",
@@ -894,7 +918,7 @@
           "evidence_ids": [
             "AT-11"
           ],
-          "status": "not_run"
+          "status": "component_evidence_in_review_runtime_pending"
         },
         {
           "id": "RG-005-AC03",
@@ -903,10 +927,11 @@
             "AT-10",
             "AT-13"
           ],
-          "status": "not_run"
+          "status": "component_evidence_in_review_runtime_pending"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read docs/evidence/RG-005.md and confirm PR14 Linux results. Wire the components into supervisor/runtime, output-directory retention lifecycle and RG-011A before claiming full story acceptance.",
+      "component_evidence": "docs/evidence/RG-005.md"
     },
     {
       "id": "RG-006",
@@ -1908,5 +1933,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-17T16:47:23Z"
+  "generated_at_utc": "2026-11-23T06:44:00Z"
 }
