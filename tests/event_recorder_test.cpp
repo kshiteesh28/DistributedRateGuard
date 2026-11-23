@@ -84,7 +84,7 @@ template<std::size_t N> void FnvArray(std::uint64_t& h, const std::array<std::ui
   for (std::uint8_t b : a) h = FnvByte(h, b);
 }
 std::uint64_t IndependentEventChecksum(const EventV1& e) {
-  auto h = 14695981039346656037ULL;
+  std::uint64_t h = 14695981039346656037ULL;
   FnvText(h, "RGEV1");
   h = FnvByte(h, static_cast<std::uint8_t>(e.stage));
   h = FnvByte(h, static_cast<std::uint8_t>(e.outcome));
@@ -94,7 +94,7 @@ std::uint64_t IndependentEventChecksum(const EventV1& e) {
   return h;
 }
 std::uint64_t IndependentSealChecksum(const ProducerSnapshotV1& p) {
-  auto h = 14695981039346656037ULL;
+  std::uint64_t h = 14695981039346656037ULL;
   FnvText(h, "RGPS1");
   h = FnvByte(h, static_cast<std::uint8_t>(p.owner));
   FnvU32(h, p.producer_index);
@@ -111,7 +111,7 @@ std::uint64_t IndependentSealChecksum(const ProducerSnapshotV1& p) {
   return h;
 }
 std::uint64_t IndependentSnapshotChecksum(const EventSnapshotV1& s) {
-  auto h = 14695981039346656037ULL;
+  std::uint64_t h = 14695981039346656037ULL;
   FnvText(h, "RGRN1");
   FnvU32(h, s.schema_version);
   FnvArray(h, s.epoch_id);
