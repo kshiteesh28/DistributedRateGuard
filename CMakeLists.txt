@@ -544,6 +544,19 @@ target_compile_options(rateguard_manifest_store_independent_tests PRIVATE -Wall 
 add_test(NAME rateguard.manifest_store_independent COMMAND rateguard_manifest_store_independent_tests)
 set_tests_properties(rateguard.manifest_store rateguard.manifest_store_independent PROPERTIES TIMEOUT 90)
 
+# RG-006 supervisor ownership across epoch directories under the configured root.
+option(RATEGUARD_SANITIZE_RUNTIME "Instrument runtime ownership with ASan and UBSan" OFF)
+add_library(rateguard_runtime_owner src/supervisor/runtime_owner.cpp)
+target_include_directories(rateguard_runtime_owner PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_runtime_owner PRIVATE nlohmann_json::nlohmann_json OpenSSL::Crypto)
+target_link_libraries(rateguard_runtime_owner PUBLIC Threads::Threads)
+target_compile_options(rateguard_runtime_owner PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_RUNTIME)
+  target_compile_options(rateguard_runtime_owner PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_runtime_owner PUBLIC -fsanitize=address,undefined)
+endif()
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
