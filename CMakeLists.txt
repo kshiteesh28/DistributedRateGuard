@@ -602,3 +602,42 @@ add_test(NAME rateguard.history_inspector
   COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/history_inspector_integration.py"
     "$<TARGET_FILE:rateguard_history_inspect>")
 set_tests_properties(rateguard.history_inspector PROPERTIES TIMEOUT 60)
+
+# RG-006 staged bootstrap inventory. Serving and process control remain separate.
+option(RATEGUARD_SANITIZE_BOOTSTRAP "Instrument bootstrap components with ASan and UBSan" OFF)
+add_library(rateguard_bootstrap_inventory src/supervisor/bootstrap_inventory.cpp)
+target_include_directories(rateguard_bootstrap_inventory PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_bootstrap_inventory PRIVATE nlohmann_json::nlohmann_json OpenSSL::Crypto)
+target_link_libraries(rateguard_bootstrap_inventory PUBLIC Threads::Threads)
+target_compile_options(rateguard_bootstrap_inventory PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_BOOTSTRAP)
+  target_compile_options(rateguard_bootstrap_inventory PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_bootstrap_inventory PUBLIC -fsanitize=address,undefined)
+endif()
+
+add_executable(rateguard_bootstrap_inventory_tests tests/supervisor/bootstrap_inventory_test.cpp)
+target_link_libraries(rateguard_bootstrap_inventory_tests PRIVATE rateguard_bootstrap_inventory)
+target_compile_options(rateguard_bootstrap_inventory_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_inventory COMMAND rateguard_bootstrap_inventory_tests)
+add_executable(rateguard_bootstrap_inventory_independent_tests tests/supervisor/bootstrap_inventory_independent_test.cpp)
+target_link_libraries(rateguard_bootstrap_inventory_independent_tests PRIVATE
+  rateguard_bootstrap_inventory nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_bootstrap_inventory_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_inventory_independent COMMAND rateguard_bootstrap_inventory_independent_tests)
+set_tests_properties(rateguard.bootstrap_inventory rateguard.bootstrap_inventory_independent PROPERTIES TIMEOUT 60)
+
+add_library(rateguard_bootstrap_store src/supervisor/bootstrap_store.cpp)
+target_link_libraries(rateguard_bootstrap_store PUBLIC rateguard_bootstrap_inventory rateguard_runtime_owner)
+target_compile_options(rateguard_bootstrap_store PRIVATE -Wall -Wextra -Werror -pedantic)
+
+add_executable(rateguard_bootstrap_store_tests tests/supervisor/bootstrap_store_test.cpp)
+target_link_libraries(rateguard_bootstrap_store_tests PRIVATE rateguard_bootstrap_store)
+target_compile_options(rateguard_bootstrap_store_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_store COMMAND rateguard_bootstrap_store_tests)
+add_executable(rateguard_bootstrap_store_independent_tests tests/supervisor/bootstrap_store_independent_test.cpp)
+target_link_libraries(rateguard_bootstrap_store_independent_tests PRIVATE
+  rateguard_bootstrap_store nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_bootstrap_store_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_store_independent COMMAND rateguard_bootstrap_store_independent_tests)
+set_tests_properties(rateguard.bootstrap_store rateguard.bootstrap_store_independent PROPERTIES TIMEOUT 90)

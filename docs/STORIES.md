@@ -125,13 +125,15 @@ Component verification passed in Linux run 45126587562. Full acceptance remains 
 
 **Implement supervisor lifecycle and positive fencing** · Release A · In progress
 
-Local gate implementation is under review in [RG-006-A](evidence/RG-006-A.md). Full runtime acceptance is pending.
+Local [gate](evidence/RG-006-A.md), [manifest](evidence/RG-006-B.md) and [runtime ownership](evidence/RG-006-C.md) components are verified on the integration feature. [Bootstrap inventory/store](evidence/RG-006-D.md) verification and full runtime acceptance are tracked separately; the story remains In progress.
+
+Implemented component paths: `src/supervisor/epoch_gate.h`, `manifest_codec.{h,cpp}`, `manifest_store.{h,cpp}`, `runtime_owner.{h,cpp}`, `bootstrap_inventory.{h,cpp}` and `bootstrap_store.{h,cpp}` (all under `src/supervisor/`). New classes: RuntimeOwner, InitialEpochClaim, BootstrapInventory and BootstrapStore; see LLD 7 §21. Concrete Docker control, authenticated activation and successor-epoch fencing remain pending.
 
 Dependencies: RG-002, RG-003-A, RG-005 and named verified RG-004-A/B1 inputs. B1 supplies typed certificate metadata only; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
 
 Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
-Proposed files: `src/supervisor/epoch_gate.h`, `src/supervisor/manifest_store.h`, `src/supervisor/process_controller.h`, `src/supervisor/epoch_supervisor.h`, `src/supervisor/docker_process_controller.h`.
+Remaining proposed integration files: `src/supervisor/process_controller.h`, `src/supervisor/epoch_supervisor.h` and `src/supervisor/docker_process_controller.h`. The current stop/inspect `IProcessController` interface is declared in `epoch_gate.h`; the launch/recovery integration remains proposed. EpochSupervisor owns the missing existing-intent recovery reader.
 
 Classes: EpochGate, ManifestStore, IProcessController, EpochSupervisor, DockerProcessController.
 
@@ -306,4 +308,4 @@ Acceptance criteria (not run):
 
 ## Readiness clarification — 2026-11-12
 
-The full replay command/report remains a Release B deliverable. Its independent strict decision oracle and golden fixtures are required earlier as test support for Release A; this does not move replay product scope into A. The performance p99 population and target-build lock are defined in PRD 8 / SRD 5 / LLD 6. No story is implemented or accepted by this clarification.
+The full replay command/report remains a Release B deliverable. Its independent strict decision oracle and golden fixtures are required earlier as test support for Release A; this does not move replay product scope into A. The performance p99 population and target-build lock are defined in PRD 8 / SRD 5 / LLD 7. No story is implemented or accepted by this clarification.
