@@ -524,6 +524,10 @@ if(RATEGUARD_SANITIZE_MANIFEST)
   target_link_options(rateguard_manifest_codec PUBLIC -fsanitize=address,undefined)
 endif()
 
+add_library(rateguard_manifest_store src/supervisor/manifest_store.cpp)
+target_link_libraries(rateguard_manifest_store PUBLIC rateguard_manifest_codec)
+target_compile_options(rateguard_manifest_store PRIVATE -Wall -Wextra -Werror -pedantic)
+
 add_executable(rateguard_manifest_codec_tests tests/supervisor/manifest_codec_test.cpp)
 target_link_libraries(rateguard_manifest_codec_tests PRIVATE rateguard_manifest_codec)
 target_compile_options(rateguard_manifest_codec_tests PRIVATE -Wall -Wextra -Werror -pedantic)
