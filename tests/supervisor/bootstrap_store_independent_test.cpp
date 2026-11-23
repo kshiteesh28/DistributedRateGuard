@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <functional>
 #include <string>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -75,6 +76,23 @@ struct FailureOnce final : IBootstrapStoreIo {
   explicit FailureOnce(BootstrapStoreIoPoint p, std::size_t nth = 1) : point(p), occurrence(nth) {}
   bool FailAt(BootstrapStoreIoPoint candidate) noexcept override {
     if (!consumed && candidate == point && ++seen == occurrence) { consumed = true; return true; }
+    return false;
+  }
+};
+
+struct ActionOnce final : IBootstrapStoreIo {
+  BootstrapStoreIoPoint point;
+  std::size_t occurrence;
+  std::size_t seen{};
+  bool consumed{};
+  std::function<void()> action;
+  ActionOnce(BootstrapStoreIoPoint p, std::size_t nth, std::function<void()> fn)
+      : point(p), occurrence(nth), action(std::move(fn)) {}
+  bool FailAt(BootstrapStoreIoPoint candidate) noexcept override {
+    if (!consumed && candidate == point && ++seen == occurrence) {
+      consumed = true;
+      action();
+    }
     return false;
   }
 };
@@ -238,6 +256,60 @@ void TestCreateNewDoesNotPublishOnPostRenameUncertainty() {
   CHECK(result.error == BootstrapStoreError::DurabilityUncertain);
 }
 
+void TestExistingIntentReplacementRaceIsNotOverwritten() {
+  TempRoot temp;
+  const auto plan = MakePlan();
+  const std::string intent = temp.root + "/epoch-11111111111111111111111111111111/intent.json";
+  ActionOnce replace(BootstrapStoreIoPoint::RenameTemp, 2, [&] {
+    const std::string external = "external replacement survives";
+    const auto replacement = intent + ".external";
+    {
+      std::ofstream out(replacement, std::ios::binary | std::ios::trunc);
+      out.write(external.data(), static_cast<std::streamsize>(external.size()));
+      out.close();
+    }
+    CHECK(::chmod(replacement.c_str(), 0600) == 0);
+    CHECK(::rename(replacement.c_str(), intent.c_str()) == 0);
+  });
+  auto store = OpenStore(temp.root, plan, &replace);
+  const auto before = store->Snapshot();
+  const auto update = store->RecordIdentity(before->revision(), Digest(*before), Observe(plan, 0, 830));
+  CHECK(replace.consumed);
+  CHECK(update.visibility == BootstrapVisibility::NotVisible);
+  CHECK(update.store_error == BootstrapStoreError::StorageUncertain);
+  CHECK(update.snapshot == before);
+  CHECK(ReadBytes(intent) == "external replacement survives");
+  CHECK(store->Snapshot() == before);
+  CHECK(std::get<BootstrapStoreError>(store->ReadyCandidate()) == BootstrapStoreError::StorageUncertain);
+}
+
+void TestInitialIntentAppearingBeforePublishIsNeverOverwritten() {
+  TempRoot temp;
+  const auto plan = MakePlan();
+  auto owner_result = RuntimeOwner::CreateNew(temp.root, plan.domain_id);
+  CHECK(std::holds_alternative<std::unique_ptr<RuntimeOwner>>(owner_result));
+  auto owner = std::move(std::get<std::unique_ptr<RuntimeOwner>>(owner_result));
+  auto claim_result = owner->ClaimInitialEpoch(plan.epoch_id);
+  CHECK(std::holds_alternative<InitialEpochClaim>(claim_result));
+  const std::string intent = temp.root + "/epoch-11111111111111111111111111111111/intent.json";
+  const std::string external = "intent installed by competing publisher";
+  ActionOnce install(BootstrapStoreIoPoint::RenameTemp, 1, [&] {
+    std::ofstream out(intent, std::ios::binary | std::ios::trunc);
+    out.write(external.data(), static_cast<std::streamsize>(external.size()));
+    out.close();
+    CHECK(out.good());
+    CHECK(::chmod(intent.c_str(), 0600) == 0);
+  });
+  auto result = BootstrapStore::CreateNew(
+      std::move(std::get<InitialEpochClaim>(claim_result)), plan, &install);
+  CHECK(install.consumed);
+  CHECK(!result.ok());
+  CHECK(result.store == nullptr);
+  CHECK(result.visibility == BootstrapVisibility::NotVisible);
+  CHECK(result.error == BootstrapStoreError::InvalidIntent);
+  CHECK(ReadBytes(intent) == external);
+}
+
 void TestInvalidClaimBindingAndNoExistingChildReuse() {
   TempRoot temp;
   const auto plan = MakePlan();
@@ -261,6 +333,8 @@ int main() {
   TestPreRenameFailureIsNotVisibleAndDoesNotPublish();
   TestPostRenameUncertaintyLeavesDiskAheadButNeverReady();
   TestCreateNewDoesNotPublishOnPostRenameUncertainty();
+  TestExistingIntentReplacementRaceIsNotOverwritten();
+  TestInitialIntentAppearingBeforePublishIsNeverOverwritten();
   TestInvalidClaimBindingAndNoExistingChildReuse();
   return 0;
 }
