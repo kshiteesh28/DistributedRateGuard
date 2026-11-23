@@ -234,8 +234,9 @@ void TestWrongModeAndInjectedReadFailure() {
   CHECK(std::get<RecoveryReaderFatal>(wrong_mode) == RecoveryReaderFatal::OwnerNotRecoveryMode);
   fresh.reset();
 
-  CreateHistory(temp.root, plan);
-  auto owner = OpenRecoveryOwner(temp, plan);
+  TempRoot history;
+  CreateHistory(history.root, plan);
+  auto owner = OpenRecoveryOwner(history, plan);
   FailOnce fail(RecoveryReaderIoPoint::ReadIntent);
   const auto read_error = BootstrapRecoveryReader::Read(*owner, &fail);
   CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(read_error));
