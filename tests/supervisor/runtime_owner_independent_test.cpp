@@ -297,7 +297,7 @@ void TestForkedOwnerCannotValidateOrClaim() {
   CHECK(::waitpid(child, &status, 0) == child);
   CHECK(WIFEXITED(status) && WEXITSTATUS(status) == 0);
   CHECK(values[0] == static_cast<int>(RuntimeOwnerError::OwnerProcessChanged));
-  CHECK(values[1] == static_cast<int>(RuntimeOwnerError::RecoveryRequired));
+  CHECK(values[1] == static_cast<int>(RuntimeOwnerError::OwnerProcessChanged));
   CHECK(std::holds_alternative<std::monostate>(owner->ValidateOwnership()));
 }
 
