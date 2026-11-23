@@ -519,3 +519,8 @@ if(RATEGUARD_SANITIZE_HISTORY)
   target_compile_options(rateguard_history_inspect PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
   target_link_options(rateguard_history_inspect PRIVATE -fsanitize=address,undefined)
 endif()
+
+add_test(NAME rateguard.history_inspector
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/history_inspector_integration.py"
+    "$<TARGET_FILE:rateguard_history_inspect>")
+set_tests_properties(rateguard.history_inspector PROPERTIES TIMEOUT 60)
