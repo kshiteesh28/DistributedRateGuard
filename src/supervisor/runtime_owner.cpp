@@ -627,6 +627,9 @@ RuntimeOwnerOpenResult RuntimeOwner::OpenExisting(const std::string& absolute_ro
 }
 
 RuntimeOwnerMode RuntimeOwner::mode() const noexcept {
+  // A forked child must not inherit the parent's Fresh capability, even if
+  // the parent happened to fork while another thread held claim_mutex.
+  if (::getpid() != state_->owner_pid) return RuntimeOwnerMode::RecoveryRequired;
   return Latched(*state_).has_value() ? RuntimeOwnerMode::RecoveryRequired : state_->mode;
 }
 const RuntimeDomainId& RuntimeOwner::domain_id() const noexcept { return state_->domain_id; }
@@ -643,6 +646,9 @@ DuplicateFdResult RuntimeOwner::DuplicateRootFd() const noexcept {
 }
 
 InitialClaimResult RuntimeOwner::ClaimInitialEpoch(const EpochId& epoch_id) noexcept {
+  // Check process ownership before consulting mode or touching claim_mutex:
+  // after a multithreaded fork that mutex may be permanently locked in child.
+  if (::getpid() != state_->owner_pid) return RuntimeOwnerError::OwnerProcessChanged;
   if (mode() != RuntimeOwnerMode::Fresh) return RuntimeOwnerError::RecoveryRequired;
   if (AllZero(epoch_id)) return RuntimeOwnerError::InvalidEpochId;
   {
