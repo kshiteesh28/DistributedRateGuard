@@ -87,8 +87,8 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           cmake -S . -B build-manifest-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_MANIFEST=ON
-          cmake --build build-manifest-sanitized --parallel 2 --target rateguard_manifest_codec_tests
-          ctest --test-dir build-manifest-sanitized --output-on-failure -R '^rateguard[.]manifest_codec$'
+          cmake --build build-manifest-sanitized --parallel 2 --target rateguard_manifest_codec_tests rateguard_manifest_store_tests rateguard_manifest_store_independent_tests
+          ctest --test-dir build-manifest-sanitized --output-on-failure -R '^rateguard[.]manifest_(codec|store|store_independent)$'
 
       - name: Check local supervisor lifecycle under sanitizers
         env:

@@ -534,6 +534,16 @@ target_compile_options(rateguard_manifest_codec_tests PRIVATE -Wall -Wextra -Wer
 add_test(NAME rateguard.manifest_codec COMMAND rateguard_manifest_codec_tests)
 set_tests_properties(rateguard.manifest_codec PROPERTIES TIMEOUT 60)
 
+add_executable(rateguard_manifest_store_tests tests/supervisor/manifest_store_test.cpp)
+target_link_libraries(rateguard_manifest_store_tests PRIVATE rateguard_manifest_store)
+target_compile_options(rateguard_manifest_store_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.manifest_store COMMAND rateguard_manifest_store_tests)
+add_executable(rateguard_manifest_store_independent_tests tests/supervisor/manifest_store_independent_test.cpp)
+target_link_libraries(rateguard_manifest_store_independent_tests PRIVATE rateguard_manifest_store)
+target_compile_options(rateguard_manifest_store_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.manifest_store_independent COMMAND rateguard_manifest_store_independent_tests)
+set_tests_properties(rateguard.manifest_store rateguard.manifest_store_independent PROPERTIES TIMEOUT 90)
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
