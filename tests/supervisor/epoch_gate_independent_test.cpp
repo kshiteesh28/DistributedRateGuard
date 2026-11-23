@@ -1,6 +1,7 @@
 #include "supervisor/epoch_gate.h"
 
 #include <algorithm>
+#include <atomic>
 #include <array>
 #include <atomic>
 #include <barrier>
@@ -21,7 +22,7 @@
 
 using namespace rateguard::supervisor;
 namespace {
-int failures=0;
+std::atomic<int> failures{0};
 #define CHECK(x) do { if (!(x)) { std::cerr<<"FAIL line "<<__LINE__<<": " #x "\n"; ++failures; } } while(0)
 
 std::string HexContainer(unsigned value) {
