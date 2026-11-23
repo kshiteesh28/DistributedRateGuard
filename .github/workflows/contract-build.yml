@@ -81,6 +81,15 @@ jobs:
           print(f"Clean reproduction: {len(first)} generated files match")
           PY
 
+      - name: Check bootstrap inventory under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-bootstrap-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_BOOTSTRAP=ON
+          cmake --build build-bootstrap-sanitized --parallel 2 --target rateguard_bootstrap_inventory_tests rateguard_bootstrap_inventory_independent_tests
+          ctest --test-dir build-bootstrap-sanitized --output-on-failure -R '^rateguard[.]bootstrap_inventory(_independent)?$'
+
       - name: Check durable manifest components under sanitizers
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
