@@ -490,7 +490,7 @@ add_test(NAME rateguard.pinned_client_preflight_mutation
 set_tests_properties(rateguard.pinned_client_preflight_mutation PROPERTIES TIMEOUT 270)
 
 # RG-005 component checks. Use std::thread for the last-slot contention case.
-function add_history_test(target source name)
+function(add_history_test target source name)
   add_executable(${target} ${source})
   target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
   target_link_libraries(${target} PRIVATE Threads::Threads)
