@@ -42,7 +42,10 @@ EventSnapshotV1 Build(std::vector<Input> inputs, RunPlan& plan) {
 }
 AttemptDeadline Deadline(std::uint8_t id,std::uint64_t ns) { return {Id(id),ns}; }
 const AttemptResult* Find(const ReconciliationReport& r,std::uint8_t id) {
-  for(const auto& a:r.attempts) if(a.attempt_id==Id(id)) return &a; return nullptr;
+  for (const auto& attempt : r.attempts) {
+    if (attempt.attempt_id == Id(id)) return &attempt;
+  }
+  return nullptr;
 }
 void TestTimelyAndEqualityLate() {
   RunPlan p; auto s=Build({
@@ -67,7 +70,10 @@ void TestTimelyAndEqualityLate() {
   CHECK(Find(r,1)->state==AttemptState::TimelyAllow);
   CHECK(Find(r,2)->state==AttemptState::LateAllow); // equality is late: timely is strictly < deadline
   CHECK(Find(r,1)->timestamp_order_valid && Find(r,2)->timestamp_order_valid);
-  bool denied_late_forward=false; for(auto v:r.violations) if(v==Violation::ForwardWithoutAllow) denied_late_forward=true;
+  bool denied_late_forward = false;
+  for (const auto violation : r.violations) {
+    if (violation == Violation::ForwardWithoutAllow) denied_late_forward = true;
+  }
   CHECK(denied_late_forward); // equal-to-deadline receipt cannot authorize forwarding
 }
 void TestLostResponseAndNoResponseLimited() {
