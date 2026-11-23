@@ -123,7 +123,9 @@ Component verification passed in Linux run 45126587562. Full acceptance remains 
 
 ## RG-006
 
-**Implement supervisor lifecycle and positive fencing** · Release A · Planned
+**Implement supervisor lifecycle and positive fencing** · Release A · In progress
+
+Local gate implementation is under review in [RG-006-A](evidence/RG-006-A.md). Full runtime acceptance is pending.
 
 Dependencies: RG-002, RG-003-A, RG-005 and named verified RG-004-A/B1 inputs. B1 supplies typed certificate metadata only; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
 

@@ -21,7 +21,8 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
 | RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1/B2/B3 inputs verified; PR #9/#10/#11/#12 ready, unmerged; full story in progress | Real commit/forward, manifest/fencing and service/export integration remain open; native SDK resumption fixture qualified, production caching disabled |
 | RG-005 | Senior Dev / Junior Dev / Tester | In progress; components verified, runtime pending | [Evidence](evidence/RG-005.md) |
-| RG-006–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
+| RG-006 | Senior Dev / Tester | In progress; local gate verified, durable runtime pending | [Evidence](evidence/RG-006-A.md) |
+| RG-007–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
 
@@ -404,3 +405,26 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Master:** Fixed GCC's misleading-indentation rejection in the reconciliation fixture at `da19ea2`. [Run 45126587562](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45126587562) then passed on that exact head: 17 Python tests, 36 CTest groups twice, 12 matching generated files, three clock sanitizer groups, seven history sanitizer groups and twelve security sanitizer groups.
 - **Scrum Master:** Independently confirmed PR14's scope/evidence and context wording leave runtime/story acceptance open. Flagged stale Planned labels in the story catalog and board; Master synchronized them to In progress.
 - **Integration:** PR14 is ready to merge into `feature/distributed-rateguard` after documentation readback. PR13 remains the final promotion to main. Full RG004 and RG005 acceptance remains open. Next dependency order remains runtime owner/traffic-stop integration, RG006 lifecycle/fencing and RG007 witness, then RG011A evidence before strict RG008 acceptance.
+
+### LOG-046 — History inspector delivery and independent review (2026-11-23 UTC)
+
+- **Master:** Opened PR15 from the integration feature. Published the input contract, CLI, independent-fixture tests and evidence in separate commits. Reviewed diagnostic lifetime, checked-size overflow, field naming and failed-output handling; corrections were included before Linux acceptance.
+- **Junior developer:** Implemented the offline C++ inspector using the existing reader/validator and existing nlohmann_json dependency. Added the strict decimal-string uint64 plan schema, duplicate-key detection, 1 MiB input cap and independent binary fixture driver.
+- **Tester:** Independently rebuilt the CLI and ran its fixture, then checked escaped duplicate keys and secret-sentinel redaction. Root additionally exercised an independently constructed empty sealed history and ran the fixture under ASan/UBSan.
+- **Result:** [Run 45129476268](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45129476268) passed at e0c9b554: 37 CTest groups twice, 17 Python tests, eight history / three clock / twelve security sanitizer groups, generated-file reproduction. PR15 merged into the feature as edaa0ab. [Evidence](evidence/RG-005-inspector.md).
+- **Remaining:** Inspector success remains structural with safety UNKNOWN. RG005 actual service recording, stop propagation, cleanup invocation, incomplete-run persistence and RG011A remain open.
+
+### LOG-047 — Local epoch lifecycle gate (2026-11-23 UTC)
+
+- **Master:** Opened PR16 for the RG006 local gate, retaining the RG004 A/B1 dependency cycle break. Published contract, implementation, developer tests and independent tests separately. Merged the integration feature into this branch, preserving both inspector and lifecycle CMake/CI registration.
+- **Senior developer:** Implemented immutable per-epoch inventory, PreActivation/ACTIVE/DRAINING/CLOSED phases, RAII commit permits and an internal controller port. Stop requests cover all adapters/replicas before exit inspection; authority/witness stop follows confirmed ingress/replica exits. Controller failures leave the gate draining.
+- **Tester and Master review:** Found and corrected multiple-adapter rejection, missing startup cleanup, incorrect preactivation permit behavior, lease-owned mutex lifetime, stop ordering and terminal stop replay. PolicyLoader confirms arbitrary uint32 slot IDs with a maximum of eight entries; an assumed 1..8 ID range was rejected. Tester delivered separate adversarial/concurrency tests and synchronized its failure counter. Root reran both suites under ASan/UBSan.
+- **Linux correction:** GCC reported helpers unused because NDEBUG removed developer assertions. Root replaced asserts with always-on checks and verified the release-mode fixture; a diagnostic formatting error in the intermediate fix was then corrected. Failed runs are excluded from acceptance. The current combined Linux run is pending.
+- **Scrum Master:** Audited component versus full-story claims. Flagged source-revision metadata for the inspector contract and the gate's extra internal caps/topology assumptions. These are recorded as integration review items, with observable rejection and no silent SRD amendment.
+- **Remaining:** No durable manifest, exclusive supervisor ownership, real OS/Docker evidence, host-reboot recovery, no-restart enforcement or successor-epoch fencing is implemented by this gate. Full RG006 acceptance stays open. [Evidence](evidence/RG-006-A.md).
+
+### LOG-048 — Combined Linux verification (2026-11-23 07:32 UTC)
+
+- **Master:** [Run 45130958093](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45130958093) passed at `6da5d90ce70be41cf9780a64b7bc360492a8d4ab` after combining the inspector and lifecycle build changes: 39 CTest groups twice, 17 Python tests, 12 matching generated files, two lifecycle / three clock / eight history / twelve security sanitizer groups.
+- **Disposition:** PR16 is ready for integration into `feature/distributed-rateguard`; the following changes are documentation only. PR15 is already merged. PR13 remains the final promotion to main.
+- **Acceptance scope:** RG005 and RG006 remain In progress. Gate/inspector component evidence does not complete actual services, durable manifest/controller recovery or RG011A. The 1 MiB plan cap and lifecycle participant/identifier bounds remain documented internal choices; broader supported deployment/configuration must be reconciled before full acceptance.

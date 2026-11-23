@@ -25,7 +25,7 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "rg005_event_history_in_progress",
+    "implementation": "rg005_components_verified_rg006_local_gate_in_progress",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
@@ -178,10 +178,26 @@
       "evidence": "docs/evidence/RG-005.md",
       "pull_request": 14,
       "full_story_done": false
+    },
+    "latest_rg005_inspector": {
+      "status": "component_verified_runtime_pending",
+      "tested_head": "e0c9b5540349a166c5797e0a70c06a02b88290f9",
+      "run": 45129476268,
+      "evidence": "docs/evidence/RG-005-inspector.md",
+      "pull_request": 15,
+      "full_story_done": false
+    },
+    "latest_rg006": {
+      "status": "local_gate_verified_runtime_pending",
+      "tested_head": "6da5d90ce70be41cf9780a64b7bc360492a8d4ab",
+      "run": 45130958093,
+      "evidence": "docs/evidence/RG-006-A.md",
+      "pull_request": 16,
+      "full_story_done": false
     }
   },
   "next_actions": [
-    "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
+    "Complete RG006 durable manifest/controller/supervisor integration and RG005 runtime wiring. The local gate cannot authorize a successor epoch.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -878,6 +894,10 @@
         {
           "path": "tools/history/retention.py",
           "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/inspect_main.cpp",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -939,7 +959,8 @@
         }
       ],
       "first_action": "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
-      "component_evidence": "docs/evidence/RG-005.md"
+      "component_evidence": "docs/evidence/RG-005.md",
+      "inspector_evidence": "docs/evidence/RG-005-inspector.md"
     },
     {
       "id": "RG-006",
@@ -947,7 +968,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-006",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "in_progress",
       "depends_on": [
         "RG-002",
         "RG-003",
@@ -967,7 +988,7 @@
       "planned_files": [
         {
           "path": "src/supervisor/epoch_gate.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/supervisor/manifest_store.h",
@@ -1048,7 +1069,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "first_action": "Verify the local gate CI and review explicit component limits/topology. Implement durable manifest, exclusive supervisor ownership and real controller evidence before claiming cross-epoch fencing or full RG006 acceptance.",
       "input_dependency_contracts": [
         {
           "contract": "RG-003-A",
@@ -1071,7 +1092,8 @@
           "revision": "6366df84903049fde3fd92243b3aa7bd06c43986",
           "run": 44016873892
         }
-      ]
+      ],
+      "component_evidence": "docs/evidence/RG-006-A.md"
     },
     {
       "id": "RG-007",
@@ -1941,5 +1963,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-23T06:44:00Z"
+  "generated_at_utc": "2026-11-23T07:32:00Z"
 }

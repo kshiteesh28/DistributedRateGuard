@@ -1,5 +1,7 @@
 # Strict history inspection
 
+Source contracts are PRD revision 8, SRD revision 5 (FR-009), HLD revision 4 and LLD revision 5 §16. The executable extends the existing RG-005 component.
+
 This RG-005 increment exposes the existing version-1 binary reader as an offline command. It supports FR-009 evidence diagnosis. The tool reports structural evidence only; semantic quota and clock-provenance validation remain RG-011A work.
 
 ## Invocation and input
