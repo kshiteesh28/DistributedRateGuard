@@ -511,6 +511,39 @@ target_compile_options(rateguard_epoch_gate_independent_tests PRIVATE -Wall -Wex
 add_test(NAME rateguard.epoch_gate_independent COMMAND rateguard_epoch_gate_independent_tests)
 set_tests_properties(rateguard.epoch_gate_independent PROPERTIES TIMEOUT 30)
 
+# RG-006 bounded canonical persistence codec.
+option(RATEGUARD_SANITIZE_MANIFEST "Instrument manifest components with ASan and UBSan" OFF)
+add_library(rateguard_manifest_codec src/supervisor/manifest_codec.cpp)
+target_include_directories(rateguard_manifest_codec PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_manifest_codec PRIVATE nlohmann_json::nlohmann_json OpenSSL::Crypto)
+target_link_libraries(rateguard_manifest_codec PUBLIC Threads::Threads)
+target_compile_options(rateguard_manifest_codec PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_MANIFEST)
+  target_compile_options(rateguard_manifest_codec PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_manifest_codec PUBLIC -fsanitize=address,undefined)
+endif()
+
+add_library(rateguard_manifest_store src/supervisor/manifest_store.cpp)
+target_link_libraries(rateguard_manifest_store PUBLIC rateguard_manifest_codec)
+target_compile_options(rateguard_manifest_store PRIVATE -Wall -Wextra -Werror -pedantic)
+
+add_executable(rateguard_manifest_codec_tests tests/supervisor/manifest_codec_test.cpp)
+target_link_libraries(rateguard_manifest_codec_tests PRIVATE rateguard_manifest_codec)
+target_compile_options(rateguard_manifest_codec_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.manifest_codec COMMAND rateguard_manifest_codec_tests)
+set_tests_properties(rateguard.manifest_codec PROPERTIES TIMEOUT 60)
+
+add_executable(rateguard_manifest_store_tests tests/supervisor/manifest_store_test.cpp)
+target_link_libraries(rateguard_manifest_store_tests PRIVATE rateguard_manifest_store)
+target_compile_options(rateguard_manifest_store_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.manifest_store COMMAND rateguard_manifest_store_tests)
+add_executable(rateguard_manifest_store_independent_tests tests/supervisor/manifest_store_independent_test.cpp)
+target_link_libraries(rateguard_manifest_store_independent_tests PRIVATE rateguard_manifest_store)
+target_compile_options(rateguard_manifest_store_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.manifest_store_independent COMMAND rateguard_manifest_store_independent_tests)
+set_tests_properties(rateguard.manifest_store rateguard.manifest_store_independent PROPERTIES TIMEOUT 90)
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)

@@ -63,6 +63,7 @@ struct EpochCandidate {
   PolicyDigest policy_digest{};
   platform::ClockIdentity clock_identity{};
   std::vector<Participant> participants;
+  friend bool operator==(const EpochCandidate&, const EpochCandidate&) = default;
 };
 
 enum class ControllerError : std::uint8_t { Unavailable, TimedOut, InvalidEvidence, Internal };
@@ -144,6 +145,37 @@ inline bool ValidParticipant(const Participant& p, const EpochCandidate& c) noex
 }
 }  // namespace detail
 
+// Pure bounded validation shared by lifecycle startup and durable manifest decoding.
+[[nodiscard]] inline std::optional<GateError> ValidateEpochCandidate(
+    const EpochCandidate& candidate) noexcept {
+  if (candidate.participants.size() > kMaxParticipants) return GateError::TooManyParticipants;
+  if (detail::AllZero(candidate.epoch_id) || detail::AllZero(candidate.authority_incarnation) ||
+      detail::AllZero(candidate.policy_digest) || candidate.participants.empty())
+    return GateError::InvalidCandidate;
+  std::size_t authorities = 0, witnesses = 0, adapters = 0;
+  std::size_t replicas = 0;
+  for (std::size_t i = 0; i < candidate.participants.size(); ++i) {
+    const auto& p = candidate.participants[i];
+    if (!detail::ValidParticipant(p, candidate)) return GateError::InvalidInventory;
+    if (p.role == ParticipantRole::Authority) ++authorities;
+    if (p.role == ParticipantRole::Witness) ++witnesses;
+    if (p.role == ParticipantRole::Adapter) ++adapters;
+    if (p.role == ParticipantRole::Replica) ++replicas;
+    for (std::size_t j = 0; j < i; ++j) {
+      const auto& q = candidate.participants[j];
+      if (p.process.container_id == q.process.container_id || p.process.pid == q.process.pid)
+        return GateError::InvalidInventory;
+      if (p.role == q.role && p.participant_id == q.participant_id)
+        return GateError::InvalidInventory;
+      if (p.role == ParticipantRole::Replica && q.role == ParticipantRole::Replica &&
+          p.slot_id == q.slot_id) return GateError::InvalidInventory;
+    }
+  }
+  if (authorities != 1 || witnesses != 1 || adapters == 0 || replicas == 0 ||
+      replicas > kMaxReplicaSlots) return GateError::InvalidInventory;
+  return std::nullopt;
+}
+
 class CommitLease {
  public:
   CommitLease(const CommitLease&) = delete;
@@ -179,31 +211,7 @@ class EpochGate {
 
   [[nodiscard]] static GateCreateResult Create(const EpochCandidate& candidate,
                                                 IProcessController& controller) noexcept {
-    if (candidate.participants.size() > kMaxParticipants) return GateError::TooManyParticipants;
-    if (detail::AllZero(candidate.epoch_id) || detail::AllZero(candidate.authority_incarnation) ||
-        detail::AllZero(candidate.policy_digest) || candidate.participants.empty())
-      return GateError::InvalidCandidate;
-    std::size_t authorities = 0, witnesses = 0, adapters = 0;
-    std::size_t replicas = 0;
-    for (std::size_t i = 0; i < candidate.participants.size(); ++i) {
-      const auto& p = candidate.participants[i];
-      if (!detail::ValidParticipant(p, candidate)) return GateError::InvalidInventory;
-      if (p.role == ParticipantRole::Authority) ++authorities;
-      if (p.role == ParticipantRole::Witness) ++witnesses;
-      if (p.role == ParticipantRole::Adapter) ++adapters;
-      if (p.role == ParticipantRole::Replica) ++replicas;
-      for (std::size_t j = 0; j < i; ++j) {
-        const auto& q = candidate.participants[j];
-        if (p.process.container_id == q.process.container_id || p.process.pid == q.process.pid)
-          return GateError::InvalidInventory;
-        if (p.role == q.role && p.participant_id == q.participant_id)
-          return GateError::InvalidInventory;
-        if (p.role == ParticipantRole::Replica && q.role == ParticipantRole::Replica &&
-            p.slot_id == q.slot_id) return GateError::InvalidInventory;
-      }
-    }
-    if (authorities != 1 || witnesses != 1 || adapters == 0 || replicas == 0 ||
-        replicas > kMaxReplicaSlots) return GateError::InvalidInventory;
+    if (const auto error = ValidateEpochCandidate(candidate)) return *error;
     try {
       auto shared_candidate = std::make_shared<const EpochCandidate>(candidate);
       auto state = std::make_shared<detail::GateState>();

@@ -194,10 +194,18 @@
       "evidence": "docs/evidence/RG-006-A.md",
       "pull_request": 16,
       "full_story_done": false
+    },
+    "latest_rg006_manifest": {
+      "status": "local_persistence_verified_runtime_pending",
+      "tested_head": "ba2d14731b3f2e9e996049e67b9e4d702a2218d8",
+      "run": 45207019201,
+      "evidence": "docs/evidence/RG-006-B.md",
+      "pull_request": 17,
+      "full_story_done": false
     }
   },
   "next_actions": [
-    "Complete RG006 durable manifest/controller/supervisor integration and RG005 runtime wiring. The local gate cannot authorize a successor epoch.",
+    "Verify the durable manifest increment, then implement trusted global ownership and a staged launch-intent/bootstrap identity protocol before full supervisor/controller integration. Existing manifests remain recovery-only.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -992,7 +1000,7 @@
         },
         {
           "path": "src/supervisor/manifest_store.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/supervisor/process_controller.h",
@@ -1005,6 +1013,18 @@
         {
           "path": "src/supervisor/docker_process_controller.h",
           "status": "proposed_not_present"
+        },
+        {
+          "path": "src/supervisor/manifest_codec.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/manifest_codec.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/manifest_store.cpp",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -1093,7 +1113,8 @@
           "run": 44016873892
         }
       ],
-      "component_evidence": "docs/evidence/RG-006-A.md"
+      "component_evidence": "docs/evidence/RG-006-A.md",
+      "manifest_evidence": "docs/evidence/RG-006-B.md"
     },
     {
       "id": "RG-007",
@@ -1963,5 +1984,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-23T07:32:00Z"
+  "generated_at_utc": "2026-11-23T15:45:00Z"
 }
