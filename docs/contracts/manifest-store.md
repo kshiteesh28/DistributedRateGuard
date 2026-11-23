@@ -16,7 +16,7 @@ A store-directory lock cannot exclude supervisors configured with different dire
 
 Updates compare the expected generation and digest, retain the same epoch candidate, advance generation without wrap and obey PREPARED→ACTIVE→DRAINING→CLOSED or PREPARED→DRAINING cleanup. CLOSED remains terminal. Reopening existing state never restores ACTIVE service or grants successor-epoch authority.
 
-A bounded temporary file is written and file-synced before atomic rename. Directory sync follows publication. Results distinguish prepublication failure from a visible update whose crash durability is uncertain. A failure or uncertain result latches the writer unavailable. Recovery requires independent fencing; a prior file is never used to resume admission automatically. Manifest and lock files are private owner-owned regular files; symlinks and identity replacement fail validation.
+A bounded temporary file is written and file-synced before atomic rename. Directory sync follows publication. Results distinguish prepublication failure from a visible update whose crash durability is uncertain. An attempted storage/integrity failure or uncertain persisted result latches the writer unavailable. Invalid caller inputs, stale caller CAS values and Busy responses do not themselves invalidate a healthy writer. Recovery requires independent fencing; a prior file is never used to resume admission automatically. Manifest and lock files are private owner-owned regular files with a single link; symlinks, extra hard links and identity replacement fail validation.
 
 ## Verification boundary
 
