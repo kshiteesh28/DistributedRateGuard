@@ -641,3 +641,11 @@ target_link_libraries(rateguard_bootstrap_store_independent_tests PRIVATE
 target_compile_options(rateguard_bootstrap_store_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
 add_test(NAME rateguard.bootstrap_store_independent COMMAND rateguard_bootstrap_store_independent_tests)
 set_tests_properties(rateguard.bootstrap_store rateguard.bootstrap_store_independent PROPERTIES TIMEOUT 90)
+
+
+# RG-006 diagnostic read of existing bootstrap intents; never a fencing token.
+add_library(rateguard_bootstrap_recovery_reader src/supervisor/bootstrap_recovery_reader.cpp)
+target_link_libraries(rateguard_bootstrap_recovery_reader PUBLIC
+  rateguard_bootstrap_inventory rateguard_runtime_owner)
+target_compile_options(rateguard_bootstrap_recovery_reader PRIVATE -Wall -Wextra -Werror -pedantic)
+
