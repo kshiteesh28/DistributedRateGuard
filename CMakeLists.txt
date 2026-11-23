@@ -524,6 +524,12 @@ if(RATEGUARD_SANITIZE_MANIFEST)
   target_link_options(rateguard_manifest_codec PUBLIC -fsanitize=address,undefined)
 endif()
 
+add_executable(rateguard_manifest_codec_tests tests/supervisor/manifest_codec_test.cpp)
+target_link_libraries(rateguard_manifest_codec_tests PRIVATE rateguard_manifest_codec)
+target_compile_options(rateguard_manifest_codec_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.manifest_codec COMMAND rateguard_manifest_codec_tests)
+set_tests_properties(rateguard.manifest_codec PROPERTIES TIMEOUT 60)
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
