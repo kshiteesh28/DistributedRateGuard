@@ -511,6 +511,19 @@ target_compile_options(rateguard_epoch_gate_independent_tests PRIVATE -Wall -Wex
 add_test(NAME rateguard.epoch_gate_independent COMMAND rateguard_epoch_gate_independent_tests)
 set_tests_properties(rateguard.epoch_gate_independent PROPERTIES TIMEOUT 30)
 
+# RG-006 bounded canonical persistence codec.
+option(RATEGUARD_SANITIZE_MANIFEST "Instrument manifest components with ASan and UBSan" OFF)
+add_library(rateguard_manifest_codec src/supervisor/manifest_codec.cpp)
+target_include_directories(rateguard_manifest_codec PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_manifest_codec PRIVATE nlohmann_json::nlohmann_json OpenSSL::Crypto)
+target_link_libraries(rateguard_manifest_codec PUBLIC Threads::Threads)
+target_compile_options(rateguard_manifest_codec PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_MANIFEST)
+  target_compile_options(rateguard_manifest_codec PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_manifest_codec PUBLIC -fsanitize=address,undefined)
+endif()
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
