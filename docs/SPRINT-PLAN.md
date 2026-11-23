@@ -2,7 +2,7 @@
 
 **Date:** 2026-11-12  
 **Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1/B2/B3 implementation inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
-**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 6 startup clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
+**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 7 startup and class-boundary clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
 
 ## Team and control
 

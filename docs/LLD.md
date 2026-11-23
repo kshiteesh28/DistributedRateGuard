@@ -1,20 +1,20 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 6 · **Date:** 2026-11-23 · **Status:** Proposed design; component implementation/evidence tracked separately  
-**Current source branch:** `feature/distributed-rateguard` (implementation review)  
-**Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)  
-**Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.  
+**Revision:** 7 · **Date:** 2026-11-23 · **Status:** Proposed design with implemented RG-006 ownership/bootstrap components; integration evidence tracked separately
+**Current source branch:** `feature/distributed-rateguard` (implementation review)
+**Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)
+**Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
 
 ## 1. Scope and implementation status
 
 This LLD serves implementers and reviewers of a tenant admission service. A delivers strict quota decisions, B delivers deterministic replay and evaluation, and C delivers fixed-Q credits and independent model/history validation. PRD-013 live policy changes and PRD-014 long-operation permits remain deferred. Multi-host operation, transparent failover, automatic credit reclamation, and continuous cross-epoch quota guarantees are excluded.
 
-The original design inspection found README and docs. Component implementation and the established CMake layout are now tracked in the integration feature and its evidence records. Remaining paths below remain proposed until their implementation evidence exists. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD proposes interfaces and synchronization; §15 lists implementation gates rather than silently resolving product behavior. No code, tests, model checks, benchmarks, or deployment are claimed.
+The implementation feature now contains component code for RuntimeOwner, InitialEpochClaim, BootstrapInventory, and BootstrapStore; their exact boundaries are listed in §17.1 and §21. The Docker process controller, participant activation, complete supervisor lifecycle, and successor-epoch recovery remain unimplemented integration work. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD distinguishes implemented component APIs from proposed integration and does not claim release acceptance, benchmark results, production deployment, or complete fencing.
 
 ## 2. Modules and dependency graph
 
-All paths in this table are **proposed**. Public means a process boundary; internal means a C++ library boundary.
+Public means a process boundary; internal means a C++ library boundary. Rows labeled implemented identify component code present on the integration feature; the remaining rows are proposed or partially implemented and do not imply end-to-end acceptance.
 
 | Module/path | Boundary; dependencies | State owned; source |
 | --- | --- | --- |
@@ -25,7 +25,12 @@ All paths in this table are **proposed**. Public means a process boundary; inter
 | `src/admission/` | Public CheckAdmission; policy, authority client, credits | Bounded in-flight calls; FR-005/006/010 |
 | `src/authority/` | Internal strict/grant engine plus internal gRPC | Buckets, grant journal, tenant transition order; FR-002/015 |
 | `src/credits/` | Internal; authority client, clock | Fixed-slot confirmed credit and pending sequence; FR-014–018 |
-| `src/supervisor/` and `src/supervisor/witness.*` | Local CLI/control and authenticated witness protocol; process controller, manifest, journal | Independent expected image, journal, inventory and epoch lifecycle; FR-001/007/008 |
+| `src/supervisor/` and `src/supervisor/witness.*` | Local CLI/control and authenticated witness protocol; process controller, manifest, journal | Independent expected image, journal, inventory and epoch lifecycle; FR-001/007/008; integration proposed |
+| `src/supervisor/runtime_owner.h/.cpp` | Internal; POSIX filesystem and lock ownership | One configured runtime-root owner, anchor/lock identity, fresh/recovery mode, one-use initial claim; implemented component |
+| `src/supervisor/bootstrap_inventory.h/.cpp` | Internal immutable value model and canonical codec | Fixed planned roster, observed process identities, monotonic revision and recovery latch; implemented component |
+| `src/supervisor/bootstrap_store.h/.cpp` | Internal; RuntimeOwner claim, BootstrapInventory, POSIX durable file operations | Initial epoch intent creation, revision/digest CAS, last durable snapshot and candidate data handoff; implemented component |
+| `src/supervisor/epoch_gate.h` | Internal lifecycle gate and `IProcessController` interface | Fixed single-epoch candidate, commit leases, stop/inspect boundary and local phase; component-verified, not durable successor authorization |
+| `src/supervisor/manifest_store.h/.cpp` | Internal POSIX manifest store | Prepared/Active/Draining/Closed manifest snapshots and recovery-only existing open; component-verified, not launch or exit proof |
 | `adapter/` | Public sample API; admission client | Forwarding attempt state; FR-006 |
 | `src/events/` | Internal; bounded recorder/export | Event buffers and bounded aggregate metrics; FR-009 |
 | `tools/loadgen/`, `tools/report/` | Offline CLI; traces and manifest | Schedule, paired samples, gate calculations; FR-013/019 |
@@ -447,7 +452,7 @@ The recorded semantic findings are resolved in this revision. Conformance tests,
 
 ## 17. Class design and construction contracts
 
-All classes/files below are **planned**. C++20 is the implementation language baseline; use std::variant<T,Error> as Result<T>, not an undeclared exception convention or C++23-only std::expected. Error has category, stable code, retry disposition, commitment (NotCommitted/Possible/Committed) and optional bounded diagnostics; no credential values. Constructors return validated factories when validation can fail. Runtime dependencies outlive services and are injected by reference; no hidden global mutable state.
+Unless marked implemented, classes/files below are **planned**. C++20 is the implementation language baseline; use std::variant<T,Error> as Result<T>, not an undeclared exception convention or C++23-only std::expected. Error has category, stable code, retry disposition, commitment (NotCommitted/Possible/Committed) and optional bounded diagnostics; no credential values. Constructors return validated factories when validation can fail. Runtime dependencies outlive services and are injected by reference; no hidden global mutable state.
 
 ### 17.1 Class ownership and interfaces
 
@@ -462,14 +467,19 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | LinuxMonotonicClock / src/platform/clock_linux.h | Verified boot/namespace/clock identity | Implements IClock; syscall/provenance/backwards failures return typed integrity error |
 | PeerAuthenticator / src/security/peer_authenticator.h | Immutable trust registry + trusted wall-time provider | Authenticate(TransportPeer)→Result<AuthenticatedPeer>; role/SAN/EKU/expiry checked every RPC |
 | AuthorizationResolver / src/security/authorization.h | PolicySnapshot reference | Resolve(peer,tenant,operation)→Result<AuthorizedOperation>; sole constructor of trusted operation/cost |
-| EpochGate / src/supervisor/epoch_gate.h | Atomic observed phase + epoch identity | ObserveDrain, PermitCommit(expectedEpoch), Phase; transitions monotonic ACTIVE→DRAINING→CLOSED |
+| EpochGate / src/supervisor/epoch_gate.h (component-verified) | Mutex-protected shared fixed-epoch candidate, lifecycle phase, in-flight commit count; injected `IProcessController` | Create, Activate, TryAcquireCommitPermit, BeginDrain, FenceAndClose, phase; PreActivation→Active→Draining→Closed. This gate is local to one candidate and cannot authorize a successor epoch |
+| IProcessController / src/supervisor/epoch_gate.h (implemented interface only) | Abstract boundary injected into EpochGate; no concrete Docker implementation | RequestStop(exact participant, operation ID), Inspect(exact participant); errors/unknown states do not count as positive exit |
+| RuntimeOwner / src/supervisor/runtime_owner.h + runtime_owner.cpp (implemented component) | Exclusive lock and immutable anchor for one configured runtime root; process identity and owner validation | CreateNew, OpenExisting, ValidateOwnership, ClaimInitialEpoch; existing roots are recovery-only and cannot mint a fresh claim |
+| InitialEpochClaim / src/supervisor/runtime_owner.h (implemented component) | Move-only one-use capability retaining the RuntimeOwner lock state | Supplies validated domain/epoch ownership and a duplicated root descriptor; proves neither process launch nor fencing |
+| BootstrapInventory / src/supervisor/bootstrap_inventory.h + bootstrap_inventory.cpp (implemented component) | Immutable planned roster, observations, canonical digest inputs, revision and recovery state | Create, RecordIdentity, RequireRecovery, ReadyCandidate; exact replay is idempotent, identity mismatch irreversibly requires recovery |
+| BootstrapStore / src/supervisor/bootstrap_store.h + bootstrap_store.cpp (implemented component) | InitialEpochClaim plus durable per-epoch intent file and last committed snapshot | CreateNew, RecordIdentity(revision,digest CAS), ReadyCandidate; distinguishes NotVisible, Durable and VisibleDurabilityUnknown; uncertainty blocks further writes |
 | TenantLedger / src/authority/tenant_ledger.h | Mutex, immutable identity, bucket, fixed grant-result array, version, reservation state | BeginReservation→Result<TenantReservation>; ReadSnapshot; no public balance setter |
 | TenantReservation / src/authority/tenant_reservation.h | Move-only reservation token, original version/snapshot, phase | ValidateSnapshot, CommitCandidate, CompleteAck, Fail; only this token can change the reserved tenant |
 | BucketMath / src/authority/bucket_math.h | Stateless production arithmetic | Refill, Decide, RetryDelay; checked 128-bit D3 arithmetic, never accesses clock or global state |
 | IStateWitness / src/authority/witness_port.h | Abstract authority boundary | Validate, Commit, QueryAck; exact identity/fingerprint/version per §16.1 |
 | LocalStateWitnessClient / src/authority/local_witness_client.h | Unix-socket client bound to supervisor identity; implements IStateWitness | Validate, Commit, QueryAck; authenticates expected server and keeps exact transaction fingerprint |
 | WitnessServer / src/supervisor/witness_server.h | Supervisor-owned local socket; refs peer identity, WitnessStateMachine and JournalWriter | Dispatch validated authority requests; reject unrelated process identity before touching witness state |
-| DockerProcessController / src/supervisor/docker_process_controller.h | Implements IProcessController using local runtime API and recorded identities | Start, InspectIdentity, Stop, ConfirmExited; never infer exit from missing network reply |
+| DockerProcessController / proposed `src/supervisor/docker_process_controller.h` | Future adapter over the local container runtime and durable bootstrap inventory | Create stopped containers, StartNonServing, InspectIdentity, Stop, ConfirmExited; not implemented. Never infer exit from missing runtime response |
 | WitnessStateMachine / src/supervisor/witness_state.h | Independent expected tenant images and last acknowledgments; own arithmetic validator | ValidateSnapshot, ValidateTransition, PublishAck; cannot import BucketMath as its validator |
 | JournalWriter / src/supervisor/journal_writer.h | Single joined worker, append fd, chain/index, fixed queue and 2 GiB budget | AppendAndFlush→Result<DurableAck>; ack only after flush; no active-epoch recovery |
 | AuthorityEngine / src/authority/authority_engine.h | Preloaded TenantLedger objects; refs clock, witness, policy, gate, recorder | StrictCheck, AllocateCredit, ReplayGrant; private shared ExecuteTransition follows reservation/ack protocol |
@@ -481,8 +491,7 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | AuthorityService / src/authority/authority_service.h | Internal gRPC facade; refs auth and AuthorityEngine | StrictCheck and AcquireCredit RPCs; only registered replica identity can call |
 | ForwardAttempt / adapter/forward_attempt.h | Attempt ID, deadline, atomic Pending/ForwardStarted/Expired/Failed | TryForwardTransition; exactly one CAS winner; does not retry backend automatically |
 | SampleAdapter / adapter/sample_adapter.h | Trusted fixture mapping and bounded active ForwardAttempt objects | Handle; derive authorized context, call admission, enforce receipt/epoch/deadline, never replay after crash |
-| ManifestStore / src/supervisor/manifest_store.h | Supervisor-owned directory/lock fd; immutable validated manifest snapshots | Load, AtomicReplace; fsync/rename/dir-fsync failures prevent activation; no anti-rollback claim from rename |
-| IProcessController / src/supervisor/process_controller.h | Abstract local runtime boundary | Start, InspectIdentity, Stop, ConfirmExited; identity includes boot/container/PID-start values |
+| ManifestStore / src/supervisor/manifest_store.h/.cpp (component-verified) | Supervisor-owned directory/lock fd; immutable validated manifest snapshots | CreateNew, OpenExisting, snapshot, digest, Transition; existing opens are recovery-only; fsync/rename/directory-fsync uncertainty blocks writes; no anti-rollback claim from rename |
 | EpochSupervisor / src/supervisor/epoch_supervisor.h | Exclusive control thread, inventory/operation state, WitnessStateMachine, JournalWriter | StartEpoch, Drain, FenceAndClose, RecoverAfterCrash; never adopts old ACTIVE epoch |
 | EventRecorder / src/events/event_recorder.h | Fixed run-wide budget, producer sequences and reserved slots | Reserve→Result<EventReservation>, Publish, SealIncomplete; no identifiers as metric labels |
 | HistoryExporter / src/events/history_exporter.h | Bounded streaming file writer | Export with count/hash/complete markers; cleanup follows D7; missing producer seal yields incomplete |
@@ -500,12 +509,17 @@ TenantReservation is move-only. Destruction before CommitCandidate cancels reser
 
 JournalWriter owns its descriptor and joined worker exclusively. Queue capacity is fixed at 1,024 transition records, each bounded to 16 KiB; reservation/queue acquisition occurs before commit so overload cannot silently strand a postcommit append. Per-tenant ordering and durable indices are maintained; batching never changes commit timestamps. Grant result snapshots contain ≤8 fixed-slot records, so encoding must be size-validated at startup; configuration whose transition record cannot fit is rejected before traffic. Existing in-flight records finish or become uncertain when the 2 GiB cap/IO failure occurs. Supervisor continues to account old credit holders until CLOSED.
 
-AuthorityService exposes both the strict internal check and credit grant port. AdmissionService never exposes the witness socket or a balance-reset endpoint. Only Supervisor constructs a new epoch and authority identity; local mutexes cannot authorize a second authority instance. IProcessController positively verifies identity/exit; container names alone cannot prove fencing.
+AuthorityService exposes both the strict internal check and credit grant port. AdmissionService never exposes the witness socket or a balance-reset endpoint. Only Supervisor constructs a new epoch and authority identity; local mutexes cannot authorize a second authority instance. The `IProcessController` contract requires identity-bound stop/inspection evidence; the interface alone and container names alone do not prove that an OS process exited.
 
 ### 17.3 Class collaboration
 
 ```mermaid
 classDiagram
+  RuntimeOwner --> InitialEpochClaim : issues once for fresh root
+  BootstrapStore *-- InitialEpochClaim : consumes and retains
+  BootstrapStore --> BootstrapInventory : durable CAS snapshots
+  BootstrapInventory --> EpochCandidate : complete roster data only
+  EpochGate --> EpochCandidate : validates fixed candidate
   AdmissionService --> AuthorizationResolver
   AdmissionService --> IAuthorityClient
   AdmissionService --> CreditManager
@@ -530,11 +544,13 @@ classDiagram
   CreditManager --> EventRecorder
 ```
 
-Class-level seam acceptance: substitute IClock, IAuthorityClient, IStateWitness and IProcessController through constructors only. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; all stop/fencing outcomes against EpochSupervisor. Independent ReplayModel/HistoryChecker use only versioned artifacts and policy input, not production decision functions. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
+The `InitialEpochClaim` edge is a move-only capability that retains root-lock ownership; `BootstrapStore` consumes and owns it. `BootstrapInventory` can produce only complete candidate data. The diagram does not imply that `ReadyCandidate` activates the gate or authorizes a later epoch.
+
+Class-level seam acceptance: substitute IClock, IAuthorityClient, IStateWitness and IProcessController through constructors only. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; lifecycle gate outcomes against EpochGate. Concrete Docker stop/exit evidence and full recovery remain integration requirements. Independent ReplayModel/HistoryChecker use only versioned artifacts and policy input, not production decision functions. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
 
 ### 17.4 Per-process composition
 
-SupervisorRuntime owns ManifestStore, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime refers to this per-process construction pattern; it is not one address space for all components. All cross-process transitions use the explicit authenticated ports.
+The intended SupervisorRuntime composition is RuntimeOwner, BootstrapStore, ManifestStore, EpochGate, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. RuntimeOwner, InitialEpochClaim, BootstrapInventory and BootstrapStore are the RG-006 components described in §21; EpochGate and ManifestStore are previously component-verified. `IProcessController` is currently an interface declared in `epoch_gate.h` with stop-request and inspection operations; no concrete Docker controller or durable process-launch/exit acknowledgment path is implemented. DockerProcessController, participant activation, full EpochSupervisor orchestration, and the complete recovery path remain proposed. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime is a per-process construction pattern, not one address space for all components. All cross-process transitions use the explicit authenticated ports.
 
 Witness Validate pre-reserves a bounded journal queue slot and maximum record byte budget before returning permission to prepare a transition; no automatic eviction/lease expiry can remove it while the authority may commit. It is released only on explicit precommit abort, committed acknowledgment, or fenced epoch shutdown. This prevents postcommit capacity rejection from becoming an unrecorded ordinary overload. Duplicate Validate with identical transaction identity returns its existing reservation. Only crashes/I/O/integrity failures can invalidate a postcommit reservation, and those follow DRAINING/uncertainty rules.
 
@@ -543,7 +559,7 @@ Witness Validate pre-reserves a bounded journal queue slot and maximum record by
 
 PRD 8 / SRD 5 define the p99 population as all delivered attempts, including error responses; a missing response contributes the caller-deadline duration. The latency measurement begins at adapter receipt and ends at the first terminal application response or deadline. This prevents completion-only sampling from hiding timed-out calls.
 
-The implementation toolchain is intentionally not pre-pinned in this document: the current local path has documentation only and no verified Git checkout or Linux build environment. RG-001 must capture compiler, CMake, gRPC, Protocol Buffers, crypto, and model-tool versions from the actual supported build host and produce a successful reproducible build before the lock is treated as validated. This is a sequencing decision, not a guessed compatibility matrix. Clock, witness, fencing, and certificate tests remain required before activating enforcement services or claiming acceptance. No implementation or evidence is claimed here.
+The implementation toolchain and component evidence are tracked with the integration feature and RG-001 build records. A successful component build does not establish Docker runtime identity, participant activation, recovery fencing, performance gates, or release acceptance. Clock, witness, fencing, certificate, and end-to-end integration evidence remain required before activating enforcement services or claiming acceptance.
 
 
 ## 19. RG-002 representation addendum — version 1
@@ -561,7 +577,7 @@ Sampling uses the shared CLOCK_MONOTONIC source; lock direction is tenant transi
 
 ## Startup ordering clarification — 2026-11-23
 
-Revision 5 of the HLD and revision 6 of the LLD clarify A-03 without changing PRD 8 or SRD 5. A PID-start identity becomes available after OS process creation. The previous pre-launch wording could not be implemented literally. The selected sequence preserves durable registration before execution and complete verified identity before serving.
+Revision 5 of the HLD and revision 7 of the LLD clarify A-03 without changing PRD 8 or SRD 5. A PID-start identity becomes available after OS process creation. The previous pre-launch wording could not be implemented literally. The selected sequence preserves durable registration before process start and complete verified identity before serving.
 
 1. Hold ownership of the one configured runtime root. Fresh initialization requires a new root; existing acquisition enters recovery.
 2. Create stopped containers and persist the complete fixed launch plan before any container start.
@@ -591,3 +607,21 @@ sequenceDiagram
 ```
 
 Runtime ownership is global across epoch directories within the deployment's one trusted configured root. Different configured roots require deployment-level reconciliation before serving; changing that root while an old epoch may act cannot bypass fencing. A fresh ownership claim alone supplies no launch or durability proof. Bootstrap models supply no actual OS observation, authenticated control-channel or persistence guarantee. Those guarantees require the corresponding controller, durable store and participant integration tests.
+
+
+## 21. RG-006 implementation boundary — revision 7
+
+These components support PRD-007, PRD-024 and PRD-025 / FR-001, FR-007, FR-008 and FR-022. Component fixtures exercise ownership, intent and identity persistence; the end-to-end restart, state-integrity and fencing evidence in AT-08, AT-09 and AT-28 remains pending.
+
+The integration feature implements four bounded supervisor-side components:
+
+- **RuntimeOwner** (`src/supervisor/runtime_owner.h`, `src/supervisor/runtime_owner.cpp`) acquires exclusive ownership of one configured runtime root, validates its owner lock and immutable anchor, and distinguishes a newly created root from recovery-only opening. `ClaimInitialEpoch` can issue one move-only `InitialEpochClaim` from a fresh root. The claim retains owner state and provides the root descriptor only while ownership validates. It is not a successor-epoch or process-fencing token.
+- **BootstrapInventory** (`src/supervisor/bootstrap_inventory.h`, `src/supervisor/bootstrap_inventory.cpp`) is an immutable planned roster plus observed identity records. It binds domain, epoch, authority incarnation, policy digest, and expected clock identity. Revisions start at one, advance without wrapping on new observations/recovery latches, and remain unchanged for an exact duplicate observation unless recovery is already latched. A new observation at revision exhaustion cannot wrap and enters recovery-required state. Unknown or mismatched observations latch recovery-required state.
+- **BootstrapStore** (`src/supervisor/bootstrap_store.h`, `src/supervisor/bootstrap_store.cpp`) consumes the initial claim to create one epoch intent directory and its canonical inventory file. Updates use expected revision and digest as a compare-and-swap precondition. The returned visibility is `NotVisible`, `Durable`, or `VisibleDurabilityUnknown`; only a durable write advances the acknowledged in-memory snapshot. `store_error` reports persistence/ownership outcomes independently from `transition_status`: for example, a detected identity mismatch can be durably recorded as recovery-required while the transition reports the mismatch. An uncertain publication makes the store unavailable for further writes. `ReadyCandidate` checks ownership, canonical persisted bytes, domain/epoch binding, and complete observed inventory before returning candidate data.
+- **InitialEpochClaim** is a one-use ownership capability, not proof that a participant has started or stopped. `RuntimeOwner::OpenExisting` is recovery-only; the current code has no API to reopen an existing bootstrap intent for serving or to authorize a successor epoch. Any diagnostic read of an existing intent is not authority to serve or reset.
+
+The intended startup handoff is: after the controller confirms the fixed containers exist in a stopped state, persist their exact IDs and bindings before process start; start each container in a non-serving mode; inspect its exact host PID, PID-start identity, container identity and shared clock provenance; persist each observation; then obtain candidate data and continue through the remaining readiness gates. These ownership/bootstrap components implement durable roster/observation storage and candidate-data validation only. They do not implement a Docker process controller, participant activation acknowledgment, authority/witness readiness, `ACTIVE` transition, stopping, positive exit confirmation, supervisor-crash recovery, or a fenced-successor authorization.
+
+A create operation that succeeds in the container runtime while persisting its returned container ID fails or becomes uncertain cannot be treated as an empty roster. Recovery remains blocked until the container is reconciled or the HLD/LLD-required controlled complete-VM shutdown supplies positive fencing evidence. No token or API currently proves that all prior participants are stopped and authorizes a successor epoch.
+
+**Blocking integration — bootstrap recovery reader (EpochSupervisor owner):** The future recovery path must enumerate and validate every recorded intent, including pending process identities, using the bounded canonical codec and exact runtime inventory before requesting stop/exit evidence. `BootstrapStore` currently exposes no existing-intent recovery reader; `RuntimeOwner::OpenExisting` only reacquires recovery-mode root ownership. Implementing that reader does not authorize adoption or a successor claim. Missing, partial or untrusted inventory keeps reset blocked pending reconciliation or the required controlled complete-VM shutdown evidence.
