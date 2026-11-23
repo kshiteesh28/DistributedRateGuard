@@ -626,3 +626,7 @@ target_link_libraries(rateguard_bootstrap_inventory_independent_tests PRIVATE
 target_compile_options(rateguard_bootstrap_inventory_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
 add_test(NAME rateguard.bootstrap_inventory_independent COMMAND rateguard_bootstrap_inventory_independent_tests)
 set_tests_properties(rateguard.bootstrap_inventory rateguard.bootstrap_inventory_independent PROPERTIES TIMEOUT 60)
+
+add_library(rateguard_bootstrap_store src/supervisor/bootstrap_store.cpp)
+target_link_libraries(rateguard_bootstrap_store PUBLIC rateguard_bootstrap_inventory rateguard_runtime_owner)
+target_compile_options(rateguard_bootstrap_store PRIVATE -Wall -Wextra -Werror -pedantic)
