@@ -4,7 +4,7 @@ This RG-005 increment exposes the existing version-1 binary reader as an offline
 
 ## Invocation and input
 
-The proposed executable is `rateguard_history_inspect PLAN.json HISTORY.bin`. Both paths must be supplied explicitly. The plan comes from the trusted run configuration, independently of the history being inspected. The tool never derives its expected plan from history bytes.
+The executable is `rateguard_history_inspect PLAN.json HISTORY.bin`. Build it with `cmake --build build --target rateguard_history_inspect` after the repository's standard CMake configuration. Run `build/rateguard_history_inspect PLAN.json HISTORY.bin`. Both paths must be supplied explicitly. The plan comes from the trusted run configuration, independently of the history being inspected. The tool never derives its expected plan from history bytes.
 
 The plan is a JSON object with exactly these fields.
 

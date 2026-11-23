@@ -22,4 +22,4 @@ The inspector does not supply actual clock/commit provenance or semantic quota v
 
 ## Linux CI
 
-Pending observation for the current review-branch source. Local checks are scoped above.
+[Linux run 45129476268](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45129476268) passed at `e0c9b5540349a166c5797e0a70c06a02b88290f9`. Both clean builds passed 37 CTest groups. Eight history sanitizer groups, three clock sanitizer groups and twelve security sanitizer groups passed; 17 Python tests and generated-file reproduction also passed. The subsequent evidence/invocation update changes documentation only.
