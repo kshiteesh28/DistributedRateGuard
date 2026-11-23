@@ -505,6 +505,12 @@ target_compile_options(rateguard_epoch_gate_tests PRIVATE -Wall -Wextra -Werror 
 add_test(NAME rateguard.epoch_gate COMMAND rateguard_epoch_gate_tests)
 set_tests_properties(rateguard.epoch_gate PROPERTIES TIMEOUT 30)
 
+add_executable(rateguard_epoch_gate_independent_tests tests/supervisor/epoch_gate_independent_test.cpp)
+target_link_libraries(rateguard_epoch_gate_independent_tests PRIVATE rateguard_epoch_gate)
+target_compile_options(rateguard_epoch_gate_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.epoch_gate_independent COMMAND rateguard_epoch_gate_independent_tests)
+set_tests_properties(rateguard.epoch_gate_independent PROPERTIES TIMEOUT 30)
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
