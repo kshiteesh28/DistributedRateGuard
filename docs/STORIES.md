@@ -103,19 +103,19 @@ Acceptance criteria (full integration not run):
 
 ## RG-005
 
-**Implement bounded events and incomplete-history accounting** · Release A · Planned
+**Implement bounded events and incomplete-history accounting** · Release A · In progress
 
 Dependencies: RG-001.
 
 Reserve slots before commit. Published checksummed records and producer seals distinguish complete evidence from crash gaps. Run-wide cap is 1 GiB. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
-Proposed files: `src/events/event_recorder.h`, `src/events/history_exporter.h`.
+Component files include `src/events/` and `tools/history/`. See [RG-005 evidence](evidence/RG-005.md) for exact scope and test results.
 
 Classes: EventRecorder, HistoryExporter.
 
 Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-009, PRD-015, FR-009, FR-010.
 
-Acceptance criteria (not run):
+Component verification passed in Linux run 45126587562. Full acceptance remains pending service/supervisor wiring and the RG-011A provenance gate.
 
 - **RG-005-AC01** — Reserved but unpublished slots, gaps, checksum loss and missing producer seals mark a run incomplete/UNKNOWN. Evidence: AT-10, AT-11.
 - **RG-005-AC02** — Cap exhaustion stops correctness traffic; no event is silently dropped and no debit is refunded. Evidence: AT-11.

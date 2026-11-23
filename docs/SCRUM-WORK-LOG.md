@@ -20,7 +20,8 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 | RG-002 policy/arithmetic | Junior Dev: arithmetic; Senior Dev: policy/codec; Tester: independent oracles; Master: representation decisions/integration | Component verified; PR #6 ready, unmerged | Product Owner review; runtime integration in later stories |
 | RG-003 clock provenance | Junior Dev: clock implementation; Senior Dev: design/code review; Tester: independent checks; Master: decisions/integration | RG-003-A component verified; PR #8 ready, unmerged | RG-003-B/C/D topology, service and checker integrations remain pending |
 | RG-004 authentication | Senior Dev: TLS verifier/fixtures; Junior Dev: trusted UTC/Docker observer; Tester: independent checks; Master: integration | RG-004-A/B1/B2/B3 inputs verified; PR #9/#10/#11/#12 ready, unmerged; full story in progress | Real commit/forward, manifest/fencing and service/export integration remain open; native SDK resumption fixture qualified, production caching disabled |
-| RG-005–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
+| RG-005 | Senior Dev / Junior Dev / Tester | In progress; components verified, runtime pending | [Evidence](evidence/RG-005.md) |
+| RG-006–014 | Assigned by dependency readiness | Planned | Dependencies and acceptance in [stories](STORIES.md) |
 
 ## Work entries
 
@@ -397,3 +398,9 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Tester:** Finished independent strict reconciliation and regressions for lost/late/equal-deadline outcomes, duplicate stages, orphan evidence and forwarding. Root requested corrections to LIMITED/debit distinction, missing-offer detection and forwarding authorization; the tester addressed them and root reran the suite under ASan/UBSan.
 - **Master verification:** Ran seven local C++20 component suites and the Python retention fixture. Added a Linux sanitizer lane. Earlier failed CI is preserved and excluded from passing evidence. See [RG-005 evidence](evidence/RG-005.md) for scope and pending runtime work.
 - **Remaining:** Supervisor/process wiring, actual service event recording, traffic stop propagation, cleanup invocation, persisted incomplete summaries, CLI and RG-011A provenance/semantic checks. Review branches target the integration feature; PR13 remains the final promotion to main.
+
+### LOG-045 — Linux verification and component integration (2026-11-23 UTC)
+
+- **Master:** Fixed GCC's misleading-indentation rejection in the reconciliation fixture at `da19ea2`. [Run 45126587562](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45126587562) then passed on that exact head: 17 Python tests, 36 CTest groups twice, 12 matching generated files, three clock sanitizer groups, seven history sanitizer groups and twelve security sanitizer groups.
+- **Scrum Master:** Independently confirmed PR14's scope/evidence and context wording leave runtime/story acceptance open. Flagged stale Planned labels in the story catalog and board; Master synchronized them to In progress.
+- **Integration:** PR14 is ready to merge into `feature/distributed-rateguard` after documentation readback. PR13 remains the final promotion to main. Full RG004 and RG005 acceptance remains open. Next dependency order remains runtime owner/traffic-stop integration, RG006 lifecycle/fencing and RG007 witness, then RG011A evidence before strict RG008 acceptance.

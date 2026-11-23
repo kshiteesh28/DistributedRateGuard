@@ -170,10 +170,18 @@
       },
       "full_story_done": false,
       "pull_request_status": "ready_unmerged"
+    },
+    "latest_rg005": {
+      "status": "component_verified_runtime_pending",
+      "tested_head": "da19ea21800c303acae4646d6159f67a1607a3b1",
+      "run": 45126587562,
+      "evidence": "docs/evidence/RG-005.md",
+      "pull_request": 14,
+      "full_story_done": false
     }
   },
   "next_actions": [
-    "Read docs/evidence/RG-005.md and confirm PR14 Linux results. Wire the components into supervisor/runtime, output-directory retention lifecycle and RG-011A before claiming full story acceptance.",
+    "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -841,35 +849,35 @@
       "planned_files": [
         {
           "path": "src/events/event_recorder.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/events/history_exporter.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/events/history_validator.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/events/file_publisher.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/events/aggregate_metrics.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "tools/history/history_reader.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "tools/history/strict_reconciliation.h",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         },
         {
           "path": "tools/history/retention.py",
-          "status": "implemented_component_in_review"
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -910,7 +918,7 @@
             "AT-10",
             "AT-11"
           ],
-          "status": "component_evidence_in_review_runtime_pending"
+          "status": "component_verified_runtime_pending"
         },
         {
           "id": "RG-005-AC02",
@@ -918,7 +926,7 @@
           "evidence_ids": [
             "AT-11"
           ],
-          "status": "component_evidence_in_review_runtime_pending"
+          "status": "component_verified_runtime_pending"
         },
         {
           "id": "RG-005-AC03",
@@ -927,10 +935,10 @@
             "AT-10",
             "AT-13"
           ],
-          "status": "component_evidence_in_review_runtime_pending"
+          "status": "component_verified_runtime_pending"
         }
       ],
-      "first_action": "Read docs/evidence/RG-005.md and confirm PR14 Linux results. Wire the components into supervisor/runtime, output-directory retention lifecycle and RG-011A before claiming full story acceptance.",
+      "first_action": "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
       "component_evidence": "docs/evidence/RG-005.md"
     },
     {
