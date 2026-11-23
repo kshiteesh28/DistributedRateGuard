@@ -6,12 +6,13 @@
 #include <string>
 #include <vector>
 
-#define CHECK(expression) do { \
-  if (!(expression)) { \
-    std::cerr << "check failed at line " << __LINE__ << ": " #expression << '\\n'; \
-    std::exit(EXIT_FAILURE); \
-  } \
-} while (false)
+static void Check(bool condition, int line) {
+  if (!condition) {
+    std::cerr << "check failed at line " << line << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
+}
+#define CHECK(expression) Check(static_cast<bool>(expression), __LINE__)
 
 using namespace rateguard::supervisor;
 
