@@ -63,6 +63,7 @@ struct EpochCandidate {
   PolicyDigest policy_digest{};
   platform::ClockIdentity clock_identity{};
   std::vector<Participant> participants;
+  friend bool operator==(const EpochCandidate&, const EpochCandidate&) = default;
 };
 
 enum class ControllerError : std::uint8_t { Unavailable, TimedOut, InvalidEvidence, Internal };
