@@ -1,16 +1,16 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 5 · **Date:** 2026-11-12 · **Status:** Proposed design; implementation/evidence pending  
-**Current source branch:** `main` (the review design has been merged)  
+**Revision:** 6 · **Date:** 2026-11-23 · **Status:** Proposed design; component implementation/evidence tracked separately  
+**Current source branch:** `feature/distributed-rateguard` (implementation review)  
 **Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)  
-**Architecture input:** [proposed HLD revision 4](HLD.md), delivered with this LLD.  
+**Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.  
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
 
 ## 1. Scope and implementation status
 
 This LLD serves implementers and reviewers of a tenant admission service. A delivers strict quota decisions, B delivers deterministic replay and evaluation, and C delivers fixed-Q credits and independent model/history validation. PRD-013 live policy changes and PRD-014 long-operation permits remain deferred. Multi-host operation, transparent failover, automatic credit reclamation, and continuous cross-epoch quota guarantees are excluded.
 
-The repository root inspected on main contains README and docs; all implementation paths below are proposed. There is no established build layout to preserve. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD proposes interfaces and synchronization; §15 lists implementation gates rather than silently resolving product behavior. No code, tests, model checks, benchmarks, or deployment are claimed.
+The original design inspection found README and docs. Component implementation and the established CMake layout are now tracked in the integration feature and its evidence records. Remaining paths below remain proposed until their implementation evidence exists. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD proposes interfaces and synchronization; §15 lists implementation gates rather than silently resolving product behavior. No code, tests, model checks, benchmarks, or deployment are claimed.
 
 ## 2. Modules and dependency graph
 
@@ -238,7 +238,7 @@ The witness appends an ordered hash-chained journal, with flush before acknowled
 
 The witness detects declared single-record deletion, version rollback and inconsistent grant results before subsequent authority use. It is not a claim to detect coordinated corruption of both independent images or malicious rollback of the whole host; such evidence is UNKNOWN. Witness/supervisor loss terminates the authority incarnation and blocks reset until all old processes are confirmed stopped. Crash-window, acknowledgment-loss, journal corruption and record-rollback checks are mandatory evidence before this mechanism can satisfy FR-008/AT-09. Added coordination and flush cost may miss performance gates; thresholds must not be reduced to conceal it.
 
-**A-03 — lifecycle recovery:** One supervisor holds an exclusive local runtime lock and durably records exact container IDs, boot identity and PID start identities before launching each participant. No participant is unregistered or automatically restarted. Confirm stop with runtime inspect plus OS exit evidence for the recorded identity; a reused PID or an absent response is not proof. Supervisor death does not permit a new supervisor to resume service: recovery loads the last inventory, fences/stops every recorded participant including the old authority and witness, confirms exit, then creates a new epoch. On host reboot, verified changed kernel boot identity proves old kernel processes cannot survive, but the supervisor still inventories/stops any newly auto-started containers before activation. Unreadable or untrusted inventory blocks reset until a controlled complete VM shutdown provides positive fencing evidence. A stop command is monotonic and idempotent by operation ID; activation is never inferred from a partially written manifest.
+**A-03 — lifecycle recovery:** One supervisor holds the exclusive lock for the deployment's single trusted runtime root across epoch creation, serving and recovery. Before starting a participant, durably record its exact created/stopped container ID, role, slot/incarnation, epoch and policy binding in a launch-intent artifact. OS creation enters a non-serving bootstrap phase. After start, obtain and verify the exact host PID, PID-start identity, boot/time-namespace provenance and container identity while admission remains disabled. Persist those observations before acknowledging activation. Complete inventory, policy, clock, trust and witness readiness are required before the epoch becomes ACTIVE; adapters activate last. No participant is unregistered or automatically restarted. Recovery from supervisor loss reads every recorded intent, including containers whose process identity was never completed, stops each exact container/process and verifies exit before any successor epoch. Existing ownership or manifest acquisition never adopts serving state. Host reboot requires verified changed boot identity plus inventory and cessation of any auto-started containers. Missing or untrusted intent/inventory blocks reset until controlled complete-VM shutdown supplies positive fencing evidence. Stop operations remain monotonic and idempotent by operation ID; partial writes never authorize activation.
 
 
 ## 9. mTLS and authorization
@@ -558,3 +558,36 @@ The implementation uses immutable sorted vectors with binary-search lookups and 
 [Linux clock v1](contracts/clock-v1.md) fixes the internal provenance grammar, Linux namespace source checks, mandatory manifest matching and initial successful clock sample, and serialized sticky failure behavior before component acceptance. Namespace offsets describe the children namespace, so current/children device and inode must agree across all four startup snapshots. A process-leader startup probe precedes worker creation; runtime namespace changes are prohibited.
 
 Sampling uses the shared CLOCK_MONOTONIC source; lock direction is tenant transition → process clock. Factory success is clock-component readiness, not authority/replica activation: RG-006 must verify every participant and trusted manifest. Actual commit/deadline mapping remains RG-007/008 and strict UNKNOWN history semantics the RG-011A/005 Release A evidence gate, extended by RG-013 for C. Inadequate clock/history provenance cannot produce a safety PASS in A; this obligation is not deferred to the formal checker. A local or fork/exec smoke test alone cannot claim the Docker shared-clock premise or a quota bound. This addendum records implementation decisions, not completed tests or measured latency.
+
+## Startup ordering clarification — 2026-11-23
+
+Revision 5 of the HLD and revision 6 of the LLD clarify A-03 without changing PRD 8 or SRD 5. A PID-start identity becomes available after OS process creation. The previous pre-launch wording could not be implemented literally. The selected sequence preserves durable registration before execution and complete verified identity before serving.
+
+1. Hold ownership of the one configured runtime root. Fresh initialization requires a new root; existing acquisition enters recovery.
+2. Create stopped containers and persist the complete fixed launch plan before any container start.
+3. Start registered containers with admission disabled. Record exact runtime-observed identity and common clock provenance.
+4. Persist every identity. A failed or uncertain write keeps startup unavailable and requires recovery.
+5. Construct the complete epoch manifest and validate policy/trust/witness/clock readiness. Activate the epoch and acknowledge participants, with adapters last.
+6. After failure, fence every recorded container, including pending-identity entries. An omitted/missing record cannot be replaced by an empty inventory.
+
+```mermaid
+sequenceDiagram
+    participant S as Supervisor
+    participant D as Durable artifacts
+    participant R as Container runtime
+    participant P as Bootstrap participant
+    S->>R: Create stopped registered containers
+    R-->>S: Exact container IDs
+    S->>D: Persist fixed launch intents
+    D-->>S: Durable result
+    S->>R: Start non-serving bootstrap
+    R->>P: Create process
+    S->>R: Inspect exact process and clock identity
+    R-->>S: Verified identity observations
+    S->>D: Persist identity-complete inventory
+    D-->>S: Durable result
+    S->>S: Validate all epoch readiness gates
+    S->>P: Activate matching epoch and policy
+```
+
+Runtime ownership is global across epoch directories within the deployment's one trusted configured root. Different configured roots require deployment-level reconciliation before serving; changing that root while an old epoch may act cannot bypass fencing. A fresh ownership claim alone supplies no launch or durability proof. Bootstrap models supply no actual OS observation, authenticated control-channel or persistence guarantee. Those guarantees require the corresponding controller, durable store and participant integration tests.

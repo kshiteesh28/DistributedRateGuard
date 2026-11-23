@@ -445,3 +445,23 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 - **Corrections after initial CI:** Checked subprocess-pipe write results for fortified GCC. Added nonblocking manifest/lock opens and a named-pipe regression so invalid file types cannot block before validation. Real Linux runtime supersedes local syntax/stub smoke; earlier failed runs do not count as acceptance.
 - **Audit:** Scrum Master independently confirmed scope/source revisions and no full-fencing, activation, authentication or rollback-freshness claims. The launch-order gap is recorded in the contract before any real launcher implementation.
 - **Integration:** PR17 is ready for feature integration after documentation readback. PR13 remains the final promotion to main. Durable global supervisor ownership, bootstrap intents/identity barrier, actual process control and recovery still block full RG006.
+
+### LOG-051 — Startup design clarification (2026-11-23 UTC)
+
+- **Master:** Rechecked integration c65780d and opened PR18/19. Clarified HLD revision 5 and LLD revision 6 A-03: persist exact stopped-container launch intents before start; create non-serving processes; verify and persist host PID/start/clock identity before activation. The previous literal pre-process PID requirement was impossible. PRD 8/SRD 5 and all release gates remain unchanged.
+- **Scope:** This resolves the design ordering; actual launcher/participant acknowledgements remain implementation work. Serving activation continues to require every policy, clock, trust, witness and lifecycle gate.
+
+### LOG-052 — Runtime-root ownership (2026-11-23 UTC)
+
+- **Senior developer:** Implemented RuntimeOwner and one-use InitialEpochClaim. The configured root's OS lock survives owner-object destruction while a claim exists; existing-root acquisition stays RecoveryRequired. The domain/path anchor is immutable and canonical.
+- **Master review:** Required monotonic ownership invalidation, root/lock/anchor identity checks, FIFO-safe opens, bounded JSON parsing, realpath allocation ownership, fresh-OFD enumeration and pre-mutex inherited-PID rejection. Identified claim ordering that could taint a legitimate token after an epoch child appeared; fixed with one issuance reservation and non-poisoning repeat-claim outcomes.
+- **Tester:** Independently exercised contention, token lifetime, inherited PID, restoration after taint, initialization/crash boundaries, root-path normalization and claim concurrency. Root checked child pipe writes before publication so fortified GCC can enforce their outcomes.
+- **Evidence:** [Runtime ownership](evidence/RG-006-C.md). Local syntax tests pass. Shim-linked local POSIX/sanitizer checks are excluded from cryptographic acceptance; real OpenSSL/Linux CI is pending.
+- **Remaining:** The configured-root guarantee does not cover alternate misconfigured roots. A fenced successor-epoch authorization protocol and actual process control remain open; root recreation cannot substitute for recovery.
+
+### LOG-053 — Runtime ownership verified on Linux (2026-11-23 23:20 UTC)
+
+- **Master:** [Run 45286150998](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45286150998) passed at `abd4a1bb30eecbc3d8eae3f5f582e5c5660d6780` (PR merge ref 79eb61f): 44 CTest groups twice, 17 Python tests, 12 matching generated files, three manifest / two owner / two lifecycle / three clock / eight history / twelve security sanitizer groups. Real OpenSSL evidence supersedes shim-only local smoke.
+- **Correction:** After pre-mutex fork rejection was added, the independent child fixture still expected the older RecoveryRequired enum. Updated it to OwnerProcessChanged; no failed run is counted as acceptance.
+- **Scrum Master:** Confirmed scope and staged startup ordering; flagged missing new-class detail in LLD and stale tracking metadata. Those documentation corrections are being recorded, with successor-epoch recovery explicitly open.
+- **Integration:** PR18 is ready for feature integration after readback. PR19 depends on it and adds initial bootstrap inventory/persistence. Full RG006 process control, authenticated activation and positive-fencing acceptance remain pending; PR13 remains final promotion to main.
