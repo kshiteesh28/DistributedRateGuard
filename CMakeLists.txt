@@ -630,3 +630,14 @@ set_tests_properties(rateguard.bootstrap_inventory rateguard.bootstrap_inventory
 add_library(rateguard_bootstrap_store src/supervisor/bootstrap_store.cpp)
 target_link_libraries(rateguard_bootstrap_store PUBLIC rateguard_bootstrap_inventory rateguard_runtime_owner)
 target_compile_options(rateguard_bootstrap_store PRIVATE -Wall -Wextra -Werror -pedantic)
+
+add_executable(rateguard_bootstrap_store_tests tests/supervisor/bootstrap_store_test.cpp)
+target_link_libraries(rateguard_bootstrap_store_tests PRIVATE rateguard_bootstrap_store)
+target_compile_options(rateguard_bootstrap_store_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_store COMMAND rateguard_bootstrap_store_tests)
+add_executable(rateguard_bootstrap_store_independent_tests tests/supervisor/bootstrap_store_independent_test.cpp)
+target_link_libraries(rateguard_bootstrap_store_independent_tests PRIVATE
+  rateguard_bootstrap_store nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_bootstrap_store_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.bootstrap_store_independent COMMAND rateguard_bootstrap_store_independent_tests)
+set_tests_properties(rateguard.bootstrap_store rateguard.bootstrap_store_independent PROPERTIES TIMEOUT 90)
