@@ -557,6 +557,16 @@ if(RATEGUARD_SANITIZE_RUNTIME)
   target_link_options(rateguard_runtime_owner PUBLIC -fsanitize=address,undefined)
 endif()
 
+add_executable(rateguard_runtime_owner_tests tests/supervisor/runtime_owner_test.cpp)
+target_link_libraries(rateguard_runtime_owner_tests PRIVATE rateguard_runtime_owner)
+target_compile_options(rateguard_runtime_owner_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.runtime_owner COMMAND rateguard_runtime_owner_tests)
+add_executable(rateguard_runtime_owner_independent_tests tests/supervisor/runtime_owner_independent_test.cpp)
+target_link_libraries(rateguard_runtime_owner_independent_tests PRIVATE rateguard_runtime_owner)
+target_compile_options(rateguard_runtime_owner_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.runtime_owner_independent COMMAND rateguard_runtime_owner_independent_tests)
+set_tests_properties(rateguard.runtime_owner rateguard.runtime_owner_independent PROPERTIES TIMEOUT 90)
+
 # RG-005 component checks. Use std::thread for the last-slot contention case.
 option(RATEGUARD_SANITIZE_HISTORY "Instrument history component tests with ASan and UBSan" OFF)
 function(add_history_test target source name)
