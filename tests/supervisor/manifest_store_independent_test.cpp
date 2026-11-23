@@ -342,7 +342,7 @@ void TestDirectoryLockContendsAcrossProcess() {
     auto attempt = ManifestStore::OpenExisting(dir.string());
     const int code = std::get_if<ManifestStoreError>(&attempt) &&
                      std::get<ManifestStoreError>(attempt) == ManifestStoreError::LockBusy ? 1 : 0;
-    (void)::write(pipefd[1], &code, sizeof(code));
+    if (::write(pipefd[1], &code, sizeof(code)) != sizeof(code)) ::_exit(74);
     ::close(pipefd[1]);
     ::_exit(0);
   }
@@ -376,7 +376,7 @@ void TestProcessExitAroundRenameKeepsOnlyVisibleSnapshot() {
       ::close(pipefd[0]);
       auto transitioned = store->Transition(1, store->digest(), ManifestPhase::Active, Op(71));
       const int code = transitioned.visibility == ManifestVisibility::Durable ? 0 : 2;
-      (void)::write(pipefd[1], &code, sizeof(code));
+      if (::write(pipefd[1], &code, sizeof(code)) != sizeof(code)) ::_exit(74);
       ::_exit(0);
     }
     ::close(pipefd[1]);
