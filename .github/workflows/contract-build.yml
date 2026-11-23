@@ -25,7 +25,7 @@ jobs:
   contract:
     name: C++20 protobuf/gRPC contract build
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - name: Check out source
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -197,6 +197,12 @@ jobs:
             build/docker-time-preflight.json
             build/b3-session-qualification.json
             build/Testing/Temporary/LastTest.log
+            build-clean/Testing/Temporary/LastTest.log
+            build-bootstrap-sanitized/Testing/Temporary/LastTest.log
+            build-manifest-sanitized/Testing/Temporary/LastTest.log
+            build-runtime-sanitized/Testing/Temporary/LastTest.log
+            build-supervisor-sanitized/Testing/Temporary/LastTest.log
+            build-history-sanitized/Testing/Temporary/LastTest.log
             build-clock-sanitized/Testing/Temporary/LastTest.log
             build-security-sanitized/Testing/Temporary/LastTest.log
           if-no-files-found: error
