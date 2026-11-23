@@ -1,6 +1,6 @@
 # Implementation stories
 
-**Date:** 2026-11-16 · **Status:** RG-001/002/003-A components and RG-004-A/B1/B2/B3 implementation inputs verified; full story integrations remain pending. Implementation PRs are ready and unmerged.
+**Updated:** 2026-11-23 · **Status:** Foundation/security/history/lifecycle components are integrated on `feature/distributed-rateguard`; full runtime story acceptance remains pending. PR #13 is the final promotion to `main`. Earlier per-increment PR notes below record historical states.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
@@ -306,4 +306,4 @@ Acceptance criteria (not run):
 
 ## Readiness clarification — 2026-11-12
 
-The full replay command/report remains a Release B deliverable. Its independent strict decision oracle and golden fixtures are required earlier as test support for Release A; this does not move replay product scope into A. The performance p99 population and target-build lock are defined in PRD 8 / SRD 5 / LLD 5. No story is implemented or accepted by this clarification.
+The full replay command/report remains a Release B deliverable. Its independent strict decision oracle and golden fixtures are required earlier as test support for Release A; this does not move replay product scope into A. The performance p99 population and target-build lock are defined in PRD 8 / SRD 5 / LLD 6. No story is implemented or accepted by this clarification.
