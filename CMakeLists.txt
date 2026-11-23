@@ -531,3 +531,18 @@ add_history_test(rateguard_history_reader_tests tests/history_reader_test.cpp hi
 add_history_test(rateguard_aggregate_metrics_tests tests/aggregate_metrics_test.cpp aggregate_metrics)
 add_history_test(rateguard_history_file_publisher_tests tests/history_file_publisher_test.cpp history_file_publisher)
 add_history_test(rateguard_strict_reconciliation_tests tests/strict_reconciliation_test.cpp strict_reconciliation)
+
+# RG-005 offline structural inspection with an independently supplied plan.
+add_executable(rateguard_history_inspect tools/history/inspect_main.cpp)
+target_include_directories(rateguard_history_inspect PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(rateguard_history_inspect PRIVATE nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_history_inspect PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_HISTORY)
+  target_compile_options(rateguard_history_inspect PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_history_inspect PRIVATE -fsanitize=address,undefined)
+endif()
+
+add_test(NAME rateguard.history_inspector
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/history_inspector_integration.py"
+    "$<TARGET_FILE:rateguard_history_inspect>")
+set_tests_properties(rateguard.history_inspector PROPERTIES TIMEOUT 60)

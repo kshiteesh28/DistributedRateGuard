@@ -105,8 +105,8 @@ jobs:
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
           cmake -S . -B build-history-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_HISTORY=ON
-          cmake --build build-history-sanitized --parallel 2 --target rateguard_event_recorder_tests rateguard_history_export_tests rateguard_history_validator_tests rateguard_history_reader_tests rateguard_aggregate_metrics_tests rateguard_history_file_publisher_tests rateguard_strict_reconciliation_tests
-          ctest --test-dir build-history-sanitized --output-on-failure -R '^rateguard[.](event_recorder|history_export|history_validator|history_reader|aggregate_metrics|history_file_publisher|strict_reconciliation)$'
+          cmake --build build-history-sanitized --parallel 2 --target rateguard_history_inspect rateguard_event_recorder_tests rateguard_history_export_tests rateguard_history_validator_tests rateguard_history_reader_tests rateguard_aggregate_metrics_tests rateguard_history_file_publisher_tests rateguard_strict_reconciliation_tests
+          ctest --test-dir build-history-sanitized --output-on-failure -R '^rateguard[.](event_recorder|history_export|history_validator|history_reader|aggregate_metrics|history_file_publisher|strict_reconciliation|history_inspector)$'
 
       - name: Check security fixtures and trusted UTC under sanitizers
         env:
