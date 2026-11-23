@@ -198,6 +198,10 @@ void TestLeaseDrainAndOrderedFence() {
   CHECK(first_ingress_inspect < first_auth_stop); // all ingress exits before authority/witness stop
   CHECK(IsOk(gate->BeginDrain(op,DrainCause::Requested)));
   CHECK(IsError(gate->BeginDrain(Op(13),DrainCause::Requested),GateError::WrongOperation));
+  const auto before_replay=ctl.Calls().size();
+  CHECK(IsOk(gate->FenceAndClose(op))); // closed operation replays idempotently
+  CHECK(IsError(gate->FenceAndClose(Op(13)),GateError::WrongOperation));
+  CHECK(ctl.Calls().size()==before_replay); // replay does not repeat lifecycle I/O
   CHECK(IsError(gate->Activate(),GateError::WrongPhase));
 }
 void TestUnknownStaleAndTimeoutPreventClose() {
