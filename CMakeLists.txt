@@ -680,3 +680,5 @@ set_tests_properties(rateguard.epoch_artifact_layout PROPERTIES TIMEOUT 30)
 
 
 target_link_libraries(rateguard_bootstrap_recovery_reader PUBLIC rateguard_manifest_codec)
+
+target_link_libraries(rateguard_bootstrap_recovery_reader_tests PRIVATE rateguard_manifest_store)
