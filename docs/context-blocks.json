@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_date": "2026-11-23",
+  "generated_date": "2026-11-24",
   "recheck_mutable_state": true,
   "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
   "repository": {
@@ -21,11 +21,11 @@
     "PRD": 8,
     "SRD": 5,
     "HLD": 5,
-    "LLD": 7
+    "LLD": 8
   },
   "state": {
-    "documents": "reviewed_specifications_revision_8_5_5_7",
-    "implementation": "rg006_bootstrap_component_verified_runtime_recovery_pending",
+    "documents": "reviewed_specifications_revision_8_5_5_8",
+    "implementation": "rg006_recovery_reader_verified_layout_controller_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
@@ -71,7 +71,9 @@
       "evidence": "docs/evidence/RG-001.md",
       "run": 43328571076,
       "status": "component_verified_review_pending",
-      "remaining": "Docker target/image-digest and runtime integration gates are not satisfied by hosted package tests"
+      "remaining": "Docker target/image-digest and runtime integration gates are not satisfied by hosted package tests",
+      "pull_request": 5,
+      "pull_request_status": "merged_to_feature"
     },
     "latest_rg002": {
       "status": "component_verified_independent_acceptance_passed",
@@ -79,7 +81,9 @@
       "tested_head": "7640975031aee2af2ee7ae855ce88b76115f1569",
       "merge_ref": "9be7be9861ddc0f0bd04718e6d500781de5b18ca",
       "evidence": "docs/evidence/RG-002.md",
-      "scope": "Pure policy/arithmetic; no quota service, runtime certificate or clock claims"
+      "scope": "Pure policy/arithmetic; no quota service, runtime certificate or clock claims",
+      "pull_request": 6,
+      "pull_request_status": "merged_to_feature"
     },
     "historical_spec_merge_documentation_changes": [
       "PRD 8 / SRD 5 / HLD 4 / LLD 5 now use one p99 population and timeout/cancellation rule.",
@@ -96,7 +100,8 @@
       "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md",
       "final_documentation_head": "f656648c884ce9bbe6fcb917566898a2f01b4c0e",
       "final_documentation_run": 43358083253,
-      "pull_request_status": "ready_unmerged"
+      "pull_request_status": "merged_to_feature",
+      "pull_request": 8
     },
     "latest_rg004": {
       "status": "compatibility_input_independently_accepted",
@@ -211,7 +216,8 @@
     "current_design_checks": [
       "HLD 5 / LLD 6 clarify durable stopped-container intents, non-serving bootstrap and observed process-identity persistence before activation; PRD 8 / SRD 5 unchanged.",
       "Historical documentation-check entries retain the revisions actually checked at that time.",
-      "LLD 7 records implemented ownership/bootstrap class boundaries; actual process control and successor-epoch authorization remain pending."
+      "LLD 7 records implemented ownership/bootstrap class boundaries; actual process control and successor-epoch authorization remain pending.",
+      "LLD 8 records recovery-reader API/caps and distinguishes fatal initial ownership failure from incomplete later diagnostics; read-only scan is not fencing."
     ],
     "latest_rg006_runtime_ownership": {
       "status": "component_verified_merged_to_feature",
@@ -225,17 +231,28 @@
       "pull_request_status": "merged_to_feature"
     },
     "latest_rg006_bootstrap": {
-      "status": "component_verified_integration_pending",
+      "status": "component_verified_merged_to_feature",
       "tested_head": "03e618b311056227fe6bccb4b9143ced00d2f28c",
       "tested_merge_ref": "be6acc0697bca17f70803009327289de19c2abd0",
       "run": 45287922499,
       "pull_request": 19,
       "evidence": "docs/evidence/RG-006-D.md",
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "cb98d7851fdac6f4eedab0d5f55a88a7fd98a798"
+    },
+    "latest_rg006_bootstrap_recovery": {
+      "status": "component_verified_integration_pending",
+      "pull_request": 20,
+      "tested_head": "87c784b25d47dd97527709756fd63673671af470",
+      "tested_merge_ref": "0784213de9ec24bf7e111224363f04a56909f4cb",
+      "run": 45292546023,
+      "evidence": "docs/evidence/RG-006-E.md",
       "full_story_done": false
     }
   },
   "next_actions": [
-    "Implement the EpochSupervisor-owned existing-intent recovery reader, actual process-controller and non-serving bootstrap orchestration, authenticated readiness/activation acknowledgement, and verified fenced successor-epoch claims under the same runtime root. Existing ownership remains RecoveryRequired.",
+    "Integrate the frozen epoch artifact layout and format-specific recovery validation, then implement pending/observed controller targets, durable recovery orchestration and verified successor claims. Existing roots and reader snapshots do not authorize serving or reset.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -254,7 +271,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-001",
       "link_type": "repository_story",
       "release": "A",
-      "status": "component_accepted_review_pending",
+      "status": "component_accepted_merged_to_feature",
       "depends_on": [],
       "prd_ids": [
         "PRD-005",
@@ -309,7 +326,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -356,7 +373,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-002",
       "link_type": "repository_story",
       "release": "A",
-      "status": "component_accepted_review_pending",
+      "status": "component_accepted_merged_to_feature",
       "depends_on": [
         "RG-001"
       ],
@@ -416,7 +433,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -511,7 +528,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -709,7 +726,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -964,7 +981,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1079,6 +1096,14 @@
         {
           "path": "src/supervisor/bootstrap_store.cpp",
           "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_recovery_reader.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_recovery_reader.cpp",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -1090,13 +1115,15 @@
         "RuntimeOwner",
         "InitialEpochClaim",
         "BootstrapInventory",
-        "BootstrapStore"
+        "BootstrapStore",
+        "BootstrapRecoveryReader"
       ],
       "code_design_notes": [
         "Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch.",
         "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.",
         "LLD 7 §21 defines initial-claim ownership, durable visibility versus transition status and candidate-data handoff. BootstrapStore does not launch, activate, recover or fence participants.",
-        "EpochSupervisor owns the future existing-intent recovery reader. RuntimeOwner existing acquisition does not load bootstrap state; missing or uncertain inventory blocks reset."
+        "EpochSupervisor owns the future existing-intent recovery reader. RuntimeOwner existing acquisition does not load bootstrap state; missing or uncertain inventory blocks reset.",
+        "LLD 8 §21.1 defines diagnostic-only bounded recovery reading. Pending container IDs/historical provenance are retained; scan_complete never proves prior durability, cessation or safe reset."
       ],
       "files_to_refer": [
         {
@@ -1116,7 +1143,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1149,7 +1176,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Implement the EpochSupervisor-owned existing-intent recovery reader, actual process-controller and non-serving bootstrap orchestration, authenticated readiness/activation acknowledgement, and verified fenced successor-epoch claims under the same runtime root. Existing ownership remains RecoveryRequired.",
+      "first_action": "Integrate the frozen epoch artifact layout and format-specific recovery validation, then implement pending/observed controller targets, durable recovery orchestration and verified successor claims. Existing roots and reader snapshots do not authorize serving or reset.",
       "input_dependency_contracts": [
         {
           "contract": "RG-003-A",
@@ -1176,7 +1203,8 @@
       "component_evidence": "docs/evidence/RG-006-A.md",
       "manifest_evidence": "docs/evidence/RG-006-B.md",
       "runtime_ownership_evidence": "docs/evidence/RG-006-C.md",
-      "bootstrap_evidence": "docs/evidence/RG-006-D.md"
+      "bootstrap_evidence": "docs/evidence/RG-006-D.md",
+      "bootstrap_recovery_evidence": "docs/evidence/RG-006-E.md"
     },
     {
       "id": "RG-007",
@@ -1251,7 +1279,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1347,7 +1375,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1463,7 +1491,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1572,7 +1600,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1674,7 +1702,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1781,7 +1809,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1880,7 +1908,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1978,7 +2006,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 7,
+          "revision": 8,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2046,5 +2074,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-23T23:32:00Z"
+  "generated_at_utc": "2026-11-24T00:05:00Z"
 }
