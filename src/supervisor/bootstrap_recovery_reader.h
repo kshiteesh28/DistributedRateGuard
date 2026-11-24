@@ -4,6 +4,7 @@
 // recovery-mode RuntimeOwner. The result is never a serving or fencing token.
 
 #include "supervisor/bootstrap_inventory.h"
+#include "supervisor/manifest_codec.h"
 #include "supervisor/runtime_owner.h"
 
 #include <array>
@@ -20,6 +21,7 @@ namespace rateguard::supervisor {
 inline constexpr std::size_t kMaxRecoveryEpochDirectories = 1024;
 inline constexpr std::size_t kMaxRecoveryRootEntries = 4096;
 inline constexpr std::size_t kMaxRecoveryChildEntries = 16;
+inline constexpr std::size_t kMaxRecoveryManifestStoreEntries = 16;
 inline constexpr std::size_t kMaxRecoveryAggregateBytes = 64U * 1024U * 1024U;
 inline constexpr std::size_t kMaxRecoveryAggregateParticipants = 16'384;
 inline constexpr std::size_t kMaxRecoveryIssues = 256;
@@ -69,6 +71,19 @@ enum class RecoveryIssueCode : std::uint8_t {
   RootChangedDuringScan,
   OwnerChangedDuringScan,
   ResourceLimit,
+  InvalidManifestStoreDirectory,
+  ManifestStoreChanged,
+  ManifestStoreHasUnexpectedEntry,
+  TooManyManifestStoreEntries,
+  MissingManifestStoreFile,
+  InvalidManifestStoreFile,
+  ManifestStoreReadFailed,
+  ManifestStoreFileChanged,
+  ManifestStoreFileTooLarge,
+  InvalidManifestEncoding,
+  ManifestCodecDigestMismatch,
+  ManifestCandidateMismatch,
+  ManifestBootstrapNotReady,
 };
 
 struct RecoveryEpochDiagnostic final {
@@ -78,6 +93,17 @@ struct RecoveryEpochDiagnostic final {
   std::optional<RecoveryFileIdentity> intent_identity;
   std::shared_ptr<const BootstrapInventory> inventory;
   std::optional<std::array<std::uint8_t, 32>> canonical_digest;
+  // Present only when the optional `manifest-store` child existed and was
+  // inspected. A decoded manifest is diagnostic data, never an activation,
+  // stop, reset, or successor-epoch authorization.
+  struct ManifestDiagnostic final {
+    RecoveryFileIdentity directory_identity{};
+    std::optional<RecoveryFileIdentity> owner_lock_identity;
+    std::optional<RecoveryFileIdentity> manifest_identity;
+    std::shared_ptr<const ManifestV1> decoded_manifest;
+    std::optional<std::array<std::uint8_t, 32>> canonical_digest;
+  };
+  std::optional<ManifestDiagnostic> manifest_store;
   std::vector<RecoveryIssueCode> issues;
   bool issues_truncated{};
 };
@@ -127,6 +153,15 @@ enum class RecoveryReaderIoPoint : std::uint8_t {
   ReadIntent,
   RevalidateEntry,
   ValidateOwnerAfter,
+  OpenManifestStoreDirectory,
+  EnumerateManifestStore,
+  StatManifestStoreEntry,
+  OpenManifestLock,
+  RevalidateManifestLock,
+  OpenManifestFile,
+  ReadManifestFile,
+  RevalidateManifestFile,
+  RevalidateManifestStore,
 };
 
 class IRecoveryReaderIo {

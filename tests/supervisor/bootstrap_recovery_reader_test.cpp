@@ -1,5 +1,6 @@
 #include "supervisor/bootstrap_recovery_reader.h"
 #include "supervisor/bootstrap_store.h"
+#include "supervisor/manifest_store.h"
 
 #include <algorithm>
 #include <array>
@@ -106,6 +107,49 @@ void CreateHistory(const std::string& root, const BootstrapPlan& plan, bool reco
   owner.reset();
 }
 
+void CreateReadyHistoryWithManifest(const std::string& root, const BootstrapPlan& plan,
+                                    ManifestPhase phase = ManifestPhase::Prepared) {
+  auto owner_result = RuntimeOwner::CreateNew(root, plan.domain_id);
+  CHECK(std::holds_alternative<std::unique_ptr<RuntimeOwner>>(owner_result));
+  auto owner = std::move(std::get<std::unique_ptr<RuntimeOwner>>(owner_result));
+  auto claim_result = owner->ClaimInitialEpoch(plan.epoch_id);
+  CHECK(std::holds_alternative<InitialEpochClaim>(claim_result));
+  auto boot = BootstrapStore::CreateNew(std::move(std::get<InitialEpochClaim>(claim_result)), plan);
+  CHECK(boot.ok() && boot.visibility == BootstrapVisibility::Durable);
+  for (std::size_t i = 0; i < plan.participants.size(); ++i) {
+    const auto before = boot.store->Snapshot();
+    const auto digest = BootstrapDigestV1(*before);
+    CHECK((std::holds_alternative<std::array<std::uint8_t, 32>>(digest)));
+    const auto update = boot.store->RecordIdentity(before->revision(),
+        std::get<std::array<std::uint8_t, 32>>(digest), Observe(plan, i, 515 + i));
+    CHECK(update.store_error == BootstrapStoreError::None);
+    CHECK(update.visibility == BootstrapVisibility::Durable);
+  }
+  const auto ready = boot.store->Snapshot()->ReadyCandidate();
+  CHECK(std::holds_alternative<EpochCandidate>(ready));
+  const auto manifest_path = root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  OperationId operation{};
+  operation.fill(0x90);
+  auto store_result = ManifestStore::CreateNew(manifest_path,
+      std::get<EpochCandidate>(ready), operation);
+  CHECK(std::holds_alternative<std::unique_ptr<ManifestStore>>(store_result));
+  auto manifest = std::move(std::get<std::unique_ptr<ManifestStore>>(store_result));
+  const std::array<ManifestPhase, 3> next_phases{
+      ManifestPhase::Active, ManifestPhase::Draining, ManifestPhase::Closed};
+  for (const auto next : next_phases) {
+    if (static_cast<std::uint8_t>(next) <= static_cast<std::uint8_t>(phase)) {
+      const auto digest = manifest->digest();
+      ++operation[0];
+      const auto update = manifest->Transition(manifest->snapshot().generation, digest,
+          next, operation);
+      CHECK(update.visibility == ManifestVisibility::Durable && !update.error.has_value());
+    }
+  }
+  manifest.reset();
+  boot.store.reset();
+  owner.reset();
+}
+
 std::unique_ptr<RuntimeOwner> OpenRecoveryOwner(const TempRoot& temp, const BootstrapPlan& plan) {
   auto result = RuntimeOwner::OpenExisting(temp.root, plan.domain_id);
   CHECK(std::holds_alternative<std::unique_ptr<RuntimeOwner>>(result));
@@ -141,6 +185,32 @@ struct MutateIntentAtReadback final : IRecoveryReaderIo {
     if (consumed || point != RecoveryReaderIoPoint::RevalidateEntry) return false;
     consumed = true;
     return ::chmod(path.c_str(), 0640) != 0;
+  }
+};
+
+struct MutateManifestAtReadback final : IRecoveryReaderIo {
+  std::string path;
+  bool consumed{};
+  explicit MutateManifestAtReadback(std::string p) : path(std::move(p)) {}
+  bool FailAt(RecoveryReaderIoPoint point) noexcept override {
+    if (consumed || point != RecoveryReaderIoPoint::RevalidateManifestFile) return false;
+    consumed = true;
+    return ::chmod(path.c_str(), 0640) != 0;
+  }
+};
+
+struct CreateManifestStoreAtIntentRevalidation final : IRecoveryReaderIo {
+  std::string source;
+  std::string destination;
+  bool consumed{};
+  CreateManifestStoreAtIntentRevalidation(std::string from, std::string to)
+      : source(std::move(from)), destination(std::move(to)) {}
+  bool FailAt(RecoveryReaderIoPoint point) noexcept override {
+    if (consumed || point != RecoveryReaderIoPoint::RevalidateEntry) return false;
+    consumed = true;
+    std::error_code error;
+    std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive, error);
+    return static_cast<bool>(error);
   }
 };
 
@@ -260,6 +330,193 @@ void TestPostReadModeChangeIsDetected() {
   CHECK(HasIssue(*snapshot, RecoveryIssueCode::IntentChanged));
 }
 
+void TestManifestPhasesAndCandidateBinding() {
+  for (const auto phase : {ManifestPhase::Prepared, ManifestPhase::Active,
+                           ManifestPhase::Draining, ManifestPhase::Closed}) {
+    TempRoot temp;
+    const auto plan = MakePlan();
+    CreateReadyHistoryWithManifest(temp.root, plan, phase);
+    auto owner = OpenRecoveryOwner(temp, plan);
+    const auto result = BootstrapRecoveryReader::Read(*owner);
+    CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+    const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+    CHECK(snapshot->scan_complete && snapshot->epochs.size() == 1);
+    CHECK(snapshot->epochs[0].inventory != nullptr);
+    CHECK(snapshot->epochs[0].manifest_store.has_value());
+    CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+    CHECK(snapshot->epochs[0].manifest_store->decoded_manifest->phase == phase);
+    CHECK(snapshot->epochs[0].manifest_store->canonical_digest.has_value());
+  }
+
+  TempRoot temp;
+  const auto plan = MakePlan();
+  CreateReadyHistoryWithManifest(temp.root, plan);
+  const auto path = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store/manifest.json";
+  auto owner = OpenRecoveryOwner(temp, plan);
+  const auto original = BootstrapRecoveryReader::Read(*owner);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(original));
+  const auto original_snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(original);
+  auto mismatched = *original_snapshot->epochs[0].manifest_store->decoded_manifest;
+  mismatched.candidate.policy_digest[0] ^= 0x5a;
+  const auto encoded = EncodeManifestV1(mismatched);
+  CHECK(std::holds_alternative<std::string>(encoded));
+  owner.reset();
+  CHECK(::unlink(path.c_str()) == 0);
+  { std::ofstream output(path, std::ios::binary); output << std::get<std::string>(encoded); }
+  CHECK(::chmod(path.c_str(), 0600) == 0);
+  owner = OpenRecoveryOwner(temp, plan);
+  const auto result = BootstrapRecoveryReader::Read(*owner);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+  const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete);
+  CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::ManifestCandidateMismatch));
+}
+
+void TestManifestUnknownAndMissingFilesKeepBootstrapInventory() {
+  TempRoot temp;
+  const auto plan = MakePlan();
+  CreateReadyHistoryWithManifest(temp.root, plan);
+  const auto directory = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  const auto partial = directory + "/manifest.tmp";
+  { std::ofstream output(partial); output << "partial"; }
+  CHECK(::chmod(partial.c_str(), 0600) == 0);
+  auto owner = OpenRecoveryOwner(temp, plan);
+  auto result = BootstrapRecoveryReader::Read(*owner);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+  auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+  CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::ManifestStoreHasUnexpectedEntry));
+  owner.reset();
+  CHECK(::unlink(partial.c_str()) == 0);
+  CHECK(::unlink((directory + "/manifest.json").c_str()) == 0);
+  owner = OpenRecoveryOwner(temp, plan);
+  result = BootstrapRecoveryReader::Read(*owner);
+  snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::MissingManifestStoreFile));
+}
+
+void TestPendingBootstrapDoesNotClaimManifestMismatch() {
+  TempRoot pending;
+  TempRoot complete;
+  const auto plan = MakePlan();
+  CreateHistory(pending.root, plan, true);
+  CreateReadyHistoryWithManifest(complete.root, plan);
+  const auto source = complete.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  const auto destination = pending.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  std::filesystem::copy(source, destination, std::filesystem::copy_options::recursive);
+  CHECK(std::filesystem::exists(destination + "/manifest.json"));
+  auto owner = OpenRecoveryOwner(pending, plan);
+  const auto result = BootstrapRecoveryReader::Read(*owner);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+  const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+  CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::ManifestBootstrapNotReady));
+  CHECK(!HasIssue(*snapshot, RecoveryIssueCode::ManifestCandidateMismatch));
+}
+
+void TestManifestMetadataMutationsAndUnsafeObjectsFailClosed() {
+  {
+    TempRoot temp;
+    const auto plan = MakePlan();
+    CreateReadyHistoryWithManifest(temp.root, plan);
+    const auto manifest = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store/manifest.json";
+    auto owner = OpenRecoveryOwner(temp, plan);
+    MutateManifestAtReadback mutate(manifest);
+    const auto result = BootstrapRecoveryReader::Read(*owner, &mutate);
+    CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+    const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+    CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+    CHECK(HasIssue(*snapshot, RecoveryIssueCode::ManifestStoreFileChanged));
+  }
+  {
+    TempRoot temp;
+    const auto plan = MakePlan();
+    CreateReadyHistoryWithManifest(temp.root, plan);
+    const auto directory = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+    const auto lock = directory + "/owner.lock";
+    CHECK(::unlink(lock.c_str()) == 0);
+    const auto target = temp.parent + "/safe-empty-lock";
+    { std::ofstream output(target); }
+    CHECK(::chmod(target.c_str(), 0600) == 0);
+    CHECK(::symlink(target.c_str(), lock.c_str()) == 0);
+    auto owner = OpenRecoveryOwner(temp, plan);
+    const auto result = BootstrapRecoveryReader::Read(*owner);
+    const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+    CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+    CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+    CHECK(HasIssue(*snapshot, RecoveryIssueCode::InvalidManifestStoreFile));
+  }
+  {
+    TempRoot temp;
+    const auto plan = MakePlan();
+    CreateReadyHistoryWithManifest(temp.root, plan);
+    const auto directory = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+    const auto manifest = directory + "/manifest.json";
+    CHECK(::unlink(manifest.c_str()) == 0);
+    CHECK(::mkfifo(manifest.c_str(), 0600) == 0);
+    auto owner = OpenRecoveryOwner(temp, plan);
+    const auto result = BootstrapRecoveryReader::Read(*owner);
+    const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+    CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+    CHECK(HasIssue(*snapshot, RecoveryIssueCode::InvalidManifestStoreFile));
+  }
+  {
+    TempRoot temp;
+    const auto plan = MakePlan();
+    CreateReadyHistoryWithManifest(temp.root, plan);
+    const auto directory = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+    const auto manifest = directory + "/manifest.json";
+    CHECK(::link(manifest.c_str(), (directory + "/extra-link").c_str()) == 0);
+    auto owner = OpenRecoveryOwner(temp, plan);
+    const auto result = BootstrapRecoveryReader::Read(*owner);
+    const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+    CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+    CHECK(HasIssue(*snapshot, RecoveryIssueCode::ManifestStoreHasUnexpectedEntry));
+    CHECK(HasIssue(*snapshot, RecoveryIssueCode::InvalidManifestStoreFile));
+  }
+}
+
+void TestManifestStoreEntryCapRetainsDecodedManifest() {
+  TempRoot temp;
+  const auto plan = MakePlan();
+  CreateReadyHistoryWithManifest(temp.root, plan);
+  const auto directory = temp.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  for (std::size_t i = 0; i <= kMaxRecoveryManifestStoreEntries; ++i) {
+    const auto path = directory + "/extra-" + std::to_string(i);
+    { std::ofstream output(path); output << "x"; }
+    CHECK(::chmod(path.c_str(), 0600) == 0);
+  }
+  auto owner = OpenRecoveryOwner(temp, plan);
+  const auto result = BootstrapRecoveryReader::Read(*owner);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+  const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete && snapshot->epochs[0].inventory != nullptr);
+  CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::TooManyManifestStoreEntries));
+}
+
+void TestManifestStoreCreatedDuringScanIsExplicitlyUncertain() {
+  TempRoot pending;
+  TempRoot complete;
+  const auto plan = MakePlan();
+  CreateHistory(pending.root, plan);
+  CreateReadyHistoryWithManifest(complete.root, plan);
+  const auto source = complete.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  const auto destination = pending.root + "/" + EpochName(plan.epoch_id) + "/manifest-store";
+  auto owner = OpenRecoveryOwner(pending, plan);
+  CreateManifestStoreAtIntentRevalidation create(source, destination);
+  const auto result = BootstrapRecoveryReader::Read(*owner, &create);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+  const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete && snapshot->epochs.size() == 1);
+  CHECK(snapshot->epochs[0].manifest_store->decoded_manifest != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::ManifestStoreChanged));
+}
+
 void TestCrossEpochContainerCollisionIsReported() {
   TempRoot temp;
   const auto first = MakePlan(0x11);
@@ -354,6 +611,56 @@ void WriteInventoryDirectory(const std::string& root, const BootstrapPlan& plan)
   CHECK(::chmod(intent.c_str(), 0600) == 0);
 }
 
+void WriteRawBytes(const std::string& path, const std::string& bytes) {
+  std::ofstream out(path, std::ios::binary);
+  out.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+  CHECK(out.good());
+}
+
+struct ManifestReadCounter final : IRecoveryReaderIo {
+  std::size_t intent_reads{};
+  std::size_t manifest_reads{};
+  bool FailAt(RecoveryReaderIoPoint point) noexcept override {
+    if (point == RecoveryReaderIoPoint::ReadIntent) ++intent_reads;
+    if (point == RecoveryReaderIoPoint::ReadManifestFile) ++manifest_reads;
+    return false;
+  }
+};
+
+void TestAggregateBudgetIncludesManifestAttemptedBytes() {
+  TempRoot temp;
+  const auto target = MakePlan(0xf0);
+  CreateOwnerOnly(temp.root, target.domain_id);
+  const std::string invalid(kMaxBootstrapBytes, 'x');
+  for (std::uint8_t n = 0x10; n < 0x1f; ++n) {
+    const auto child = temp.root + "/" + EpochName(MakePlan(n).epoch_id);
+    CHECK(::mkdir(child.c_str(), 0700) == 0);
+    const auto path = child + "/intent.json";
+    WriteRawBytes(path, invalid);
+    CHECK(::chmod(path.c_str(), 0600) == 0);
+  }
+  WriteInventoryDirectory(temp.root, target);
+  const auto manifest_directory = temp.root + "/" + EpochName(target.epoch_id) + "/manifest-store";
+  CHECK(::mkdir(manifest_directory.c_str(), 0700) == 0);
+  const auto lock = manifest_directory + "/owner.lock";
+  WriteRawBytes(lock, "");
+  CHECK(::chmod(lock.c_str(), 0600) == 0);
+  const auto manifest = manifest_directory + "/manifest.json";
+  const std::string oversized(kMaxManifestBytes + 1, 'x');
+  WriteRawBytes(manifest, oversized);
+  CHECK(::chmod(manifest.c_str(), 0600) == 0);
+
+  auto owner = OpenRecoveryOwner(temp, target);
+  ManifestReadCounter counter;
+  const auto result = BootstrapRecoveryReader::Read(*owner, &counter);
+  CHECK(std::holds_alternative<std::shared_ptr<const BootstrapRecoverySnapshot>>(result));
+  const auto snapshot = std::get<std::shared_ptr<const BootstrapRecoverySnapshot>>(result);
+  CHECK(!snapshot->scan_complete);
+  CHECK(!snapshot->epochs.empty() && snapshot->epochs.back().inventory != nullptr);
+  CHECK(HasIssue(*snapshot, RecoveryIssueCode::AggregateByteLimit));
+  CHECK(counter.manifest_reads == 0);  // Budget is reserved before the over-cap read.
+}
+
 void TestAggregateParticipantLimitRetainsPriorInventories() {
   TempRoot temp;
   const auto first = MakeMaxParticipantPlan(0x11);
@@ -430,6 +737,13 @@ int main() {
   TestEmptyAndMissingIntentRemainUnknown();
   TestWrongModeAndInjectedReadFailure();
   TestPostReadModeChangeIsDetected();
+  TestManifestPhasesAndCandidateBinding();
+  TestManifestUnknownAndMissingFilesKeepBootstrapInventory();
+  TestPendingBootstrapDoesNotClaimManifestMismatch();
+  TestManifestMetadataMutationsAndUnsafeObjectsFailClosed();
+  TestManifestStoreEntryCapRetainsDecodedManifest();
+  TestManifestStoreCreatedDuringScanIsExplicitlyUncertain();
+  TestAggregateBudgetIncludesManifestAttemptedBytes();
   TestCrossEpochContainerCollisionIsReported();
   TestAggregateParticipantLimitRetainsPriorInventories();
   TestAggregateByteLimitIsReservedBeforeRead();

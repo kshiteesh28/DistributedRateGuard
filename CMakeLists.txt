@@ -665,3 +665,30 @@ add_test(NAME rateguard.bootstrap_recovery_reader_independent
   COMMAND rateguard_bootstrap_recovery_reader_independent_tests)
 set_tests_properties(rateguard.bootstrap_recovery_reader rateguard.bootstrap_recovery_reader_independent
   PROPERTIES TIMEOUT 120)
+
+
+# RG-006 layout grammar and optional manifest-store recovery diagnostics.
+target_link_libraries(rateguard_bootstrap_recovery_reader PUBLIC rateguard_manifest_codec)
+
+add_executable(rateguard_epoch_artifact_layout_tests
+  tests/supervisor/epoch_artifact_layout_test.cpp)
+target_link_libraries(rateguard_epoch_artifact_layout_tests PRIVATE rateguard_epoch_gate)
+target_compile_options(rateguard_epoch_artifact_layout_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_BOOTSTRAP)
+  target_compile_options(rateguard_epoch_artifact_layout_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_epoch_artifact_layout_tests PRIVATE -fsanitize=address,undefined)
+endif()
+add_test(NAME rateguard.epoch_artifact_layout COMMAND rateguard_epoch_artifact_layout_tests)
+set_tests_properties(rateguard.epoch_artifact_layout PROPERTIES TIMEOUT 30)
+
+add_executable(rateguard_epoch_artifact_integration_independent_tests
+  tests/supervisor/epoch_artifact_integration_independent_test.cpp)
+target_link_libraries(rateguard_epoch_artifact_integration_independent_tests PRIVATE
+  rateguard_bootstrap_recovery_reader rateguard_bootstrap_store rateguard_manifest_store
+  nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_epoch_artifact_integration_independent_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.epoch_artifact_integration_independent
+  COMMAND rateguard_epoch_artifact_integration_independent_tests)
+set_tests_properties(rateguard.epoch_artifact_integration_independent PROPERTIES TIMEOUT 120)
+
+target_link_libraries(rateguard_bootstrap_recovery_reader_tests PRIVATE rateguard_manifest_store)
