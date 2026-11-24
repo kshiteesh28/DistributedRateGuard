@@ -697,7 +697,8 @@ target_link_libraries(rateguard_bootstrap_recovery_reader_tests PRIVATE rateguar
 # RG-006 bounded Docker Unix HTTP exchange; process interpretation is separate.
 option(RATEGUARD_SANITIZE_DOCKER_TRANSPORT "Instrument Docker transport with ASan and UBSan" OFF)
 add_library(rateguard_unix_http_transport
-  src/supervisor/http1_parser.cpp)
+  src/supervisor/http1_parser.cpp
+  src/supervisor/unix_http_transport.cpp)
 target_include_directories(rateguard_unix_http_transport PUBLIC
   "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(rateguard_unix_http_transport PUBLIC Threads::Threads)
@@ -715,3 +716,7 @@ function(add_docker_transport_test target source name)
 endfunction()
 add_docker_transport_test(rateguard_http1_parser_tests
   tests/supervisor/http1_parser_test.cpp http1_parser)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_docker_transport_test(rateguard_unix_http_transport_linux_tests
+    tests/supervisor/unix_http_transport_linux_test.cpp unix_http_transport_linux)
+endif()
