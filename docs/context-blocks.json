@@ -21,11 +21,11 @@
     "PRD": 8,
     "SRD": 5,
     "HLD": 5,
-    "LLD": 8
+    "LLD": 9
   },
   "state": {
-    "documents": "reviewed_specifications_revision_8_5_5_8",
-    "implementation": "rg006_recovery_reader_verified_layout_controller_pending",
+    "documents": "reviewed_specifications_revision_8_5_5_9",
+    "implementation": "rg006_artifact_layout_component_verified_runtime_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
     "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
@@ -217,7 +217,8 @@
       "HLD 5 / LLD 6 clarify durable stopped-container intents, non-serving bootstrap and observed process-identity persistence before activation; PRD 8 / SRD 5 unchanged.",
       "Historical documentation-check entries retain the revisions actually checked at that time.",
       "LLD 7 records implemented ownership/bootstrap class boundaries; actual process control and successor-epoch authorization remain pending.",
-      "LLD 8 records recovery-reader API/caps and distinguishes fatal initial ownership failure from incomplete later diagnostics; read-only scan is not fencing."
+      "LLD 8 records recovery-reader API/caps and distinguishes fatal initial ownership failure from incomplete later diagnostics; read-only scan is not fencing.",
+      "LLD 9 and layout v1 define shared canonical paths, independent manifest retention, ReadyCandidate-only comparison, shared budgets and the generic-store path-binding integration boundary."
     ],
     "latest_rg006_runtime_ownership": {
       "status": "component_verified_merged_to_feature",
@@ -242,17 +243,37 @@
       "merge_commit": "cb98d7851fdac6f4eedab0d5f55a88a7fd98a798"
     },
     "latest_rg006_bootstrap_recovery": {
-      "status": "component_verified_integration_pending",
+      "status": "component_verified_merged_to_feature",
       "pull_request": 20,
       "tested_head": "87c784b25d47dd97527709756fd63673671af470",
       "tested_merge_ref": "0784213de9ec24bf7e111224363f04a56909f4cb",
       "run": 45292546023,
       "evidence": "docs/evidence/RG-006-E.md",
-      "full_story_done": false
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "9d9074601859c67541cd73343249ea11e8e09a95"
+    },
+    "latest_rg006_artifact_layout": {
+      "status": "component_verified",
+      "pull_request": 21,
+      "tested_head": "7fc9895e5f928ad1576d5b2119b79f4a717151e9",
+      "tested_merge_ref": "a93680850e190bb7e4d6a3c11f3dc4bb46a8051f",
+      "run": 45332588272,
+      "evidence": "docs/evidence/RG-006-F.md",
+      "scope": "Shared names and read-only optional manifest diagnostics; no Docker control, serving or successor capability",
+      "full_story_done": false,
+      "ctest_groups_per_clean_build": 52,
+      "clean_builds": 2,
+      "python_tests": 17,
+      "matching_generated_files": 12,
+      "sanitizer_groups": 38,
+      "artifact_id": 14893310876,
+      "artifact_sha256": "55e4f28c6a639bd8a09711b9842f3f40d8eca2cc7c144afe9f70721b951a188d",
+      "pull_request_status": "verified_ready_for_feature_integration"
     }
   },
   "next_actions": [
-    "Integrate the frozen epoch artifact layout and format-specific recovery validation, then implement pending/observed controller targets, durable recovery orchestration and verified successor claims. Existing roots and reader snapshots do not authorize serving or reset.",
+    "Implement a bounded local Docker Engine Unix HTTP transport and exact pending/observed inspect-stop controller; then integrate durable recovery operations, orphan inventory reconciliation and verified successor authorization. No current reader/layout result authorizes serving or reset.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -262,7 +283,7 @@
     "implementation": "Development/testing authorized; main merge remains under Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
     "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation.",
-    "main_implementation_merge": "Product Owner controls current implementation merge to main; all implementation PRs remain unmerged."
+    "main_implementation_merge": "Component PRs merge into feature/distributed-rateguard after verification. Final feature-to-main promotion is PR #13 and remains pending Product Owner review."
   },
   "stories": [
     {
@@ -326,7 +347,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -433,7 +454,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -528,7 +549,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -726,7 +747,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -981,7 +1002,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1104,6 +1125,10 @@
         {
           "path": "src/supervisor/bootstrap_recovery_reader.cpp",
           "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/epoch_artifact_layout.h",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -1123,7 +1148,8 @@
         "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.",
         "LLD 7 §21 defines initial-claim ownership, durable visibility versus transition status and candidate-data handoff. BootstrapStore does not launch, activate, recover or fence participants.",
         "EpochSupervisor owns the future existing-intent recovery reader. RuntimeOwner existing acquisition does not load bootstrap state; missing or uncertain inventory blocks reset.",
-        "LLD 8 §21.1 defines diagnostic-only bounded recovery reading. Pending container IDs/historical provenance are retained; scan_complete never proves prior durability, cessation or safe reset."
+        "LLD 8 §21.1 defines diagnostic-only bounded recovery reading. Pending container IDs/historical provenance are retained; scan_complete never proves prior durability, cessation or safe reset.",
+        "epoch_layout_v1 is a pure namespace utility, not a service or capability. Optional nested manifest diagnostics use independent codecs and the same byte/participant budgets. CLOSED metadata is not process-exit evidence."
       ],
       "files_to_refer": [
         {
@@ -1143,7 +1169,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1176,7 +1202,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Integrate the frozen epoch artifact layout and format-specific recovery validation, then implement pending/observed controller targets, durable recovery orchestration and verified successor claims. Existing roots and reader snapshots do not authorize serving or reset.",
+      "first_action": "Implement a bounded local Docker Engine Unix HTTP transport and exact pending/observed inspect-stop controller; then integrate durable recovery operations, orphan inventory reconciliation and verified successor authorization. No current reader/layout result authorizes serving or reset.",
       "input_dependency_contracts": [
         {
           "contract": "RG-003-A",
@@ -1204,7 +1230,9 @@
       "manifest_evidence": "docs/evidence/RG-006-B.md",
       "runtime_ownership_evidence": "docs/evidence/RG-006-C.md",
       "bootstrap_evidence": "docs/evidence/RG-006-D.md",
-      "bootstrap_recovery_evidence": "docs/evidence/RG-006-E.md"
+      "bootstrap_recovery_evidence": "docs/evidence/RG-006-E.md",
+      "artifact_layout_contract": "docs/contracts/epoch-artifact-layout-v1.md",
+      "artifact_layout_evidence": "docs/evidence/RG-006-F.md"
     },
     {
       "id": "RG-007",
@@ -1279,7 +1307,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1375,7 +1403,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1491,7 +1519,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1600,7 +1628,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1702,7 +1730,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1809,7 +1837,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1908,7 +1936,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2006,7 +2034,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 8,
+          "revision": 9,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2074,5 +2102,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-24T00:05:00Z"
+  "generated_at_utc": "2026-11-24T05:34:00Z"
 }

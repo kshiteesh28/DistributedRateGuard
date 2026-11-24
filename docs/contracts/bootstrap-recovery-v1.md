@@ -1,5 +1,7 @@
 # Bootstrap recovery reader v1
 
+**Layout extension:** [Epoch artifact layout v1](epoch-artifact-layout-v1.md) adds strictly validated optional `manifest-store` artifacts to the bootstrap-only child allowlist below. Other bounds and diagnostic-only semantics remain in force. The extension does not authorize serving, stopping or reset.
+
 **Status:** Proposed RG-006 component contract, 2026-11-23. Sources: PRD 8 / SRD 5, HLD 5 A-03, LLD 7 §21. This contract supplies the bounded read-only reader needed by the future EpochSupervisor recovery path. It does not complete that path.
 
 ## Boundary and result

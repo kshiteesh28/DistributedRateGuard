@@ -1,16 +1,18 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 8 · **Date:** 2026-11-23 · **Status:** Proposed design; RG-006 reader component present, full recovery orchestration/controller pending
-**Current source branch:** `feature/distributed-rateguard`; reader review on `feature/RG-006-bootstrap-recovery`
+**Revision:** 9 · **Date:** 2026-11-24 UTC · **Status:** Proposed design; artifact-layout and manifest-reader components implemented; full recovery orchestration/controller pending, verification tracked separately
+**Current source branch:** `feature/distributed-rateguard`; layout contract on `feature/RG-006-epoch-artifact-layout`
 **Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)
 **Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.
+**Revision input:** LLD revision 8 from `feature/distributed-rateguard` (blob `612cc386547f81cc83612fd548d276510f1e36d5`).
+**Selected contract input:** `docs/contracts/epoch-artifact-layout-v1.md` from `feature/RG-006-epoch-artifact-layout` (blob `9e262317fd7ea029b48723805bf7b063d1bb78c5`).
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
 
 ## 1. Scope and implementation status
 
 This LLD serves implementers and reviewers of a tenant admission service. A delivers strict quota decisions, B delivers deterministic replay and evaluation, and C delivers fixed-Q credits and independent model/history validation. PRD-013 live policy changes and PRD-014 long-operation permits remain deferred. Multi-host operation, transparent failover, automatic credit reclamation, and continuous cross-epoch quota guarantees are excluded.
 
-The implementation feature now contains component code for RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore, and BootstrapRecoveryReader; their boundaries are listed in §17.1 and §21. The Docker process controller, participant activation, complete supervisor lifecycle, and successor-epoch recovery remain integration work. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD distinguishes component code from integration and does not claim CI acceptance, release acceptance, benchmark results, production deployment, or complete fencing.
+The implementation feature contains component code for RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore, BootstrapRecoveryReader, and the pure epoch-artifact layout helper; their boundaries are listed in §17.1 and §21. The Docker process controller, participant activation, complete supervisor lifecycle, and successor-epoch recovery remain integration work. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD distinguishes component code from integration and does not claim CI acceptance, release acceptance, benchmark results, production deployment, or complete fencing.
 
 ## 2. Modules and dependency graph
 
@@ -29,7 +31,8 @@ Public means a process boundary; internal means a C++ library boundary. Rows lab
 | `src/supervisor/runtime_owner.h/.cpp` | Internal; POSIX filesystem and lock ownership | One configured runtime-root owner, anchor/lock identity, fresh/recovery mode, one-use initial claim; implemented component |
 | `src/supervisor/bootstrap_inventory.h/.cpp` | Internal immutable value model and canonical codec | Fixed planned roster, observed process identities, monotonic revision and recovery latch; implemented component |
 | `src/supervisor/bootstrap_store.h/.cpp` | Internal; RuntimeOwner claim, BootstrapInventory, POSIX durable file operations | Initial epoch intent creation, revision/digest CAS, last durable snapshot and candidate data handoff; implemented component |
-| `src/supervisor/bootstrap_recovery_reader.h/.cpp` | Internal read-only diagnostic scan; recovery-mode RuntimeOwner and BootstrapInventory decoder | Bounded scan of recorded epoch intents, including pending process identities; returns diagnostic evidence only, not a serving/adoption/fencing capability; component code present, orchestration pending |
+| `src/supervisor/epoch_artifact_layout.h` | Pure internal path/name utility; no filesystem access or state | Shared epoch artifact names and checked epoch-directory parse/format; no ownership or fencing capability |
+| `src/supervisor/bootstrap_recovery_reader.h/.cpp` | Internal read-only diagnostic scan; recovery-mode RuntimeOwner, BootstrapInventory and ManifestCodec | Bounded scan contract covers recorded intents and optional manifest-store artifacts, including pending identities; bootstrap/optional-manifest reader component code is present; full orchestration pending |
 | `src/supervisor/epoch_gate.h` | Internal lifecycle gate and `IProcessController` interface | Fixed single-epoch candidate, commit leases, stop/inspect boundary and local phase; component-verified, not durable successor authorization |
 | `src/supervisor/manifest_store.h/.cpp` | Internal POSIX manifest store | Prepared/Active/Draining/Closed manifest snapshots and recovery-only existing open; component-verified, not launch or exit proof |
 | `adapter/` | Public sample API; admission client | Forwarding attempt state; FR-006 |
@@ -474,7 +477,7 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | InitialEpochClaim / src/supervisor/runtime_owner.h (implemented component) | Move-only one-use capability retaining the RuntimeOwner lock state | Supplies validated domain/epoch ownership and a duplicated root descriptor; proves neither process launch nor fencing |
 | BootstrapInventory / src/supervisor/bootstrap_inventory.h + bootstrap_inventory.cpp (implemented component) | Immutable planned roster, observations, canonical digest inputs, revision and recovery state | Create, RecordIdentity, RequireRecovery, ReadyCandidate; exact replay is idempotent, identity mismatch irreversibly requires recovery |
 | BootstrapStore / src/supervisor/bootstrap_store.h + bootstrap_store.cpp (implemented component) | InitialEpochClaim plus durable per-epoch intent file and last committed snapshot | CreateNew, RecordIdentity(revision,digest CAS), ReadyCandidate; distinguishes NotVisible, Durable and VisibleDurabilityUnknown; uncertainty blocks further writes |
-| BootstrapRecoveryReader / src/supervisor/bootstrap_recovery_reader.h + bootstrap_recovery_reader.cpp (component code present) | Read-only bounded scan; recovery-mode RuntimeOwner and BootstrapInventory decoder | `Read(owner,test_io) → variant<shared_ptr<const BootstrapRecoverySnapshot>, RecoveryReaderFatal>`; returns diagnostic inventories/issues only, including planned participants without process identity; no claim, candidate, store, stop proof or fencing capability |
+| BootstrapRecoveryReader / src/supervisor/bootstrap_recovery_reader.h + bootstrap_recovery_reader.cpp (component code present) | Read-only bounded scan; recovery-mode RuntimeOwner, bootstrap decoder, and manifest codec | `Read(owner,test_io) → variant<shared_ptr<const BootstrapRecoverySnapshot>, RecoveryReaderFatal>`; returns diagnostic inventories/manifests/issues, including pending process identities; no claim, candidate, store, stop proof or fencing capability |
 | TenantLedger / src/authority/tenant_ledger.h | Mutex, immutable identity, bucket, fixed grant-result array, version, reservation state | BeginReservation→Result<TenantReservation>; ReadSnapshot; no public balance setter |
 | TenantReservation / src/authority/tenant_reservation.h | Move-only reservation token, original version/snapshot, phase | ValidateSnapshot, CommitCandidate, CompleteAck, Fail; only this token can change the reserved tenant |
 | BucketMath / src/authority/bucket_math.h | Stateless production arithmetic | Refill, Decide, RetryDelay; checked 128-bit D3 arithmetic, never accesses clock or global state |
@@ -493,7 +496,7 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | AuthorityService / src/authority/authority_service.h | Internal gRPC facade; refs auth and AuthorityEngine | StrictCheck and AcquireCredit RPCs; only registered replica identity can call |
 | ForwardAttempt / adapter/forward_attempt.h | Attempt ID, deadline, atomic Pending/ForwardStarted/Expired/Failed | TryForwardTransition; exactly one CAS winner; does not retry backend automatically |
 | SampleAdapter / adapter/sample_adapter.h | Trusted fixture mapping and bounded active ForwardAttempt objects | Handle; derive authorized context, call admission, enforce receipt/epoch/deadline, never replay after crash |
-| ManifestStore / src/supervisor/manifest_store.h/.cpp (component-verified) | Supervisor-owned directory/lock fd; immutable validated manifest snapshots | CreateNew, OpenExisting, snapshot, digest, Transition; existing opens are recovery-only; fsync/rename/directory-fsync uncertainty blocks writes; no anti-rollback claim from rename |
+| ManifestStore / src/supervisor/manifest_store.h/.cpp (component-verified) | Caller-supplied directory/lock fd; immutable validated manifest snapshots | CreateNew, OpenExisting, snapshot, digest, Transition; existing opens are recovery-only; caller must compose the exact `<root>/epoch-<id>/manifest-store` path under validated global ownership; layout strings do not grant path authority; fsync/rename/directory-fsync uncertainty blocks writes; no anti-rollback claim from rename |
 | EpochSupervisor / src/supervisor/epoch_supervisor.h | Exclusive control thread, inventory/operation state, WitnessStateMachine, JournalWriter | StartEpoch, Drain, FenceAndClose, RecoverAfterCrash; never adopts old ACTIVE epoch |
 | EventRecorder / src/events/event_recorder.h | Fixed run-wide budget, producer sequences and reserved slots | Reserve→Result<EventReservation>, Publish, SealIncomplete; no identifiers as metric labels |
 | HistoryExporter / src/events/history_exporter.h | Bounded streaming file writer | Export with count/hash/complete markers; cleanup follows D7; missing producer seal yields incomplete |
@@ -528,17 +531,34 @@ classDiagram
     +issues
     +issues_truncated
   }
+  class RecoveryEpochDiagnostic {
+    +directory_name
+    +intent_identity
+    +canonical_digests
+    +issues
+    +issues_truncated
+  }
   class BootstrapInventory {
     +records()
     +recovery_required()
   }
+  class ManifestV1 {
+    +candidate
+    +phase
+    +generation
+  }
   BootstrapRecoveryReader ..> RuntimeOwner : validates mode and duplicates root
-  BootstrapRecoveryReader ..> BootstrapInventory : bounded decode only
+  BootstrapRecoveryReader ..> BootstrapInventory : bounded intent decode
+  BootstrapRecoveryReader ..> ManifestV1 : bounded manifest decode
   BootstrapRecoveryReader --> BootstrapRecoverySnapshot : diagnostic result
-  BootstrapRecoverySnapshot o-- BootstrapInventory : safely decoded epochs
+  BootstrapRecoverySnapshot o-- RecoveryEpochDiagnostic : per-epoch results
+  RecoveryEpochDiagnostic o-- BootstrapInventory : optional intent model
+  RecoveryEpochDiagnostic o-- ManifestV1 : optional manifest model
   BootstrapStore *-- InitialEpochClaim : consumes and retains lock capability
   BootstrapStore ..> BootstrapInventory : durable initial writes
 ```
+
+The shared `epoch_layout_v1` helper is a pure header utility, not a service or capability. It defines the literal names `epoch-`, `intent.json`, `intent.tmp`, `manifest-store`, `owner.lock`, `manifest.json`, and `manifest.tmp`, plus checked `ParseEpochDirectoryName` / `FormatEpochDirectoryName` functions. Parsing accepts only the exact `epoch-<32 lowercase hexadecimal digits>` form for a nonzero ID; formatting rejects a zero ID and reports allocation failure. BootstrapStore, BootstrapRecoveryReader, and ManifestStore reuse these names. The helper performs no filesystem checks and cannot grant path ownership.
 
 ### 17.2 Construction, lifetime and threading
 
@@ -589,7 +609,7 @@ Class-level seam acceptance: substitute IClock, IAuthorityClient, IStateWitness 
 
 ### 17.4 Per-process composition
 
-The intended SupervisorRuntime composition is RuntimeOwner, BootstrapStore, BootstrapRecoveryReader, ManifestStore, EpochGate, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore and BootstrapRecoveryReader are the RG-006 components described in §21; EpochGate and ManifestStore are previously component-verified. `IProcessController` is currently an interface declared in `epoch_gate.h` with stop-request and inspection operations; no concrete Docker controller or durable process-launch/exit acknowledgment path is implemented. The component reader is implemented; full recovery orchestration/controller, participant activation and successor-epoch recovery remain pending. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime is a per-process construction pattern, not one address space for all components. All cross-process transitions use the explicit authenticated ports.
+The intended SupervisorRuntime composition is RuntimeOwner, BootstrapStore, BootstrapRecoveryReader, ManifestStore, EpochGate, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore and BootstrapRecoveryReader are the RG-006 components described in §21; EpochGate and ManifestStore are previously component-verified. `IProcessController` is currently an interface declared in `epoch_gate.h` with stop-request and inspection operations; no concrete Docker controller or durable process-launch/exit acknowledgment path is implemented. The bootstrap and optional-manifest reader components are implemented; full recovery orchestration/controller, participant activation and successor-epoch recovery remain pending. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime is a per-process construction pattern, not one address space for all components. All cross-process transitions use the explicit authenticated ports.
 
 Witness Validate pre-reserves a bounded journal queue slot and maximum record byte budget before returning permission to prepare a transition; no automatic eviction/lease expiry can remove it while the authority may commit. It is released only on explicit precommit abort, committed acknowledgment, or fenced epoch shutdown. This prevents postcommit capacity rejection from becoming an unrecorded ordinary overload. Duplicate Validate with identical transaction identity returns its existing reservation. Only crashes/I/O/integrity failures can invalidate a postcommit reservation, and those follow DRAINING/uncertainty rules.
 
@@ -648,7 +668,7 @@ sequenceDiagram
 Runtime ownership is global across epoch directories within the deployment's one trusted configured root. Different configured roots require deployment-level reconciliation before serving; changing that root while an old epoch may act cannot bypass fencing. A fresh ownership claim alone supplies no launch or durability proof. Bootstrap models supply no actual OS observation, authenticated control-channel or persistence guarantee. Those guarantees require the corresponding controller, durable store and participant integration tests.
 
 
-## 21. RG-006 implementation boundary — revision 8
+## 21. RG-006 implementation boundary — revision 9
 
 These components support PRD-007, PRD-024 and PRD-025 / FR-001, FR-007, FR-008 and FR-022. Component fixtures exercise ownership, intent and identity persistence; the end-to-end restart, state-integrity and fencing evidence in AT-08, AT-09 and AT-28 remains pending.
 
@@ -666,15 +686,17 @@ A create operation that succeeds in the container runtime while persisting its r
 
 ### 21.1 BootstrapRecoveryReader v1 component contract
 
-The reader contract is specified in [Bootstrap recovery reader v1](contracts/bootstrap-recovery-v1.md), based on PRD 8, SRD 5, HLD 5 A-03 and LLD 7 §21. The component reader is implemented; full recovery orchestration/controller remains pending. This LLD revision does not claim CI acceptance for the reader.
+The [bootstrap-only base contract](contracts/bootstrap-recovery-v1.md) is extended by [Epoch artifact layout v1](contracts/epoch-artifact-layout-v1.md) for optional manifest-store validation. Sources are PRD 8, SRD 5 and HLD 5 A-03. The bootstrap and optional-manifest reader components are implemented; full recovery orchestration/controller remains pending. Verification evidence is tracked separately, and this document makes no end-to-end recovery or fencing claim.
 
-**API and result semantics.** `BootstrapRecoveryReader::Read(const RuntimeOwner&, IRecoveryReaderIo*) noexcept` returns either `shared_ptr<const BootstrapRecoverySnapshot>` or `RecoveryReaderFatal`. The owner must be in `RecoveryRequired` mode and pass initial validation; otherwise the call returns a fatal outcome. The reader duplicates its root descriptor and revalidates ownership after scanning; later failure returns incomplete diagnostic evidence. The snapshot carries the domain, `scan_complete`, per-epoch diagnostics, global issues, and `issues_truncated`. An epoch diagnostic may include its canonical directory name and identity, intent identity, a safely decoded immutable `BootstrapInventory`, canonical digest, epoch-local issues, and an `issues_truncated` flag. File identities record device, inode, owner UID, link count, mode, size, mtime, and ctime. Arbitrary raw filesystem names and file contents are excluded.
+**API and result semantics.** `BootstrapRecoveryReader::Read(const RuntimeOwner&, IRecoveryReaderIo*) noexcept` returns either `shared_ptr<const BootstrapRecoverySnapshot>` or `RecoveryReaderFatal`. The owner must be in `RecoveryRequired` mode and pass initial validation; otherwise the call returns a fatal outcome. The reader duplicates its root descriptor and revalidates ownership after scanning; later failure returns incomplete diagnostic evidence. The snapshot carries the domain, `scan_complete`, per-epoch diagnostics, global issues, and `issues_truncated`. An epoch diagnostic may include its canonical directory name and identity, intent identity, a safely decoded immutable `BootstrapInventory`, an optional safely decoded immutable `ManifestV1`, canonical digests, epoch-local issues, and an `issues_truncated` flag. File identities record device, inode, owner UID, link count, mode, size, mtime, and ctime. Arbitrary raw filesystem names and file contents are excluded.
 
 `scan_complete=true` means only that the bounded structural scan was stable and all examined artifacts were valid. It does not mean all planned participants have recorded process identities, that a previous write was durably synced, that an epoch was active, that any process exited, that rollback did not occur, or that reset/serve is safe. A structurally valid inventory may contain pending identities. Empty roots, missing or invalid intents, unknown entries, collisions, detected mutation, and every resource-limit/truncation condition make the scan incomplete. The result is diagnostic data only: it is not a `BootstrapStore`, `EpochCandidate`, `InitialEpochClaim`, stop/exit acknowledgment, fencing token, or successor authorization.
 
-**Scan order and validation.** The reader validates recovery-mode ownership and duplicates the root descriptor; it enumerates all root entries rather than choosing a newest epoch. It recognizes only canonical `epoch-<32 lowercase hex>` directories with owner-only `0700` permissions. It inspects every child entry; `intent.json` must be an owner-only `0600` regular single-link file within the existing 4 MiB inventory codec cap. It opens entries with no-follow and nonblocking flags. It records symlinks, special files, hard links, malformed names, unexpected root/child entries (including temporary files), missing intents, invalid checksums/schema, domain or directory-epoch mismatch, and identity collisions across epochs as issues. Safely decoded sibling inventories remain in the result when another entry is invalid. It revalidates file/directory identities and entry listings around reads, repeats root enumeration, and validates ownership again. These checks detect observed changes; they are not an atomic filesystem snapshot or protection against a hostile same-UID writer. The scan never writes, repairs, removes, fsyncs, starts, stops, or adopts filesystem/process state.
+**Scan order and validation.** The reader validates recovery-mode ownership and duplicates the root descriptor; it enumerates all root entries rather than choosing a newest epoch. It recognizes only canonical nonzero `epoch-<32 lowercase hex>` directories with owner-only `0700` permissions. An epoch directory contains `intent.json` and may contain `manifest-store`; absence of that directory is valid for a bootstrap-only structural scan and proves no activation state. The epoch child-entry cap includes both names. `intent.json` must be an owner-only `0600` regular single-link file within the existing 4 MiB inventory codec cap. If `manifest-store` exists, it must be owner-only `0700` and have no more than 16 entries; its only accepted entries are an empty, owner-owned regular single-link `0600` `owner.lock` and an owner-owned regular single-link `0600` `manifest.json`. The manifest has its own 4 MiB codec cap. It opens entries with no-follow and nonblocking flags. It records symlinks, special files, hard links, malformed names, unknown or temporary entries (`intent.tmp`, `manifest.tmp`), missing required files, invalid checksums/schema, domain or directory-epoch mismatch, and identity collisions across epochs as issues. Safely decoded sibling artifacts remain in the result when another artifact is invalid. A readable manifest remains in its epoch diagnostic even if the intent is missing, corrupt, or inconsistent, when remaining caps permit. It revalidates file/directory identities and entry listings around reads, repeats root enumeration, and validates ownership again. These checks detect observed changes; they are not an atomic filesystem snapshot or protection against a hostile same-UID writer. The scan never writes, repairs, removes, fsyncs, starts, stops, or adopts filesystem/process state.
 
-Every safely decoded inventory contributes each planned container ID as a diagnostic target, whether or not `identity_recorded` is true. PID and PID-start identity are included only when recorded. This preserves exact container targets for pending identities. If an intent is unreadable, malformed, missing, or absent, unknown targets may exist; the reader reports uncertainty and retains known targets from other valid intents rather than presenting a complete empty set. Historical boot/clock identity remains diagnostic evidence; decoding does not require it to match the current boot.
+Every safely decoded inventory contributes each planned container ID as a diagnostic target, whether or not `identity_recorded` is true. PID and PID-start identity are included only when recorded. This preserves exact container targets for pending identities. If an intent is unreadable, malformed, missing, or absent, unknown targets may exist; the reader reports uncertainty and retains known targets from other valid artifacts rather than presenting a complete empty set. Historical boot/clock identity remains diagnostic evidence; decoding does not require it to match the current boot.
+
+If both artifacts decode, candidate comparison occurs only when `BootstrapInventory::ReadyCandidate` succeeds. Compare exact epoch ID, authority incarnation, policy digest, shared clock identity, and every participant identity, using canonical ordering by role, participant ID, and slot. Incomplete comparison data or any mismatch makes the scan incomplete; do not select the newer artifact or repair one from the other. Same-epoch duplicate representations that match are expected and are not cross-epoch collisions. `Prepared`, `Active`, `Draining`, and `Closed` are recorded metadata only; no phase, including `Closed`, proves process cessation. Manifest and intent checksums detect corruption only; they do not authenticate a writer, prove rollback freshness, or prove that a prior directory fsync completed.
 
 **Finite reader limits.** The component uses these fixed caps. Exceeding a cap retains collected evidence where possible, reports a limit/truncation condition, and forces `scan_complete=false`.
 
@@ -683,12 +705,22 @@ Every safely decoded inventory contributes each planned container ID as a diagno
 | Epoch directories | 1,024 | Stop enumerating more epoch directories and report a limit issue |
 | Root entries (excluding `.` and `..`) | 4,096 | Truncate the root listing and report a limit issue |
 | Entries per epoch directory | 16 | Truncate that child listing and report an epoch issue |
-| Aggregate attempted intent bytes | 64 MiB | Budget file size before read/decode; failed attempts still consume budget |
-| Retained participants across inventories | 16,384 | Preserve prior records, stop adding after the cap, report a limit issue |
+| Entries in `manifest-store` | 16 | Truncate nested listing and report an epoch issue |
+| Aggregate attempted intent and manifest bytes | 64 MiB | Shared budget before read/decode; failed attempts still consume budget |
+| Retained bootstrap and manifest participant records | 16,384 | Shared record budget; count both matching representations, preserve prior records, report a limit issue |
 | Global issues | 256 | Stop retaining issues and set `issues_truncated` |
 | Issues per epoch | 16 | Stop retaining local issues and set epoch `issues_truncated` |
 
-Each intent also obeys the existing 4 MiB inventory codec cap. These reader bounds do not amend product quota limits. Issue truncation, any resource cap, and allocation failure cannot become a clean scan.
+Each intent and manifest also obey its 4 MiB codec cap. These reader bounds do not amend product quota limits. Issue truncation, any resource cap, and allocation failure cannot become a clean scan. Matching bootstrap/manifest records in the same epoch do not collide; duplicate container or process identities across epoch directories remain conflicts.
 
 **Recovery handoff and remaining gates.** `EpochSupervisor` may use decoded container IDs as inputs to a future stop/reconcile operation, but it must independently inspect and positively confirm exit for each exact process/container. The reader cannot report “all stopped.” Unknown targets, missing/untrusted artifacts, or incomplete evidence block successor activation until reconciliation or the contracts' controlled complete-VM shutdown evidence. Full recovery orchestration, the Docker process controller, stop/exit evidence, participant activation, and successor-epoch authorization remain pending. Independent tests and pinned Linux/sanitizer CI evidence for the reader are required before component acceptance; no end-to-end recovery or fencing result is claimed.
+
+### 21.2 Epoch artifact layout v1
+
+The selected names and structure are specified in [Epoch artifact layout v1](contracts/epoch-artifact-layout-v1.md). The pure `epoch_layout_v1` utility is shared by BootstrapStore, BootstrapRecoveryReader, and ManifestStore: one canonical parser/formatter for nonzero epoch IDs and one source for all artifact name constants. Format/parse helpers produce or validate strings only. They do not validate filesystem ownership, authorize file access, prove an epoch is active, or issue any capability.
+
+The per-epoch layout is `epoch-<id>/intent.json`, optionally followed by `epoch-<id>/manifest-store/{owner.lock,manifest.json}`. BootstrapStore persists the launch intent before process start. ManifestStore may create a new private manifest-store directory only after the complete observed candidate exists; it cannot initialize an existing directory or adopt an ACTIVE epoch. These are separate durable transitions, not one transaction. `manifest.tmp` is uncertain evidence. Until witness/journal and recovery-operation path validators are defined and integrated, their names/directories are not recognized or accepted; an unknown entry remains a scan issue.
+
+The generic ManifestStore factory receives a caller-supplied directory and does not itself bind that path to the validated runtime root and epoch directory. Supervisor integration must construct exactly `<configured-root>/epoch-<formatted-id>/manifest-store` while holding and validating global RuntimeOwner ownership. Shared path constants are not path capabilities. This complete supervisor-to-manifest-store binding and the recovery controller remain unimplemented; layout conformance alone does not authorize serving, stopping, or successor creation.
+
 

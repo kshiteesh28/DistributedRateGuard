@@ -1,6 +1,6 @@
 # Epoch artifact layout v1
 
-**Status:** Selected implementation layout; integration in progress. Sources: PRD 8 / SRD 5, HLD 5 A-03 and LLD 8 §21. These choices preserve product behavior and release gates.
+**Status:** Selected component layout; implementation verification tracked in [RG-006-F evidence](../evidence/RG-006-F.md). Sources: PRD 8 / SRD 5, HLD 5 A-03 and LLD 9 §21. These choices preserve product behavior and release gates.
 
 ## Directory contract
 
