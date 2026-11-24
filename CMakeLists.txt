@@ -678,3 +678,5 @@ endif()
 add_test(NAME rateguard.epoch_artifact_layout COMMAND rateguard_epoch_artifact_layout_tests)
 set_tests_properties(rateguard.epoch_artifact_layout PROPERTIES TIMEOUT 30)
 
+
+target_link_libraries(rateguard_bootstrap_recovery_reader PUBLIC rateguard_manifest_codec)
