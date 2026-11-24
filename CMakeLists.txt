@@ -665,3 +665,16 @@ add_test(NAME rateguard.bootstrap_recovery_reader_independent
   COMMAND rateguard_bootstrap_recovery_reader_independent_tests)
 set_tests_properties(rateguard.bootstrap_recovery_reader rateguard.bootstrap_recovery_reader_independent
   PROPERTIES TIMEOUT 120)
+
+# Shared canonical epoch artifact grammar.
+add_executable(rateguard_epoch_artifact_layout_tests
+  tests/supervisor/epoch_artifact_layout_test.cpp)
+target_link_libraries(rateguard_epoch_artifact_layout_tests PRIVATE rateguard_epoch_gate)
+target_compile_options(rateguard_epoch_artifact_layout_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_BOOTSTRAP)
+  target_compile_options(rateguard_epoch_artifact_layout_tests PRIVATE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_epoch_artifact_layout_tests PRIVATE -fsanitize=address,undefined)
+endif()
+add_test(NAME rateguard.epoch_artifact_layout COMMAND rateguard_epoch_artifact_layout_tests)
+set_tests_properties(rateguard.epoch_artifact_layout PROPERTIES TIMEOUT 30)
+

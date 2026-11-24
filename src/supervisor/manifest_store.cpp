@@ -1,6 +1,7 @@
 #include "supervisor/manifest_store.h"
 
 #include "supervisor/epoch_gate.h"
+#include "supervisor/epoch_artifact_layout.h"
 #include "platform/file_io.h"
 
 #include <cerrno>
@@ -15,9 +16,9 @@
 namespace rateguard::supervisor {
 namespace {
 
-constexpr char kLockName[] = "owner.lock";
-constexpr char kManifestName[] = "manifest.json";
-constexpr char kTempName[] = "manifest.tmp";
+constexpr auto& kLockName = epoch_layout_v1::kManifestStoreLockFileName;
+constexpr auto& kManifestName = epoch_layout_v1::kManifestFileName;
+constexpr auto& kTempName = epoch_layout_v1::kManifestTemporaryFileName;
 constexpr std::size_t kMaxDirectoryPathBytes = 4096;
 
 bool ValidPath(const std::string& path) noexcept;

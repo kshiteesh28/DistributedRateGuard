@@ -1,6 +1,7 @@
 #include "supervisor/bootstrap_store.h"
 
 #include "platform/file_io.h"
+#include "supervisor/epoch_artifact_layout.h"
 
 #include <cerrno>
 #include <cstring>
@@ -16,22 +17,11 @@ using platform::file::Sync;
 using platform::file::UniqueFd;
 using platform::file::WriteAll;
 
-constexpr char kIntentName[] = "intent.json";
-constexpr char kTempName[] = "intent.tmp";
+constexpr auto& kIntentName = epoch_layout_v1::kIntentFileName;
+constexpr auto& kTempName = epoch_layout_v1::kIntentTemporaryFileName;
 
 bool Fail(IBootstrapStoreIo* io, BootstrapStoreIoPoint point) noexcept {
   return io != nullptr && io->FailAt(point);
-}
-
-std::string Hex(const auto& bytes) {
-  constexpr char digits[] = "0123456789abcdef";
-  std::string out;
-  out.reserve(bytes.size() * 2);
-  for (auto byte : bytes) {
-    out.push_back(digits[byte >> 4]);
-    out.push_back(digits[byte & 15]);
-  }
-  return out;
 }
 
 bool SameInode(const struct stat& a, const struct stat& b) noexcept {
@@ -293,10 +283,15 @@ BootstrapStoreOpenResult BootstrapStore::CreateNew(InitialEpochClaim claim, cons
     const auto digest_result = BootstrapDigestV1(std::get<BootstrapInventory>(model));
     if (const auto* error = std::get_if<BootstrapError>(&digest_result))
       return failure(*error == BootstrapError::AllocationFailure ? BootstrapStoreError::AllocationFailure : BootstrapStoreError::InvalidPlan);
+    auto child_name_result = epoch_layout_v1::FormatEpochDirectoryName(plan.epoch_id);
+    if (const auto* error = std::get_if<epoch_layout_v1::LayoutError>(&child_name_result))
+      return failure(*error == epoch_layout_v1::LayoutError::AllocationFailure
+                         ? BootstrapStoreError::AllocationFailure
+                         : BootstrapStoreError::InvalidPlan);
 
     auto state = std::make_unique<State>(std::move(claim));
     state->test_io = test_io;
-    state->child_name = "epoch-" + Hex(plan.epoch_id);
+    state->child_name = std::get<std::string>(std::move(child_name_result));
     state->committed = std::make_shared<const BootstrapInventory>(std::get<BootstrapInventory>(model));
     state->digest = std::get<std::array<std::uint8_t, 32>>(digest_result);
     state->committed_bytes = bytes;
