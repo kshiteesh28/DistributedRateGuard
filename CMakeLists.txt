@@ -716,7 +716,13 @@ function(add_docker_transport_test target source name)
 endfunction()
 add_docker_transport_test(rateguard_http1_parser_tests
   tests/supervisor/http1_parser_test.cpp http1_parser)
+add_docker_transport_test(rateguard_http1_parser_independent_tests
+  tests/supervisor/http1_parser_independent_test.cpp http1_parser_independent)
+add_docker_transport_test(rateguard_http1_parser_allocation_independent_tests
+  tests/supervisor/http1_parser_allocation_independent_test.cpp http1_parser_allocation_independent)
 if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_docker_transport_test(rateguard_unix_http_transport_linux_tests
     tests/supervisor/unix_http_transport_linux_test.cpp unix_http_transport_linux)
+  add_docker_transport_test(rateguard_unix_http_transport_independent_tests
+    tests/supervisor/unix_http_transport_independent_test.cpp unix_http_transport_independent)
 endif()
