@@ -1,12 +1,12 @@
 # Agile Sprint Plan — DistributedRateGuard
 
-**Date:** 2026-11-24  
+**Date:** 2026-11-25  
 **Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1/B2/B3 implementation inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
-**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 9 startup, artifact-layout and diagnostic-recovery clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
+**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 10 startup, artifact-layout, diagnostic-recovery and bounded-transport clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
 
 ## Current delivery checkpoint — 2026-11-24
 
-PRs #5–12 and #14–20 are merged into the integration feature. PR #21 adds shared epoch-artifact grammar and optional-manifest diagnostics; [Linux verification](evidence/RG-006-F.md) passed; feature integration is recorded by PR #21. RG-006 is still In progress: real process control, authenticated activation, durable recovery/orphan reconciliation and successor authorization remain open. Full quota services, replay/evaluation and distributed-credit assurance are later dependent work. Historical progress entries below retain their original status. Only PR #13 promotes the feature to `main`, and remains unmerged.
+PRs #5–12 and #14–21 are merged into the integration feature. Artifact-layout [Linux verification](evidence/RG-006-F.md) passed. PR #22 supplies a bounded parser/Unix HTTP exchange; [Linux verification](evidence/RG-006-G.md) passed; the component remains separate from runtime acceptance. RG-006 is still In progress: real process control, authenticated activation, durable recovery/orphan reconciliation and successor authorization remain open. Full quota services, replay/evaluation and distributed-credit assurance are later dependent work. Historical progress entries below retain their original status. Only PR #13 promotes the feature to `main`, and remains unmerged.
 
 ## Team and control
 
