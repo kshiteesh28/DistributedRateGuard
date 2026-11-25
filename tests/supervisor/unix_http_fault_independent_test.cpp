@@ -94,6 +94,26 @@ bool ShouldInjectPoll(FaultPlan* plan) noexcept {
 extern "C" int __real_connect(int, const sockaddr*, socklen_t);
 extern "C" ssize_t __real_send(int, const void*, size_t, int);
 extern "C" int __real_poll(pollfd*, nfds_t, int);
+extern "C" int __real___poll_chk(pollfd*, nfds_t, int, size_t);
+
+namespace {
+int InjectedPoll(pollfd* descriptors, nfds_t count, int timeout_ms) {
+  auto* plan = active_fault;
+  if (plan != nullptr) {
+    const bool stage_matches =
+        (plan->poll_stage == PollFaultStage::BeforeAnyByte && !plan->sent_any) ||
+        (plan->poll_stage == PollFaultStage::AfterAnyByte && plan->sent_any);
+    if (stage_matches) RecordPoll(plan, timeout_ms);
+    if (ShouldInjectPoll(plan)) {
+      --plan->poll_interrupts;
+      plan->clock->Advance(plan->advance_per_interrupt_ns);
+      errno = EINTR;
+      return -1;
+    }
+  }
+  return __real_poll(descriptors, count, timeout_ms);
+}
+}  // namespace
 
 extern "C" int __wrap_connect(int fd, const sockaddr* address,
                                socklen_t address_length) {
@@ -165,20 +185,19 @@ extern "C" ssize_t __wrap_send(int fd, const void* buffer, size_t length,
 }
 
 extern "C" int __wrap_poll(pollfd* descriptors, nfds_t count, int timeout_ms) {
-  auto* plan = active_fault;
-  if (plan != nullptr) {
-    const bool stage_matches =
-        (plan->poll_stage == PollFaultStage::BeforeAnyByte && !plan->sent_any) ||
-        (plan->poll_stage == PollFaultStage::AfterAnyByte && plan->sent_any);
-    if (stage_matches) RecordPoll(plan, timeout_ms);
-    if (ShouldInjectPoll(plan)) {
-      --plan->poll_interrupts;
-      plan->clock->Advance(plan->advance_per_interrupt_ns);
-      errno = EINTR;
-      return -1;
-    }
+  return InjectedPoll(descriptors, count, timeout_ms);
+}
+
+// Ubuntu's fortified headers may lower poll() to __poll_chk(). Link the test
+// executable with --wrap=__poll_chk as well as --wrap=poll so sanitizer builds
+// exercise the same deterministic deadline fault path.
+extern "C" int __wrap___poll_chk(pollfd* descriptors, nfds_t count,
+                                  int timeout_ms, size_t descriptors_bytes) {
+  if (descriptors_bytes != static_cast<size_t>(-1) &&
+      count > descriptors_bytes / sizeof(*descriptors)) {
+    return __real___poll_chk(descriptors, count, timeout_ms, descriptors_bytes);
   }
-  return __real_poll(descriptors, count, timeout_ms);
+  return InjectedPoll(descriptors, count, timeout_ms);
 }
 
 namespace {

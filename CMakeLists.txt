@@ -731,5 +731,5 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   add_docker_transport_test(rateguard_unix_http_fault_independent_tests
     tests/supervisor/unix_http_fault_independent_test.cpp unix_http_fault_independent)
   target_link_options(rateguard_unix_http_fault_independent_tests PRIVATE
-    "-Wl,--wrap=send" "-Wl,--wrap=poll" "-Wl,--wrap=connect")
+    "-Wl,--wrap=send" "-Wl,--wrap=poll" "-Wl,--wrap=connect" "-Wl,--wrap=__poll_chk")
 endif()
