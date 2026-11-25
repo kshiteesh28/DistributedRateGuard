@@ -692,3 +692,44 @@ add_test(NAME rateguard.epoch_artifact_integration_independent
 set_tests_properties(rateguard.epoch_artifact_integration_independent PROPERTIES TIMEOUT 120)
 
 target_link_libraries(rateguard_bootstrap_recovery_reader_tests PRIVATE rateguard_manifest_store)
+
+
+# RG-006 bounded Docker Unix HTTP exchange; process interpretation is separate.
+option(RATEGUARD_SANITIZE_DOCKER_TRANSPORT "Instrument Docker transport with ASan and UBSan" OFF)
+add_library(rateguard_unix_http_transport STATIC
+  src/supervisor/http1_parser.cpp
+  src/supervisor/unix_http_transport.cpp)
+target_include_directories(rateguard_unix_http_transport PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_unix_http_transport PUBLIC Threads::Threads)
+target_compile_options(rateguard_unix_http_transport PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_DOCKER_TRANSPORT)
+  target_compile_options(rateguard_unix_http_transport PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_unix_http_transport PUBLIC -fsanitize=address,undefined)
+endif()
+function(add_docker_transport_test target source name)
+  add_executable(${target} ${source})
+  target_link_libraries(${target} PRIVATE rateguard_unix_http_transport)
+  target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -pedantic)
+  add_test(NAME rateguard.${name} COMMAND ${target})
+  set_tests_properties(rateguard.${name} PROPERTIES TIMEOUT 60)
+endfunction()
+add_docker_transport_test(rateguard_http1_parser_tests
+  tests/supervisor/http1_parser_test.cpp http1_parser)
+add_docker_transport_test(rateguard_http1_parser_independent_tests
+  tests/supervisor/http1_parser_independent_test.cpp http1_parser_independent)
+add_docker_transport_test(rateguard_http1_parser_allocation_independent_tests
+  tests/supervisor/http1_parser_allocation_independent_test.cpp http1_parser_allocation_independent)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_docker_transport_test(rateguard_unix_http_transport_linux_tests
+    tests/supervisor/unix_http_transport_linux_test.cpp unix_http_transport_linux)
+  add_docker_transport_test(rateguard_unix_http_transport_independent_tests
+    tests/supervisor/unix_http_transport_independent_test.cpp unix_http_transport_independent)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_docker_transport_test(rateguard_unix_http_fault_independent_tests
+    tests/supervisor/unix_http_fault_independent_test.cpp unix_http_fault_independent)
+  target_link_options(rateguard_unix_http_fault_independent_tests PRIVATE
+    "-Wl,--wrap=send" "-Wl,--wrap=poll" "-Wl,--wrap=connect" "-Wl,--wrap=__poll_chk")
+endif()

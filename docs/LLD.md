@@ -1,10 +1,10 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 9 · **Date:** 2026-11-24 UTC · **Status:** Proposed design; artifact-layout and manifest-reader components implemented; full recovery orchestration/controller pending, verification tracked separately
+**Revision:** 10 · **Date:** 2026-11-25 UTC · **Status:** Proposed design; artifact-layout, manifest-reader and Unix HTTP transport component code present; full recovery orchestration/controller pending, verification tracked separately
 **Current source branch:** `feature/distributed-rateguard`; layout contract on `feature/RG-006-epoch-artifact-layout`
 **Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)
 **Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.
-**Revision input:** LLD revision 8 from `feature/distributed-rateguard` (blob `612cc386547f81cc83612fd548d276510f1e36d5`).
+**Revision input:** LLD revision 9 from `feature/distributed-rateguard` (integration commit `e2d6aeaef0b9ac4e595eb6c50e26afda3e6ee314`).
 **Selected contract input:** `docs/contracts/epoch-artifact-layout-v1.md` from `feature/RG-006-epoch-artifact-layout` (blob `9e262317fd7ea029b48723805bf7b063d1bb78c5`).
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
 
@@ -29,6 +29,7 @@ Public means a process boundary; internal means a C++ library boundary. Rows lab
 | `src/credits/` | Internal; authority client, clock | Fixed-slot confirmed credit and pending sequence; FR-014–018 |
 | `src/supervisor/` and `src/supervisor/witness.*` | Local CLI/control and authenticated witness protocol; process controller, manifest, journal | Independent expected image, journal, inventory and epoch lifecycle; FR-001/007/008; integration proposed |
 | `src/supervisor/runtime_owner.h/.cpp` | Internal; POSIX filesystem and lock ownership | One configured runtime-root owner, anchor/lock identity, fresh/recovery mode, one-use initial claim; implemented component |
+| `src/supervisor/unix_http_transport.h/.cpp`, `http1_parser.h/.cpp` | Internal bounded local Docker HTTP transport and pure parser | Immutable socket binding, per-call descriptors and atomic in-flight cap; component code present, verification tracked separately |
 | `src/supervisor/bootstrap_inventory.h/.cpp` | Internal immutable value model and canonical codec | Fixed planned roster, observed process identities, monotonic revision and recovery latch; implemented component |
 | `src/supervisor/bootstrap_store.h/.cpp` | Internal; RuntimeOwner claim, BootstrapInventory, POSIX durable file operations | Initial epoch intent creation, revision/digest CAS, last durable snapshot and candidate data handoff; implemented component |
 | `src/supervisor/epoch_artifact_layout.h` | Pure internal path/name utility; no filesystem access or state | Shared epoch artifact names and checked epoch-directory parse/format; no ownership or fencing capability |
@@ -724,3 +725,26 @@ The per-epoch layout is `epoch-<id>/intent.json`, optionally followed by `epoch-
 The generic ManifestStore factory receives a caller-supplied directory and does not itself bind that path to the validated runtime root and epoch directory. Supervisor integration must construct exactly `<configured-root>/epoch-<formatted-id>/manifest-store` while holding and validating global RuntimeOwner ownership. Shared path constants are not path capabilities. This complete supervisor-to-manifest-store binding and the recovery controller remain unimplemented; layout conformance alone does not authorize serving, stopping, or successor creation.
 
 
+
+### 21.3 Docker Engine Unix HTTP transport — revision 10
+
+[Transport v1](contracts/docker-engine-unix-http-v1.md) selects an internal local HTTP exchange for the future inspect/stop controller (RG-006; PRD-007/024/025, FR-007/008/022). It does not implement container identity/state interpretation, process control, EpochSupervisor activation, orphan reconciliation or successor authorization. HLD 5 architecture and PRD 8/SRD 5 product semantics remain unchanged. The transport is outside admission/quota latency measurements.
+
+| Element | Ownership, lifetime and synchronization |
+| --- | --- |
+| `IUnixHttpTransport` | Internal interface; caller owns the transport and must finish calls before destruction |
+| Private `NativeUnixHttpTransport` | Owns canonical pathname and pinned socket device/inode/owner; immutable after factory construction; owns atomic active-call count |
+| `detail::ParseHttpResponse` | Pure complete-response parser; owns no cross-call state; input remains caller-owned; returned body is independently owned |
+| `IClock&` | Borrowed; must outlive transport and all calls; clock exceptions become `ClockFailure` rather than escaping a noexcept boundary |
+| Cancellation flag | Borrowed atomic; caller retains it until return; no detached worker or callback retains it |
+| Socket descriptor and wire buffer | Per-call RAII state, never shared; four calls maximum, no queue; no mutex held across I/O |
+
+**Exchange.** A caller supplies GET/POST, bounded origin-form target, future absolute monotonic deadline and cancellation flag. The transport generates fixed headers and an empty body. Each Linux call uses a fresh nonblocking close-on-exec AF_UNIX descriptor, revalidates pinned pathname metadata and checks peer credentials before writing. Production controller composition must fix socket owner/peer UID to 0; configurable UID fields are an internal native-test seam. There is no TCP/proxy/Docker-context lookup, CLI subprocess, redirect or automatic retry. A failed Unix connect with EAGAIN fails safely; only EINPROGRESS enters completion polling. Non-Linux factory use returns UnsupportedPlatform.
+
+**Bounds.** Target/request caps are 2,048/4,096 bytes. Header bytes/fields are 8,192/64; complete wire/decoded body caps are 512/256 KiB; chunk count/size-line caps are 4,096/128 bytes. At most 4 active exchanges are allowed; the fifth returns Overloaded before connecting or writing. Factory pins the configured canonical socket; missing/replaced socket or wrong owner/peer prevents dispatch. These are internal component bounds, not amendments to product tenant/queue limits.
+
+**Framing and outcomes.** The parser requires strict CRLF HTTP/1.0 or 1.1 and rejects informational responses, duplicate/ambiguous lengths/codings, folded headers, truncation, invalid chunks, extensions, nonempty trailers and trailing framed bytes. Exactly one Content-Length, chunked encoding, or EOF-delimited body is supported. This narrow Docker profile accepts 204/304 only with no transfer coding, absent/zero Content-Length and zero body. Every response requires EOF within the same deadline. Valid HTTP error/redirect statuses are returned as data and never followed; the future controller must interpret only its allowed statuses. Parser allocation failure maps distinctly to transport AllocationFailure.
+
+**Deadline and uncertainty.** Initial deadline must be future and at most 30 seconds away. Reads/writes and readiness waits use that absolute deadline, never restarted after interruption. Cancellation/clock/deadline are checked at I/O boundaries and again after parsing before allocation-free move of a successful response. Failures are known-unsent only until the first positive write; every later failure preserves request_possibly_sent=true. A possible stop dispatch requires higher-layer inspection/reconciliation; transport completion alone proves no stop, cessation or fence. No late result authorizes serving or forwarding.
+
+**Choice and evidence.** Direct local HTTP avoids CLI executable/environment selection and subprocess-tree cleanup; the cost is a deliberately limited, independently tested HTTP parser. Socket UID checks do not authenticate a particular daemon binary; trusted local rootful-daemon placement and actual API compatibility remain deployment qualification obligations. The transport never chooses an API version. Fake peers and synthetic version strings are not real Docker qualification. Independent parser/bounds/allocation and Linux socket/UID/replacement/cancel/deadline/concurrency/throwing-clock fixtures are separate from production functions. [RG-006-G evidence](evidence/RG-006-G.md) records actual run status and exclusions; no forced short-write or exact post-EOF scheduling-race result is implied by source review.
