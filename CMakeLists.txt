@@ -776,3 +776,12 @@ add_docker_control_test(rateguard_docker_process_controller_independent_tests
   tests/supervisor/docker_process_controller_independent_test.cpp docker_process_controller_independent)
 target_link_libraries(rateguard_docker_process_controller_independent_tests PRIVATE
   rateguard_docker_process_controller nlohmann_json::nlohmann_json)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(rateguard_docker_controller_linux_probe
+    tools/probes/docker_controller_linux_probe.cpp)
+  target_link_libraries(rateguard_docker_controller_linux_probe PRIVATE
+    rateguard_docker_process_controller rateguard_clock nlohmann_json::nlohmann_json)
+  target_compile_options(rateguard_docker_controller_linux_probe PRIVATE
+    -Wall -Wextra -Werror -pedantic)
+endif()

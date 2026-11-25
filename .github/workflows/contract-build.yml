@@ -183,6 +183,18 @@ jobs:
             --image ubuntu:24.04 > build/docker-time-preflight.json
           cat build/docker-time-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Qualify local Docker inspect and stop (component only)
+        run: |
+          set +e
+          python3 tools/probes/docker_controller_preflight.py --probe "$(realpath build/rateguard_docker_controller_linux_probe)" --clock-observation build/docker-time-preflight.json --output build/docker-controller-preflight.json
+          rg_control_status=$?
+          set -e
+          if [ -f build/docker-controller-preflight.json ]
+          then
+            cat build/docker-controller-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$rg_control_status"
+
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
@@ -204,6 +216,7 @@ jobs:
             build/build-manifest.json
             build/native-trusted-time.json
             build/docker-time-preflight.json
+            build/docker-controller-preflight.json
             build/b3-session-qualification.json
             build/Testing/Temporary/LastTest.log
             build-clean/Testing/Temporary/LastTest.log
