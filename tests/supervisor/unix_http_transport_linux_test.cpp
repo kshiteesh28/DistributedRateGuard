@@ -84,7 +84,7 @@ class LocalPeer {
             std::string reply = "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok",
             std::atomic_bool* cancel = nullptr)
       : path_(path), mode_(mode), reply_(std::move(reply)), cancel_(cancel) {
-    listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
     if (listener_ < 0) return;
     sockaddr_un addr{};
     addr.sun_family = AF_UNIX;
@@ -129,7 +129,7 @@ class LocalPeer {
       if (stop_.load(std::memory_order_relaxed)) break;
       if (ready == 0 || (ready < 0 && errno == EINTR)) continue;
       if (ready < 0) break;
-      const int fd = ::accept4(listener_, nullptr, nullptr, SOCK_CLOEXEC);
+      const int fd = ::accept4(listener_, nullptr, nullptr, SOCK_CLOEXEC | SOCK_NONBLOCK);
       if (fd < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) continue;
         break;
@@ -141,8 +141,17 @@ class LocalPeer {
       }
       std::string request;
       char buffer[1024];
-      while (request.find("\r\n\r\n") == std::string::npos && request.size() < 8192) {
+      const auto read_deadline = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+      while (request.find("\r\n\r\n") == std::string::npos && request.size() < 8192 &&
+             !stop_.load(std::memory_order_relaxed) &&
+             std::chrono::steady_clock::now() < read_deadline) {
+        pollfd read_poll{fd, POLLIN, 0};
+        const int readable = ::poll(&read_poll, 1, 100);
+        if (readable < 0 && errno == EINTR) continue;
+        if (readable < 0) break;
+        if (readable == 0) continue;
         const auto n = ::recv(fd, buffer, sizeof(buffer), 0);
+        if (n < 0 && (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)) continue;
         if (n <= 0) break;
         request.append(buffer, static_cast<std::size_t>(n));
       }
@@ -156,7 +165,7 @@ class LocalPeer {
       if (mode_ == Mode::Delay) std::this_thread::sleep_for(std::chrono::milliseconds(300));
       if (mode_ == Mode::Hold) {
         std::unique_lock lock(mutex_);
-        cv_.wait(lock, [&] { return released_; });
+        (void)cv_.wait_for(lock, std::chrono::seconds(3), [&] { return released_; });
       }
       if (mode_ == Mode::Reply) {
         (void)::send(fd, reply_.data(), reply_.size(), MSG_NOSIGNAL);

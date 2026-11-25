@@ -132,7 +132,7 @@ class UnixPeer {
            std::atomic_bool* cancel_after_request = nullptr)
       : path_(path), response_(std::move(response)), delay_(delay),
         cancel_after_request_(cancel_after_request) {
-    listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
     if (listener_ < 0) return;
     sockaddr_un address{};
     address.sun_family = AF_UNIX;
@@ -241,7 +241,7 @@ class UnixPeer {
 class FourCallPeer {
  public:
   explicit FourCallPeer(const std::string& path) : path_(path) {
-    listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    listener_ = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
     if (listener_ < 0) return;
     sockaddr_un address{};
     address.sun_family = AF_UNIX;
@@ -473,7 +473,7 @@ void TestSocketPathReplacementFailsBeforeConnect() {
   TempDir dir;
   const auto path = dir.path + "/daemon.sock";
   const auto bind_listener = [&path]() {
-    const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
+    const int fd = ::socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC | SOCK_NONBLOCK, 0);
     if (fd < 0) return -1;
     sockaddr_un address{};
     address.sun_family = AF_UNIX;
