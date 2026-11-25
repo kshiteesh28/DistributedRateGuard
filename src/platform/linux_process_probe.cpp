@@ -143,7 +143,7 @@ std::variant<Fd, LinuxProcessReason> OpenProcDirectory(int parent,
   Fd fd(::openat(parent, name, flags));
   if (fd.get() < 0) return ErrnoReason(errno);
   if (!IsProcFs(fd.get())) return LinuxProcessReason::ProcUnavailable;
-  return std::move(fd);
+  return fd;
 }
 
 template <class Gate>

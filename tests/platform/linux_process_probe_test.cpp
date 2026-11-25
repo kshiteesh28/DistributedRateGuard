@@ -230,8 +230,7 @@ class Child final {
   void StopAndReap() {
     if (pid_ <= 0) return;
     if (write_fd_ >= 0) {
-      const char value = 'x';
-      (void)::write(write_fd_, &value, 1);
+      // Closing the sole writer wakes the owned child with EOF.
       ::close(write_fd_);
       write_fd_ = -1;
     }
