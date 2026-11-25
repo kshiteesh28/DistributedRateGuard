@@ -1,4 +1,4 @@
-# Docker Engine Unix HTTP Transport Contract (Proposal)
+# Docker Engine Unix HTTP Transport Contract
 
 **Status:** Selected internal component contract; implementation and verification are tracked separately. No Docker deployment, process-fencing or release guarantee is claimed.
 
