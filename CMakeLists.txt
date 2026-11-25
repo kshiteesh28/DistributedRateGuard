@@ -733,3 +733,25 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_options(rateguard_unix_http_fault_independent_tests PRIVATE
     "-Wl,--wrap=send" "-Wl,--wrap=poll" "-Wl,--wrap=connect" "-Wl,--wrap=__poll_chk")
 endif()
+
+
+# RG-006 read-only native process evidence and bounded Docker inspect/stop.
+option(RATEGUARD_SANITIZE_DOCKER_CONTROL "Instrument Docker control components with ASan and UBSan" OFF)
+add_library(rateguard_linux_process_probe STATIC src/platform/linux_process_probe.cpp)
+target_include_directories(rateguard_linux_process_probe PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_linux_process_probe PUBLIC Threads::Threads)
+target_compile_options(rateguard_linux_process_probe PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_DOCKER_CONTROL)
+  target_compile_options(rateguard_linux_process_probe PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_linux_process_probe PUBLIC -fsanitize=address,undefined)
+endif()
+function(add_docker_control_test target source name)
+  add_executable(${target} ${source})
+  target_link_libraries(${target} PRIVATE rateguard_linux_process_probe)
+  target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -pedantic)
+  add_test(NAME rateguard.${name} COMMAND ${target})
+  set_tests_properties(rateguard.${name} PROPERTIES TIMEOUT 90)
+endfunction()
+add_docker_control_test(rateguard_linux_process_probe_tests
+  tests/platform/linux_process_probe_test.cpp linux_process_probe)
