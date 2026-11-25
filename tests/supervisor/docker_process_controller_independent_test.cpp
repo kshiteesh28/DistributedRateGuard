@@ -630,7 +630,7 @@ void TestStopPreflightEveryBindingMismatchNeverPosts() {
 
 void TestStopAcknowledgementsAreNotExitEvidenceAndNeverRetry() {
   const auto binding = TestBinding();
-  for (const auto [status, expected_kind] : {
+  for (const auto& [status, expected_kind] : {
            std::pair<std::uint16_t, DockerStopAcknowledgement::Kind>{
                204, DockerStopAcknowledgement::Kind::Accepted},
            std::pair<std::uint16_t, DockerStopAcknowledgement::Kind>{
