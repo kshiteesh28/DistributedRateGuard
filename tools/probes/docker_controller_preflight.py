@@ -305,7 +305,17 @@ def _run(argv: list[str], env: dict[str, str], timeout: float, limit: int = MAX_
 def _docker(docker: str, env: dict[str, str], *args: str, timeout: float = 30) -> bytes:
     code, stdout, _ = _run([docker, "--host", "unix://" + DOCKER_SOCKET, *args], env, timeout)
     if code != 0:
-        raise PreflightError("docker_command_failed")
+        operation = {
+            ("image", "inspect"): "image_inspect",
+            ("inspect",): "container_inspect",
+            ("create",): "container_create",
+            ("start",): "container_start",
+            ("rm",): "container_remove",
+            ("ps",): "container_list",
+        }.get(args[:2] if args[:1] == ("image",) else args[:1], "unknown")
+        raise PreflightError("docker_command_failed", {
+            "docker_operation": operation, "docker_exit_code": int(code),
+        })
     return stdout
 
 
@@ -399,12 +409,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         env = {"PATH": "/usr/bin:/bin:/usr/sbin:/sbin", "LANG": "C", "LC_ALL": "C",
                "DOCKER_CONFIG": config_dir, "DOCKER_API_VERSION": engine["api_version"]}
         image_out = _docker(docker, env, "image", "inspect", "--format",
-                            "{{.Id}}|{{join .RepoDigests ","}}", repo_digest)
+                            '{{.Id}}|{{json .RepoDigests}}', repo_digest)
         try:
-            image_id, repo_digests = image_out.decode("ascii").strip().split("|", 1)
-        except ValueError:
+            image_id, digest_json = image_out.decode("ascii").strip().split("|", 1)
+            repo_digests = json.loads(digest_json)
+            if not isinstance(repo_digests, list) or not all(isinstance(value, str) for value in repo_digests):
+                raise ValueError
+        except (ValueError, UnicodeError):
             raise PreflightError("qualified_image_inspect_invalid") from None
-        if image_id != expected_image_id or repo_digest not in repo_digests.split(","):
+        if image_id != expected_image_id or repo_digest not in repo_digests:
             raise PreflightError("qualified_image_not_present_or_mismatched")
 
         domain = secrets.token_hex(16)

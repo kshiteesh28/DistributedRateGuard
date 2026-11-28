@@ -78,6 +78,36 @@ def version_http(body: bytes, headers: bytes = b"Content-Length: ") -> bytes:
 
 
 class PreflightDriverTests(unittest.TestCase):
+    def _run_to_create_with_image_inspect(self, image_reply: bytes) -> list[tuple[str, ...]]:
+        calls: list[tuple[str, ...]] = []
+        def docker(_docker, _env, *args, timeout=30):
+            del timeout
+            calls.append(args)
+            if args[:3] == ("image", "inspect", "--format"):
+                return image_reply
+            if args[0] == "create":
+                raise RuntimeError("stop after image verification")
+            return b""
+
+        with tempfile.TemporaryDirectory() as td:
+            probe = Path(td) / "probe"
+            probe.write_text("#!/bin/sh\nexit 0\n")
+            probe.chmod(0o700)
+            args = argparse.Namespace(probe=str(probe), clock_observation="unused", output="unused")
+            with mock.patch.object(preflight.sys, "platform", "linux"), \
+                 mock.patch.object(preflight, "_read_json", return_value=observation()), \
+                 mock.patch.object(preflight, "_clock_fields", return_value=([], {})), \
+                 mock.patch.object(preflight, "_repo_digest", return_value=(
+                     "example/image@sha256:" + "a" * 64, "sha256:" + "b" * 64)), \
+                 mock.patch.object(preflight, "_http_get_version", return_value={
+                     "api_version": "1.57", "min_api_version": "1.42", "engine_version": "test"}), \
+                 mock.patch.object(preflight.shutil, "which", side_effect=lambda name: "/usr/bin/" + name), \
+                 mock.patch.object(preflight, "_docker", side_effect=docker), \
+                 mock.patch.object(preflight, "_inspect", return_value={}):
+                with self.assertRaisesRegex(RuntimeError, "stop after image verification"):
+                    preflight.run(args)
+        return calls
+
     def fake_http(self, response: bytes):
         fake = FakeSocket(response)
         sock_stat = os.stat_result((stat.S_IFSOCK | 0o600, 1, 1, 1, 0, 0, 0, 0, 0, 0))
@@ -164,6 +194,50 @@ class PreflightDriverTests(unittest.TestCase):
                     preflight._http_get_version(preflight.DOCKER_SOCKET)
             self.assertTrue(fake.closed)
 
+    def test_image_inspect_uses_one_format_value_and_one_qualified_reference(self):
+        repo_digest = "example/image@sha256:" + "a" * 64
+        image_id = "sha256:" + "b" * 64
+        calls = self._run_to_create_with_image_inspect(
+            (image_id + "|" + json.dumps([repo_digest])).encode("ascii"))
+        image_calls = [args for args in calls if args[:2] == ("image", "inspect")]
+        self.assertEqual(len(image_calls), 1)
+        args = image_calls[0]
+        self.assertEqual(args, ("image", "inspect", "--format",
+                                "{{.Id}}|{{json .RepoDigests}}", repo_digest))
+        self.assertEqual(args.count("--format"), 1)
+        self.assertEqual(args.count(repo_digest), 1)
+
+    def test_image_inspect_rejects_malformed_repo_digests_before_create(self):
+        repo_digest = "example/image@sha256:" + "a" * 64
+        image_id = "sha256:" + "b" * 64
+        with tempfile.TemporaryDirectory() as td:
+            probe = Path(td) / "probe"
+            probe.write_text("#!/bin/sh\nexit 0\n")
+            probe.chmod(0o700)
+            args = argparse.Namespace(probe=str(probe), clock_observation="unused", output="unused")
+            calls: list[tuple[str, ...]] = []
+            def docker(_docker, _env, *docker_args, timeout=30):
+                del timeout
+                calls.append(docker_args)
+                if docker_args[:2] == ("image", "inspect"):
+                    return (image_id + "|not-json").encode("ascii")
+                return b""
+            with mock.patch.object(preflight.sys, "platform", "linux"), \
+                 mock.patch.object(preflight, "_read_json", return_value=observation()), \
+                 mock.patch.object(preflight, "_clock_fields", return_value=([], {})), \
+                 mock.patch.object(preflight, "_repo_digest", return_value=(repo_digest, image_id)), \
+                 mock.patch.object(preflight, "_http_get_version", return_value={
+                     "api_version": "1.57", "min_api_version": "1.42", "engine_version": "test"}), \
+                 mock.patch.object(preflight.shutil, "which", side_effect=lambda name: "/usr/bin/" + name), \
+                 mock.patch.object(preflight, "_docker", side_effect=docker):
+                with self.assertRaises(preflight.PreflightError) as error:
+                    preflight.run(args)
+            self.assertEqual(error.exception.code, "qualified_image_inspect_invalid")
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(calls[0], ("image", "inspect", "--format",
+                                        "{{.Id}}|{{json .RepoDigests}}", repo_digest))
+        self.assertNotIn(("create",), calls)
+
     def test_inspect_pipe_parser_rejects_noncanonical_bool_and_pid(self):
         cid = "a" * 64
         labels = ["value"] * len(preflight.LABELS)
@@ -187,7 +261,8 @@ class PreflightDriverTests(unittest.TestCase):
         def docker(_docker, _env, *args, timeout=30):
             events.append(("docker", args))
             if args[0] == "image":
-                return ("sha256:" + "b" * 64 + "|example/image@sha256:" + "a" * 64).encode()
+                digests = json.dumps(["example/image@sha256:" + "a" * 64])
+                return ("sha256:" + "b" * 64 + "|" + digests).encode()
             if args[0] == "create":
                 return cid.encode()
             return b""

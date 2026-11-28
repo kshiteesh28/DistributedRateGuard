@@ -581,3 +581,12 @@ Historical entries below are reconstructed from retained handoffs and GitHub evi
 
 - **Native build:** Run45561959923 passed all25 Python checks and compiled the native probe, controller and qualification sources, but the independent controller fixture failed GNU13's range-loop-copy warning. CTest, sanitizers and Docker qualification did not run; the overall failure is excluded from acceptance.
 - **Master:** Changed the fixture's structured binding to const reference and checked the new source set for the same pattern. No assertion, warning or sanitizer policy changed. A complete new source run remains required. PR22 is already verified/merged; full RG006 and PR13/main remain open.
+
+### LOG-067 — Corrected qualification driver argument boundary (2026-11-28 UTC)
+
+- **Master:** Resumed after an interruption; re-read GitHub heads and confirmed main 71393cf, feature 4db648d and open PR23 at 521f259. No elapsed interruption is counted as measured active-agent effort.
+- **Native run:** [Run45562319817](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/45562319817) passed 62 CTest groups in both clean builds, 25 Python tests, generated-file reproduction and all 48 selected sanitizer groups. Docker qualification failed before container creation; the whole run is excluded from final acceptance.
+- **Root cause/fix:** AST inspection showed Python quoting split the image-inspection template into two arguments. Master changed it to one JSON-format argument, parses the digest list as an array and emits only bounded Docker operation/exit-code diagnostics on failure. Raw daemon/child error text remains excluded.
+- **Tester:** Updated the owned-cleanup fixture and added regressions for the exact argument boundary and malformed digest JSON rejecting before create. All 10 focused offline tests and Python compilation pass; no local Docker was launched.
+- **CI ordering:** Qualification now follows the first complete build, so real Docker failures surface before the repeated clean/regression stages. All CTest, Python, reproduction, sanitizer, toolchain and artifact gates remain required for an accepted run. Expected counts are 62 CTest groups, 27 Python tests and 48 sanitizer groups; actual Docker qualification remains pending.
+- **Scope:** PR22 transport is already merged. PR23 is still under review; full RG006, new-epoch authorization and main promotion remain open.
