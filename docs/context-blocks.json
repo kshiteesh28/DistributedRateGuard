@@ -28,7 +28,7 @@
     "implementation": "rg006_docker_process_control_component_qualified_full_runtime_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "PR23 Docker inspect/stop and recorded-process component passed exact-source run46103748414; docs/evidence/RG-006-H.md records evidence and limits. Full RG006 remains open and PR13/main promotion remains unmerged."
+    "note": "PR23 merged to feature as dd43694ccb16a394e64914a5f7f85617a835a0a4 after exact-source acceptance. Full RG006 and PR13/main promotion remain open."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -320,7 +320,8 @@
         "scope": "one synthetic component fixture; no host-global placement, launch, epoch fencing or successor authorization"
       },
       "full_story_done": false,
-      "pull_request_status": "verified_ready_for_feature_integration"
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "dd43694ccb16a394e64914a5f7f85617a835a0a4"
     },
     "latest_documentation_checks": {
       "source_revisions": {
@@ -337,7 +338,10 @@
         "stories": 14,
         "dependency_edges": 37,
         "acceptance_ids": 42
-      }
+      },
+      "readback_files": 9,
+      "readback_exact": true,
+      "post_test_comparison": "Only nine documentation files differ from tested source; verified after merge."
     }
   },
   "next_actions": [
