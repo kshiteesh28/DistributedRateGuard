@@ -2,9 +2,13 @@
 
 **Date:** 2026-11-28  
 **Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1/B2/B3 implementation inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
-**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 11 startup, artifact-layout, diagnostic-recovery and bounded transport/control clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
+**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 12 startup, artifact-layout, diagnostic-recovery, bounded transport/control and strict-oracle clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
 
 ## Current delivery checkpoint — 2026-11-28
+
+PR24 / RG-011A corrected source `b26d4fa4aa8e6e6a9126d83e1299217431594a5a` passed [exact-source Linux verification](evidence/RG-011-A.md) (run46169772434). Initial run 46169353785 failed during test-harness compilation before CTest and is excluded. Observed checks passed:77 CTest groups in each clean build,29 Python tests,12 generated-file matches and52 sanitizer groups, including3 positive oracle sanitizer groups; both clean builds also ran11 negative controls. The one-million-malformed-row case is only a model resource-cap test. The 120–185 active-minute contract estimate is a scoped estimate, not actual effort; CI wait time is excluded. Full RG-011, runtime joins and release gates remain open.
+
+
 
 PRs #5–12 and #14–23 are merged into the integration feature. PR23's Docker inspect/stop and recorded-process evidence component passed [exact-source Linux qualification](evidence/RG-006-H.md):63 CTest groups in each of two clean builds,29 Python tests,12 matching generated files,49 sanitizer groups and all eight real Docker checks with owned cleanup. PR23 merged as dd43694c after exact readback and documentation-only comparison; these are component results, not release metrics. RG006 remains In progress: durable launch/old-Start exclusion, orphan reconciliation, authenticated activation, whole-epoch fencing and successor authorization are open. Quota services, witness, independent sequence/replay evidence, evaluation and distributed-credit assurance remain dependent work. Historical entries retain their original status. Only PR13 promotes the feature to main and remains unmerged.
 

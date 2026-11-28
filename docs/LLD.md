@@ -1,10 +1,11 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 11 · **Date:** 2026-11-28 UTC · **Status:** Proposed design; artifact-layout, manifest-reader, Unix HTTP transport, Docker inspect/stop and Linux process-probe component code present; PR23 Docker/native qualification passed for this component scope; full supervisor lifecycle/recovery orchestration pending
+**Revision:** 12 · **Date:** 2026-11-28 UTC · **Status:** Proposed design; RG-011A pure strict-sequence oracle source present on PR24 review branch; exact-source component verification passed; full RG-011 replay, runtime joins and release gates remain open
 **Current source branch:** `feature/distributed-rateguard`; layout contract on `feature/RG-006-epoch-artifact-layout`
 **Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)
 **Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.
-**Revision input:** LLD revision 10 from `feature/distributed-rateguard` (blob `2e85df24bb4003e0df0c6583437b0f47330678d2`).
+**Revision input:** LLD revision 11 from `feature/distributed-rateguard` (blob `a7069d9fbcf184e501f685ce34d8d15ce7a7fab08`).
+**Component input:** PR24 corrected source `b26d4fa4aa8e6e6a9126d83e1299217431594a5a`, branch `feature/RG-011A-strict-sequence-oracle`; selected contract [revision 2](contracts/strict-sequence-oracle-v1.md). [Exact-source component verification](evidence/RG-011-A.md) passed on run46169772434.
 **Component input:** Docker inspect/stop and process-probe source on review branch `feature/RG-006-docker-process-control`; source `dbc1f8fbb3d5d4fc9bc4c59286e2a05e82ee021b`; [scoped component qualification](evidence/RG-006-H.md) passed on run 46103748414.
 **Selected contract input:** `docs/contracts/epoch-artifact-layout-v1.md` from `feature/RG-006-epoch-artifact-layout` (blob `9e262317fd7ea029b48723805bf7b063d1bb78c5`).
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
@@ -332,7 +333,7 @@ Inject internal ClockSource/ProvenanceProvider, authority port, fault-capable RP
 | 002–003 | FR-002/003; NFR-001 | Strict engine/D3, exact permissive bucket decision | AT-02–04/21 |
 | 004 | FR-004; NFR-002 | Separate tenant state, noisy-tenant service | AT-05/22 |
 | 005 | FR-005/006 | API/adapter, deadlines and forwarding CAS | AT-06/07 |
-| 006 | FR-011/012 | Independent replay, complete trace/comparison | AT-12 |
+| 006 | FR-011/012 | RG-011A StrictSequenceOracle for typed synthetic ordered decisions; RG-011B ReplayModel/CLI remains future Release B | AT-12; no runtime provenance PASS |
 | 007–008 | FR-001/003/007/008 | Lifecycle/identity, no unsafe restart | AT-01/04/08/09 |
 | 009 | FR-009 | Event owners and reconciliation | AT-10 |
 | 010–012 | FR-013; NFR-003/006/007 | Generator/report, p99 and clean reproductions | AT-13/23/25 |
@@ -507,7 +508,9 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | HistoryExporter / src/events/history_exporter.h | Bounded streaming file writer | Export with count/hash/complete markers; cleanup follows D7; missing producer seal yields incomplete |
 | TraceGenerator / tools/loadgen/trace_generator.h | Immutable workload spec and integer index | Next; exact PRD-026 schedule, no output-dependent retry/routing |
 | BenchmarkRunner / tools/loadgen/runner.h | Open-loop scheduler and pinned manifest | RunPair; scheduled membership, 50 ms settlement, counts and invalid-run reasons |
-| ReplayModel / tools/replay/reference_model.h | Independent pure model state | ApplyOffered, ComparePolicies; no production BucketMath/AuthorityEngine imports |
+| StrictSequenceOracle / tools/replay/reference_model.h (PR24 component verified; run46169772434) | Pure in-memory typed strict-sequence input/expected-result model; owns no runtime or product state | `Run(const StrictScenario&) noexcept → RunResult`; independent implementation, no production math/policy/service imports |
+| ReplayModel / tools/replay/replay_model.h (future Release B) | Full offered-trace replay state | ApplyOffered, ComparePolicies, first divergence; separate from the RG-011A sequence oracle |
+| ReplayCLI / tools/replay/main.cpp (future Release B) | Trace I/O and deterministic report orchestration | Parse versioned replay inputs, call the future ReplayModel and publish complete outputs; not part of RG-011A |
 | HistoryChecker / tools/history_checker/checker.h | Independent parser/model/config | Check, ExplainCounterexample; prefix interval check plus serial/provenance validation; UNKNOWN on missing evidence/resource limit |
 | ModelHarness / model/runner | Pinned external model-check tool/config | EnumerateDeclaredBounds, Mutate, ExportCounterexample; tool output cannot self-certify production code |
 
@@ -605,6 +608,14 @@ classDiagram
   EpochSupervisor --> IProcessController
   AuthorityEngine --> IClock
   CreditManager --> IClock
+  class StrictSequenceOracle {
+    +Run(StrictScenario const&) RunResult
+  }
+  class ReplayModel : Future Release B
+  class ReplayCLI : Future Release B
+  StrictSequenceOracle ..> StrictScenario
+  StrictSequenceOracle ..> StrictSequenceResult
+  ReplayCLI ..> ReplayModel
   SampleAdapter *-- ForwardAttempt
   AuthorityEngine --> EventRecorder
   CreditManager --> EventRecorder
@@ -612,7 +623,7 @@ classDiagram
 
 The `InitialEpochClaim` edge is a move-only capability that retains root-lock ownership; `BootstrapStore` consumes and owns it. `BootstrapInventory` can produce only complete candidate data. The diagram does not imply that `ReadyCandidate` activates the gate or authorizes a later epoch.
 
-Class-level seams: `EpochGate` retains its legacy `IProcessController` seam; the PR23 Docker component separately implements `IRecoveryProcessController`. Neither interface substitution nor a component observation grants successor authority. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; lifecycle gate outcomes against EpochGate. Docker native qualification, supervisor composition, launch fencing, recovery and successor authorization remain open. Independent ReplayModel/HistoryChecker use only versioned artifacts and policy input, not production decision functions. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
+Class-level seams: `EpochGate` retains its legacy `IProcessController` seam; the PR23 Docker component separately implements `IRecoveryProcessController`. Neither interface substitution nor a component observation grants successor authority. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; lifecycle gate outcomes against EpochGate. Docker native qualification, supervisor composition, launch fencing, recovery and successor authorization remain open. The RG-011A `StrictSequenceOracle` is separate from the future Release B `ReplayModel`/`ReplayCLI` and the Release C `HistoryChecker`; none may reuse production decision functions as its oracle. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
 
 ### 17.4 Per-process composition
 
@@ -769,3 +780,44 @@ For Docker requests, the controller uses a canonical full 64-character container
 `RequestStop` re-inspects the exact ID/labels before POST. A logically bound known container may still be drained despite bad PID/restart-policy evidence, but those conditions prevent positive exit classification. It sends one bounded SIGTERM request with the fixed one-second grace. A 204/304 result is only an acknowledgement; after every result, a future supervisor must separately inspect/reconcile. Any post-dispatch failure preserves possibly-sent uncertainty and cannot trigger an automatic retry; pre-dispatch failure is known-unsent only where the transport proves no request byte was written. Deadline, cancellation and clock health are rechecked before returning a positive result.
 
 This component owns transport/probe objects and per-call state only. It does not create or start containers, join in-flight launch requests, latch launch uncertainty, activate participants, drain all registered participants, prove a whole epoch CLOSED, recover/adopt an old epoch, or mint a fencing/successor token. The future `ContainerLauncher` and `EpochSupervisor` must be separately designed and integrated. Native Linux/Docker qualification, including actual container inspect/stop/exited transitions and constrained cleanup of only the exact test-owned container, passed for this component scope on run 46103748414. [Exact-source evidence](evidence/RG-006-H.md) records the accepted component run and limits. No full RG-006, end-to-end recovery, or fencing acceptance is claimed.
+
+
+## 22. RG-011A pure strict-sequence oracle — revision 12
+
+**Readiness handoff.** The accepted RG-011-A1 pure model and golden fixtures may be used as an input dependency for RG-008 development; that named component is not equivalent to full RG-011 completion, and the oracle remains test-support-only with no production reuse. RG-008 strict acceptance still depends on distinct RG-011-A2 runtime comparison/provenance evidence joining RG-003-D, RG-005, and RG-007/008 actual commit records. Until that complete evidence exists, the safety result is UNKNOWN and the Release A gate remains blocked. This clarifies the existing story dependency without changing the DAG or acceptance criteria.
+
+The selected test-support boundary is [Strict Sequence Oracle v1, revision 2](contracts/strict-sequence-oracle-v1.md), sourced from PRD 8, SRD 5 (D3/D4, FR-011/012/020, AT-12 and strict arithmetic FR-002/003, AT-02/03), HLD 5 and this LLD. The C++20 source is present at `tools/replay/reference_model.h` on PR24 branch `feature/RG-011A-strict-sequence-oracle`, source commit `b26d4fa4aa8e6e6a9126d83e1299217431594a5a`. The initial run 46169353785 failed during GCC test-harness compilation before CTest; it is not acceptance evidence. The correction isolates the allocation-failure injector under `tests/replay/failing_allocator.h/.cpp` and links it only to the resource-test executable; production model, assertions and compiler flags are unchanged. [Corrected exact-source run46169772434](evidence/RG-011-A.md) passed77 CTest groups in each of two clean builds,29 Python tests,12 matching generated files and52 selected sanitizer groups. These are component results, not product release metrics. This component is A test support, not a delivered Release B replay product.
+
+**Ownership and type boundary.** `rateguard::replay::StrictSequenceOracle` is a stateless pure entry point over caller-owned `StrictScenario`; `Run` borrows a const scenario synchronously and callers must not mutate it concurrently. It does not copy the whole input trace or retain caller views. It returns either `StrictSequenceResult` with owned `StepResult` rows or one `ModelError`. Types include typed tenant/operation policy, an explicit initial bucket per tenant, ordered `SyntheticAttempt` rows, `Decision::{Allow,Limited,Invalid}`, optional `InvalidReason`, before/after `BucketView`, and optional retry nanoseconds. Invalid syntax/unknown-selector results are model decisions representing policy-invalid requests, not corrupted or omitted serialized trace records; full trace/wire completeness checking remains outside this slice. Malformed policy, state, order, chronology, resource overflow or implementation failure is a whole-run `ModelError`. A `ModelError` never exposes a partial prefix.
+
+**Validation and invalid-row semantics.** Validate in the contract order: finite resource caps; policy and identifier syntax; identifier uniqueness and exact initial-state membership/balances; contiguous ordinals and globally nondecreasing logical timestamps; then per-attempt classification. The per-attempt classification order is malformed tenant selector, unknown tenant, malformed operation selector, unknown operation. An oversized selector returns `ResourceLimit` before result copying. For a known tenant, check that the attempt time is not earlier than that tenant's current refill time before classifying the operation; even an invalid operation cannot hide a chronology regression. An invalid selector never creates, refills, or debits state. For known tenant plus invalid operation, before and after views are identical; an unresolved tenant has no bucket views. Unknown/extra/missing initial tenant membership maps to `MissingInitialState`; it never synthesizes a balance. Exact error precedence is structural phase order, then ordinal before time within an attempt.
+
+`ModelError` distinguishes `InvalidScenario`, `DuplicateIdentifier`, `MissingInitialState`, `InvalidInitialBalance`, `InvalidAttemptOrder`, `TimeRegression`, `ResourceLimit`, `ArithmeticInvariant`, `AllocationFailure`, and `InternalFailure`. `bad_alloc` becomes `AllocationFailure`; `length_error` becomes `ResourceLimit`; unexpected exceptions become `InternalFailure`, not an invented arithmetic defect. An empty attempt sequence with a valid nonempty policy and complete initial state yields an empty result, but proves no gate.
+
+**Strict transition math.** Use D3 exactly: `S=10^9` subunits per unit; integer units/nanoseconds; `1≤B,r≤10^9`, `1≤c≤B`, and `0≤balance≤B*S`. Cost derives only from the configured operation table. For known valid attempts, refill advances on both ALLOW and LIMITED; LIMITED debits nothing. To preserve implementation independence, the oracle uses divide-before-multiply saturation rather than production `BucketMath`'s direct refill product:
+
+```text
+cap = B*S
+headroom = cap - balance
+elapsed = now_ns - last_refill_ns
+ns_to_full = ceil(headroom / r)
+if elapsed >= ns_to_full:
+    available = cap
+else:
+    refill = checked_u128(r * elapsed)  // proven < headroom
+    available = checked_u64(checked_u128(balance + refill))
+if available >= c*S:
+    ALLOW; next_balance = available - c*S
+else:
+    LIMITED; next_balance = available
+    retry_ns = ceil((c*S - available) / r)
+next_refill_ns = now_ns
+```
+
+All products, additions and narrowing conversions are checked; no floating point or wraparound. Ceilings use quotient/remainder. Equal timestamps preserve caller ordinal and are never reordered. Golden sequence fixtures cover exact balance boundaries, weighted costs, saturation, partial refill, LIMITED time advance, ties, isolation, invalid selectors, maximum legal values and regressions. Fifteen fixed arithmetic transition vectors also match the existing independent Python reference.
+
+**Bounds and evidence scope.** The model cap is 1–10,000 tenants, 1–64 operations per tenant, 100,000 total operations, 128-byte identifiers and 0–1,000,000 attempts/results. Counts and identifiers are validated before result allocation; fixed record and identifier limits bound the model input/output shape, but no model byte-budget or production D6 cap is claimed. A one-million-row malformed-input resource-cap fixture tests only rejection/cap behavior; it is not one million valid attempts, runtime attempts, or a PRD performance/correctness gate.
+
+The PR24 review report lists 3 positive CTest groups, 11 generated/compiled negative controls that were rejected at runtime, 15 arithmetic vectors compared with the independent Python big-integer reference, and allocation-failure/resource-cap cases. `tests/replay/failing_allocator.h/.cpp` are test-only fault-injection support, not enforcement code. These are component test reports, not formal proof; the exact-source Linux run passed and successful mutation controls do not establish all executions safe. The independent C++ model imports none of production `BucketMath`, `PolicyLoader`, `AuthorityEngine`, clock, event recorder or service code. It performs no I/O, hashing, wire parsing, CLI, deadline/transport simulation or runtime timestamp validation.
+
+**Release and integration boundary.** The oracle accepts synthetic logical times and already-ordered attempts; it cannot label inputs trusted, runtime-valid or provenance-passed. Runtime conformance requires a separate complete join of offered attempt, tenant/operation, policy/epoch, committed outcome/cost and verified commit time. Existing event/run-plan data is insufficient. RG-003-D, RG-005 and RG-007/008 runtime joins remain required. This slice supports FR-011/012 and AT-12 only, not FR-017; it cannot authorize runtime Safety PASS or claim one million real strict attempts. Full RG-011B first-divergence replay, full replay CLI/report, concurrency/interval history checking, and all runtime/Release A gates remain open.

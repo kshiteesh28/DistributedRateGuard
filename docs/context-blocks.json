@@ -21,14 +21,14 @@
     "PRD": 8,
     "SRD": 5,
     "HLD": 5,
-    "LLD": 11
+    "LLD": 12
   },
   "state": {
-    "documents": "reviewed_specifications_revision_8_5_5_11",
-    "implementation": "rg006_docker_process_control_component_qualified_full_runtime_pending",
+    "documents": "reviewed_specifications_revision_8_5_5_12",
+    "implementation": "rg011_a1_component_verified_full_runtime_release_gates_open",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "PR23 merged to feature as dd43694ccb16a394e64914a5f7f85617a835a0a4 after exact-source acceptance. Full RG006 and PR13/main promotion remain open."
+    "note": "PR24 pure synthetic strict-sequence oracle passed source b26d4fa on run46169772434. Full RG011 replay, runtime provenance joins and release gates remain open; PR13/main remains unmerged."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -219,7 +219,9 @@
       "LLD 7 records implemented ownership/bootstrap class boundaries; Docker inspect/stop now exists; supervisor process-control orchestration and successor-epoch authorization remain pending.",
       "LLD 8 records recovery-reader API/caps and distinguishes fatal initial ownership failure from incomplete later diagnostics; read-only scan is not fencing.",
       "LLD 9 and layout v1 define shared canonical paths, independent manifest retention, ReadyCandidate-only comparison, shared budgets and the generic-store path-binding integration boundary.",
-      "LLD 10 records bounded Unix HTTP transport; LLD 11 records source-present Docker inspect/stop and process-probe components. PR23 component-scope native qualification passed on run 46103748414; full lifecycle and successor authorization remain pending."
+      "LLD 10 records bounded Unix HTTP transport; LLD 11 records source-present Docker inspect/stop and process-probe components. PR23 component-scope native qualification passed on run 46103748414; full lifecycle and successor authorization remain pending.",
+      "LLD 12 adds the PR24 StrictSequenceOracle boundary, distinct from future ReplayModel/CLI; exact-source CI is pending and no runtime provenance or release gate is claimed.",
+      "LLD12 records accepted RG-011-A1 as a pure model/golden development input; RG-011-A2 runtime provenance/comparison and full Release-B replay remain unimplemented. No production reuse of the oracle is allowed."
     ],
     "latest_rg006_runtime_ownership": {
       "status": "component_verified_merged_to_feature",
@@ -328,23 +330,77 @@
         "PRD": 8,
         "SRD": 5,
         "HLD": 5,
-        "LLD": 11
+        "LLD": 12
       },
-      "scope": "PR23 component evidence and class boundaries; readback/link/DAG checks required before feature merge",
-      "full_runtime_acceptance": false,
       "local_validation": {
-        "relative_links": 139,
-        "fenced_blocks": 8,
+        "relative_links": 154,
+        "fenced_blocks": 11,
         "stories": 14,
         "dependency_edges": 37,
-        "acceptance_ids": 42
+        "unique_acceptance_ids": 42,
+        "source_revisions": {
+          "PRD": 8,
+          "SRD": 5,
+          "HLD": 5,
+          "LLD": 12
+        }
       },
-      "readback_files": 9,
-      "readback_exact": true,
-      "post_test_comparison": "Only nine documentation files differ from tested source; verified after merge."
+      "full_runtime_acceptance": false,
+      "scope": "PR24 synthetic oracle component; readback and documentation-only comparison required before feature integration"
+    },
+    "latest_rg011a": {
+      "status": "component_verified",
+      "pull_request": 24,
+      "branch": "feature/RG-011A-strict-sequence-oracle",
+      "source_commit": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "run": 46169772434,
+      "contract": "docs/contracts/strict-sequence-oracle-v1.md",
+      "contract_revision": 2,
+      "scope": "Pure typed synthetic ordered strict decisions only; no runtime provenance or full replay",
+      "expected": {
+        "ctest_groups_per_clean_build": 77,
+        "python_tests": 29,
+        "generated_files": 12,
+        "sanitizer_groups": 52
+      },
+      "reported_local_checks": {
+        "compiled_negative_controls": 11,
+        "arithmetic_vectors": 15,
+        "malformed_rows_cap_count": 1000000,
+        "positive_ctest_groups": 3
+      },
+      "full_rg011_done": false,
+      "initial_failed_run": {
+        "run": 46169353785,
+        "status": "failed_before_CTest",
+        "reason": "GCC inlined test-delete/free diagnostic in test harness; excluded from acceptance"
+      },
+      "test_support_paths": [
+        "tests/replay/failing_allocator.h",
+        "tests/replay/failing_allocator.cpp"
+      ],
+      "tested_head": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "tested_merge_ref": "f4ff605fd683921bde16b75e5011546303ba01ab",
+      "tested_base": "270a1cd9cd7327149c8bfa87c74abebbf1d90b49",
+      "evidence": "docs/evidence/RG-011-A.md",
+      "observed": {
+        "ctest_groups_per_clean_build": 77,
+        "clean_builds": 2,
+        "python_tests": 29,
+        "matching_generated_files": 12,
+        "sanitizer_groups": 52,
+        "oracle_positive_sanitizer_groups": 3,
+        "compiled_oracle_negative_controls": 11
+      },
+      "artifact_id": 15273607993,
+      "artifact_sha256": "8257c019bf8aa870def8c0317a3911336a300fec8e8283f3140a76d22a24a7cb",
+      "pull_request_status": "verified_ready_for_feature_integration",
+      "verification_json": "docs/evidence/RG-011-A/verification.json"
     }
   },
   "next_actions": [
+    "Use accepted RG-011-A1 as a test-support development input; specify RG-011-A2 runtime joins and continue RG006 diagnostic inventory/launch-fencing contracts without minting reset authority.",
+    "Wait for exact-source Linux CI for PR24 strict-sequence oracle; record component evidence only on green, then continue separate RG-011B full replay and RG-003-D/005/007/008 runtime provenance joins.",
     "Integrate the verified PR23 control/probe component into separately designed durable launch/recovery orchestration and verified successor authorization. No current component grants serving or reset authority.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
@@ -419,7 +475,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -526,7 +582,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -621,7 +677,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -819,7 +875,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1074,7 +1130,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1292,7 +1348,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1435,7 +1491,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1483,7 +1539,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-011",
       "link_type": "repository_story",
       "release": "B",
-      "status": "planned_not_implemented",
+      "status": "rg011_a1_component_verified_full_story_incomplete",
       "depends_on": [
         "RG-002",
         "RG-005"
@@ -1498,20 +1554,52 @@
       "planned_files": [
         {
           "path": "tools/replay/reference_model.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/replay/replay_model.h",
+          "status": "proposed_future_RG-011B"
         },
         {
           "path": "tools/replay/main.cpp",
-          "status": "proposed_not_present"
+          "status": "proposed_future_RG-011B"
+        },
+        {
+          "path": "tests/replay/failing_allocator.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/failing_allocator.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/strict_sequence_oracle_test.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/strict_sequence_oracle_independent_test.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/strict_sequence_oracle_resource_test.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/tests/generate_sequence_mutants.py",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
-        "ReplayModel"
+        "rateguard::replay::StrictSequenceOracle",
+        "ReplayModel (future RG-011B)",
+        "ReplayCLI (future RG-011B)"
       ],
       "code_design_notes": [
-        "Build a minimal independent strict serial oracle and golden fixtures before strict A acceptance. Complete the full offered-trace replay CLI in Release B. Never import production BucketMath or AuthorityEngine logic.",
-        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.",
-        "RG-011A owns Release A strict provenance evidence gate RG-003-D: RG-005 completeness plus verified runtime provenance/commit mapping; inadequate evidence is UNKNOWN and cannot count as safety PASS before RG-008 acceptance. RG-013 adds C extensions."
+        "StrictSequenceOracle is a pure C++20 model for already-ordered synthetic strict requests; consumes typed policy/initial buckets/attempts and returns owned expected rows or one ModelError; whole-run errors expose no partial prefix.",
+        "Invalid selectors return per-step Invalid and do not mutate/refill/debit; known-tenant invalid operation has identical before/after view. Structural time/order/resource errors reject the entire scenario.",
+        "Use divide-before-multiply saturation with checked integer intermediates, independent of production BucketMath. No production policy/service/clock/recorder import.",
+        "Model's 1,000,000 row cap and malformed-row cap tests are resource bounds only; do not count them as 1,000,000 valid runtime or release attempts. Not formal proof or runtime Safety PASS.",
+        "Keep full offered-trace ReplayModel/CLI in B; runtime provenance join and concurrency/interval checking remain separate gates."
       ],
       "files_to_refer": [
         {
@@ -1531,7 +1619,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1559,11 +1647,40 @@
             "AT-20",
             "AT-21"
           ],
-          "status": "not_run"
+          "status": "component_source_independence_verified_full_replay_integration_pending"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
-      "release_prerequisite": "The independent strict oracle and golden fixtures are required before Release A acceptance; the full replay CLI remains a Release B deliverable."
+      "first_action": "Use accepted RG-011-A1 only as a development/test input for RG008. Specify RG-011-A2 runtime comparison/provenance joins before runtime acceptance; full RG011 replay/hash/report CLI remains Release B.",
+      "release_prerequisite": "RG-011-A1 pure strict oracle and golden fixtures are an input prerequisite for RG-008 development and a prerequisite before RG-008 strict Release A acceptance. Separate RG-011-A2 runtime comparison/provenance evidence is required for full acceptance; full RG-011B replay remains Release B.",
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-011A-strict-sequence-oracle/docs/contracts/strict-sequence-oracle-v1.md",
+      "component_branch": "feature/RG-011A-strict-sequence-oracle",
+      "component_source": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "ci_status": "passed_component_scope",
+      "expected_ci": {
+        "ctest_groups_per_clean_build": 77,
+        "python_tests": 29,
+        "generated_files": 12,
+        "sanitizer_groups": 52
+      },
+      "reported_local_component_checks": {
+        "compiled_negative_controls": 11,
+        "arithmetic_vectors": 15,
+        "malformed_rows_resource_case_attempt_count": 1000000,
+        "scope_note": "Reported component checks; not formal proof or runtime release gate.",
+        "positive_ctest_groups": 3
+      },
+      "ci_run": 46169772434,
+      "initial_ci_run": {
+        "run": 46169353785,
+        "status": "failed_before_CTest",
+        "reason": "GCC inlined test-delete/free diagnostic in test harness; excluded from acceptance"
+      },
+      "test_support_paths": [
+        "tests/replay/failing_allocator.h",
+        "tests/replay/failing_allocator.cpp"
+      ],
+      "component_evidence": "docs/evidence/RG-011-A.md",
+      "component_tested_head": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a"
     },
     {
       "id": "RG-008",
@@ -1647,7 +1764,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1681,13 +1798,21 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "first_action": "Begin development after the named RG-011-A1 pure-model/golden-fixture input is accepted; do not wait for full RG-011B. Keep RG-011-A2 runtime comparison/provenance joins as a separate full-acceptance gate; missing evidence is UNKNOWN.",
       "input_dependency_contracts": [
         {
           "contract": "RG-003-A",
           "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
           "evidence": "docs/evidence/RG-003.md",
           "purpose": "Verified clock for development; full RG-003 integration not waived"
+        },
+        {
+          "contract": "RG-011-A1",
+          "revision": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+          "evidence": "docs/evidence/RG-011-A.md",
+          "purpose": "Pure typed oracle and synthetic golden fixtures may inform/test RG-008 development; this does not waive full RG-011 or authorize production reuse.",
+          "status": "component_verified",
+          "run": 46169772434
         }
       ],
       "acceptance_dependency_contracts": [
@@ -1697,6 +1822,13 @@
           "owner_deliverable": "RG-011A",
           "status": "pending",
           "scope": "Required before strict acceptance, not before development"
+        },
+        {
+          "contract": "RG-011-A2",
+          "owner_story": "RG-011",
+          "owner_deliverable": "Runtime comparison/provenance join",
+          "status": "pending",
+          "scope": "Required for RG-008 full strict acceptance; joins RG-003-D, RG-005, and RG-007/008 actual commits. Missing/incomplete evidence remains UNKNOWN. Not a prerequisite for RG-008 development."
         }
       ]
     },
@@ -1756,7 +1888,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1858,7 +1990,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1965,7 +2097,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2064,7 +2196,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2162,7 +2294,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 11,
+          "revision": 12,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2230,5 +2362,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-28T16:52:00Z"
+  "generated_at_utc": "2026-11-28T17:36:22Z"
 }
