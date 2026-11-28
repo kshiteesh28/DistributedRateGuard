@@ -1,6 +1,6 @@
 # Strict Sequence Oracle v1
 
-**Status:** Selected RG-011A test-support contract, revision 1 (2026-11-28). Implementation and acceptance are pending; no runtime conformance or release gate is claimed.
+**Status:** Selected RG-011A test-support contract, revision 2 (2026-11-28). Component code is present on the review branch; Linux acceptance is pending. No runtime conformance or release gate is claimed.
 
 **Sources:** PRD 8, SRD 5 (D3/D4, FR-011/012/020, AT-12, strict arithmetic FR-002/003 and AT-02/03), [HLD 5](../HLD.md) and [LLD 11](../LLD.md). Existing arithmetic is `src/authority/bucket_math.h`; the independent secondary reference is `tools/tests/bucket_math_oracle.py`. Proposed new C++ path: `tools/replay/reference_model.h`.
 
@@ -49,7 +49,7 @@ struct StepResult {
 struct StrictSequenceResult { std::vector<StepResult> steps; };
 enum class ModelError { InvalidScenario, DuplicateIdentifier, MissingInitialState,
   InvalidInitialBalance, InvalidAttemptOrder, TimeRegression, ResourceLimit,
-  ArithmeticInvariant, AllocationFailure };
+  ArithmeticInvariant, AllocationFailure, InternalFailure };
 using RunResult = std::variant<StrictSequenceResult, ModelError>;
 class StrictSequenceOracle final {
  public: static RunResult Run(const StrictScenario&) noexcept;
@@ -57,7 +57,7 @@ class StrictSequenceOracle final {
 }
 ```
 
-Malformed selector syntax (empty/bad ASCII within 128 bytes) and valid unknown tenant/operation each yield per-step `Invalid` with a specific reason. They create no state and never refill/debit an existing bucket. Selectors longer than 128 bytes are a structural `ResourceLimit` before result copying. Validate scenario structure, policy, IDs, operation costs, initial states, count limits, contiguous ordinals, and global time ordering before emitting any result. Decreasing global time, or time earlier than a known tenant's current `last_refill_ns` (including when its operation selector is invalid), rejects the **whole** run with `TimeRegression`; invalid selectors do not hide chronology errors. No partial result escapes a `ModelError`.
+Malformed selector syntax (empty/bad ASCII within 128 bytes) and valid unknown tenant/operation each yield per-step `Invalid` with a specific reason. They create no state and never refill/debit an existing bucket. Selectors longer than 128 bytes are a structural `ResourceLimit` before result copying. Validate scenario structure, policy, IDs, operation costs, initial states, count limits, contiguous ordinals, and global time ordering before emitting any result. Decreasing global time, or time earlier than a known tenant's current `last_refill_ns` (including when its operation selector is invalid), rejects the **whole** run with `TimeRegression`; invalid selectors do not hide chronology errors. No partial result escapes a `ModelError`. A `std::bad_alloc` maps to `AllocationFailure`, a `std::length_error` to `ResourceLimit`, and any unexpected implementation exception to `InternalFailure`; an unexpected exception must not be mislabeled as a failed arithmetic invariant.
 
 Selector classification order is malformed tenant, unknown tenant, malformed operation, unknown operation. A known tenant has identical before/after views for either invalid-operation outcome; an unresolved tenant has neither view. Structural validation precedes this classification. Empty attempt sequences are valid model inputs and yield empty results; they establish no acceptance evidence.
 
@@ -103,3 +103,9 @@ No input can claim `trusted`, `runtime_valid`, or `provenance_passed`. Runtime c
 4. Independent Python-vector/source-import review: **20–30 minutes**.
 
 Estimated total: **120–185 active minutes**, excluding CI queue time. Junior implements after approval; tester independently derives expected fixtures/mutations; senior reviews. Runtime history joins, interval/concurrency checking, full replay CLI, credit mode and authority changes are separate slices.
+
+## Principal review dispositions — revision 2
+
+- **Accepted:** Separate unexpected implementation exceptions from `ArithmeticInvariant` using `InternalFailure`. This refines the model's error reporting and changes no quota behavior.
+- **Retained by explicit contract:** `MissingInitialState` denotes a nonmatching initial-state tenant set, including an extra or unknown tenant. That mapping is deliberately shared with missing records; it never creates a bucket or permits partial execution.
+- **Verification additions:** Exercise every inclusive/exclusive count cap and allocation-failure atomicity. Seed all ten selected logical faults plus the targeted unchecked-u64 refill fault; successful compilation alone never counts as defect detection.
