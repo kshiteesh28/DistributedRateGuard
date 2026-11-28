@@ -1,6 +1,6 @@
 # Docker inspect/stop component v1
 
-**Status:** Selected component contract; implementation and native qualification remain under review. Sources: PRD 8 / SRD 5, HLD 5 A-03 and LLD lifecycle requirements. This is an internal control boundary, not an epoch capability.
+**Status:** Selected component contract; component source and native qualification accepted; full lifecycle integration remains open. Sources: PRD 8 / SRD 5, HLD 5 A-03 and LLD lifecycle requirements. This is an internal control boundary, not an epoch capability.
 
 ## Ownership and trust
 

@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_date": "2026-11-25",
+  "generated_date": "2026-11-28",
   "recheck_mutable_state": true,
   "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
   "repository": {
@@ -21,14 +21,14 @@
     "PRD": 8,
     "SRD": 5,
     "HLD": 5,
-    "LLD": 10
+    "LLD": 11
   },
   "state": {
-    "documents": "reviewed_specifications_revision_8_5_5_10",
-    "implementation": "rg006_unix_http_transport_component_verified_runtime_pending",
+    "documents": "reviewed_specifications_revision_8_5_5_11",
+    "implementation": "rg006_docker_process_control_component_qualified_full_runtime_pending",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Foundation and security components are integrated on feature/distributed-rateguard. PR #13 is the pending promotion to main."
+    "note": "PR23 Docker inspect/stop and recorded-process component passed exact-source run46103748414; docs/evidence/RG-006-H.md records evidence and limits. Full RG006 remains open and PR13/main promotion remains unmerged."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -216,10 +216,10 @@
     "current_design_checks": [
       "HLD 5 / LLD 6 clarify durable stopped-container intents, non-serving bootstrap and observed process-identity persistence before activation; PRD 8 / SRD 5 unchanged.",
       "Historical documentation-check entries retain the revisions actually checked at that time.",
-      "LLD 7 records implemented ownership/bootstrap class boundaries; actual process control and successor-epoch authorization remain pending.",
+      "LLD 7 records implemented ownership/bootstrap class boundaries; Docker inspect/stop now exists; supervisor process-control orchestration and successor-epoch authorization remain pending.",
       "LLD 8 records recovery-reader API/caps and distinguishes fatal initial ownership failure from incomplete later diagnostics; read-only scan is not fencing.",
       "LLD 9 and layout v1 define shared canonical paths, independent manifest retention, ReadyCandidate-only comparison, shared budgets and the generic-store path-binding integration boundary.",
-      "LLD10 records bounded internal Unix HTTP exchange, clock/deadline/uncertainty semantics, ownership and parser/transport boundaries; no actual Docker controller or process-fencing claim."
+      "LLD 10 records bounded Unix HTTP transport; LLD 11 records source-present Docker inspect/stop and process-probe components. PR23 component-scope native qualification passed on run 46103748414; full lifecycle and successor authorization remain pending."
     ],
     "latest_rg006_runtime_ownership": {
       "status": "component_verified_merged_to_feature",
@@ -290,11 +290,58 @@
       "artifact_id": 14997099492,
       "artifact_sha256": "8c7e98465d00e0f03f54dfdc690a28c3b11bd5bfebe0a4e4db923a23ce92f595",
       "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "4db648d85008bb638d579abf54504fe3da711898"
+    },
+    "latest_rg006_docker_control": {
+      "status": "component_verified",
+      "pull_request": 23,
+      "branch": "feature/RG-006-docker-process-control",
+      "tested_head": "dbc1f8fbb3d5d4fc9bc4c59286e2a05e82ee021b",
+      "tested_merge_ref": "36b9c0f484f500236e54ba3ac740094f6831b984",
+      "tested_base": "4db648d85008bb638d579abf54504fe3da711898",
+      "run": 46103748414,
+      "evidence": "docs/evidence/RG-006-H.md",
+      "native_summary": "docs/evidence/RG-006-H/native-summary.json",
+      "ctest_groups_per_clean_build": 63,
+      "clean_builds": 2,
+      "python_tests": 29,
+      "matching_generated_files": 12,
+      "sanitizer_groups": 49,
+      "control_transport_sanitizer_groups": 11,
+      "artifact_id": 15246882215,
+      "artifact_sha256": "57a57e38523657ab09309dd1896ee2c558f97f984a88352255050a84d0fc1932",
+      "native_qualification": {
+        "state": "OBSERVED_AND_STOPPED",
+        "engine": "28.0.4",
+        "api": "1.48",
+        "all_eight_checks": true,
+        "owned_cleanup": true,
+        "scope": "one synthetic component fixture; no host-global placement, launch, epoch fencing or successor authorization"
+      },
+      "full_story_done": false,
       "pull_request_status": "verified_ready_for_feature_integration"
+    },
+    "latest_documentation_checks": {
+      "source_revisions": {
+        "PRD": 8,
+        "SRD": 5,
+        "HLD": 5,
+        "LLD": 11
+      },
+      "scope": "PR23 component evidence and class boundaries; readback/link/DAG checks required before feature merge",
+      "full_runtime_acceptance": false,
+      "local_validation": {
+        "relative_links": 139,
+        "fenced_blocks": 8,
+        "stories": 14,
+        "dependency_edges": 37,
+        "acceptance_ids": 42
+      }
     }
   },
   "next_actions": [
-    "Finish PR23 native Docker/process-evidence qualification and independent review, then integrate durable recovery/orphan reconciliation and verified successor authorization. No current component grants serving or reset authority.",
+    "Integrate the verified PR23 control/probe component into separately designed durable launch/recovery orchestration and verified successor authorization. No current component grants serving or reset authority.",
     "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
     "Keep production session caching disabled; native SDK qualification is test-only.",
     "Maintain per-agent logs and leave main implementation merges to Product Owner control."
@@ -368,7 +415,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -475,7 +522,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -570,7 +617,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -768,7 +815,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1023,7 +1070,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1065,7 +1112,7 @@
       "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-006",
       "link_type": "repository_story",
       "release": "A",
-      "status": "in_progress",
+      "status": "component_qualified_full_runtime_in_progress",
       "depends_on": [
         "RG-002",
         "RG-003",
@@ -1092,15 +1139,27 @@
           "status": "implemented_component_verified"
         },
         {
-          "path": "src/supervisor/process_controller.h",
+          "path": "src/supervisor/docker_process_controller.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/docker_process_controller.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_process_probe.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_process_probe.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/container_launcher.h",
           "status": "proposed_not_present"
         },
         {
           "path": "src/supervisor/epoch_supervisor.h",
-          "status": "proposed_not_present"
-        },
-        {
-          "path": "src/supervisor/docker_process_controller.h",
           "status": "proposed_not_present"
         },
         {
@@ -1166,30 +1225,50 @@
         {
           "path": "src/supervisor/http1_parser.cpp",
           "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_proc_stat_parser.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_pidfd_helper.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/probes/docker_controller_linux_probe.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/probes/docker_controller_preflight.py",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/tests/supervisor/docker_probe_fixture_parser_test.cpp",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
         "EpochGate",
-        "ManifestStore",
-        "IProcessController",
-        "EpochSupervisor",
+        "IProcessController (legacy EpochGate interface)",
+        "IRecoveryProcessController",
         "DockerProcessController",
+        "IRecordedProcessProbe",
         "RuntimeOwner",
         "InitialEpochClaim",
         "BootstrapInventory",
         "BootstrapStore",
         "BootstrapRecoveryReader",
-        "IUnixHttpTransport",
-        "NativeUnixHttpTransport (private)"
+        "ManifestStore",
+        "ContainerLauncher (future)",
+        "EpochSupervisor"
       ],
       "code_design_notes": [
         "Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch.",
-        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.",
-        "LLD 7 §21 defines initial-claim ownership, durable visibility versus transition status and candidate-data handoff. BootstrapStore does not launch, activate, recover or fence participants.",
-        "EpochSupervisor owns the future existing-intent recovery reader. RuntimeOwner existing acquisition does not load bootstrap state; missing or uncertain inventory blocks reset.",
-        "LLD 8 §21.1 defines diagnostic-only bounded recovery reading. Pending container IDs/historical provenance are retained; scan_complete never proves prior durability, cessation or safe reset.",
-        "epoch_layout_v1 is a pure namespace utility, not a service or capability. Optional nested manifest diagnostics use independent codecs and the same byte/participant budgets. CLOSED metadata is not process-exit evidence.",
-        "LLD10 §21.3 and transport v1 define a Linux-only bounded Unix HTTP exchange. The controller must construct API-qualified paths and fix root peer/socket UIDs; response status, stop ACK and exit proof remain separate."
+        "DockerProcessController implements IRecoveryProcessController; EpochGate's IProcessController is a distinct legacy interface and is not implemented by the Docker controller.",
+        "Inspect/RequestStop accept exact pending or observed targets. All eight identity labels and the full canonical container ID are checked; no names, prefixes, CLI, redirect or automatic stop retry.",
+        "Pending targets can provide runtime-only exit evidence. Observed targets require matching PID/start ticks and recorded shared-clock identity, plus same-boot/qualified observer context and proc ENOENT corroborated by pidfd_open ESRCH. Any ambiguity is UNKNOWN.",
+        "Stop ACK and point-in-time process absence are not an epoch fence. This component does not launch, activate, join starts, recover, close an epoch, or authorize a successor.",
+        "LLD 11 §21.4 documents these boundaries; PR23 component-scope native qualification passed on run 46103748414; full RG-006 remains not accepted."
       ],
       "files_to_refer": [
         {
@@ -1209,7 +1288,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1242,7 +1321,7 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Finish PR23 native Docker/process-evidence qualification and independent review, then integrate durable recovery/orphan reconciliation and verified successor authorization. No current component grants serving or reset authority.",
+      "first_action": "Proceed with separately designed launch/recovery and successor-fencing integration; preserve the full RG-006 AC01-03 gates and do not infer full lifecycle acceptance from PR23 component qualification.",
       "input_dependency_contracts": [
         {
           "contract": "RG-003-A",
@@ -1274,7 +1353,10 @@
       "artifact_layout_contract": "docs/contracts/epoch-artifact-layout-v1.md",
       "artifact_layout_evidence": "docs/evidence/RG-006-F.md",
       "unix_http_transport_contract": "docs/contracts/docker-engine-unix-http-v1.md",
-      "unix_http_transport_evidence": "docs/evidence/RG-006-G.md"
+      "unix_http_transport_evidence": "docs/evidence/RG-006-G.md",
+      "docker_process_control_contract": "docs/contracts/docker-process-control-v1.md",
+      "docker_process_control_evidence": "docs/evidence/RG-006-H.md",
+      "native_qualification_status": "passed_component_scope_run_46103748414"
     },
     {
       "id": "RG-007",
@@ -1349,7 +1431,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1445,7 +1527,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1561,7 +1643,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1670,7 +1752,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1772,7 +1854,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1879,7 +1961,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -1978,7 +2060,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2076,7 +2158,7 @@
         },
         {
           "path": "docs/LLD.md",
-          "revision": 10,
+          "revision": 11,
           "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
@@ -2144,5 +2226,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-25T06:30:00Z"
+  "generated_at_utc": "2026-11-28T16:52:00Z"
 }
