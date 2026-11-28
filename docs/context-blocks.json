@@ -25,10 +25,10 @@
   },
   "state": {
     "documents": "reviewed_specifications_revision_8_5_5_12",
-    "implementation": "rg011_a1_component_verified_full_runtime_release_gates_open",
+    "implementation": "rg011_a1_component_verified_merged_full_runtime_release_gates_open",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "PR24 pure synthetic strict-sequence oracle passed source b26d4fa on run46169772434. Full RG011 replay, runtime provenance joins and release gates remain open; PR13/main remains unmerged."
+    "note": "PR24 merged to feature as cd218968d9f28a0b95a4fc80f136656b6506ec03 after exact-source acceptance; full RG011/runtime joins/release gates remain open. PR13/main remains unmerged."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -346,7 +346,11 @@
         }
       },
       "full_runtime_acceptance": false,
-      "scope": "PR24 synthetic oracle component; readback and documentation-only comparison required before feature integration"
+      "scope": "PR24 synthetic oracle component; readback and documentation-only comparison required before feature integration",
+      "readback_files": 10,
+      "readback_exact": true,
+      "local_anchors_matched": true,
+      "post_test_comparison": "Only ten documentation files differ from tested source; checked before and after merge."
     },
     "latest_rg011a": {
       "status": "component_verified",
@@ -394,8 +398,9 @@
       },
       "artifact_id": 15273607993,
       "artifact_sha256": "8257c019bf8aa870def8c0317a3911336a300fec8e8283f3140a76d22a24a7cb",
-      "pull_request_status": "verified_ready_for_feature_integration",
-      "verification_json": "docs/evidence/RG-011-A/verification.json"
+      "pull_request_status": "merged_to_feature",
+      "verification_json": "docs/evidence/RG-011-A/verification.json",
+      "merge_commit": "cd218968d9f28a0b95a4fc80f136656b6506ec03"
     }
   },
   "next_actions": [
@@ -1680,7 +1685,9 @@
         "tests/replay/failing_allocator.cpp"
       ],
       "component_evidence": "docs/evidence/RG-011-A.md",
-      "component_tested_head": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a"
+      "component_tested_head": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "component_merge_commit": "cd218968d9f28a0b95a4fc80f136656b6506ec03",
+      "component_pull_request_status": "merged_to_feature"
     },
     {
       "id": "RG-008",
@@ -2362,5 +2369,5 @@
     "historical_actual_effort": "unknown_not_recorded",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
   },
-  "generated_at_utc": "2026-11-28T17:36:22Z"
+  "generated_at_utc": "2026-11-28T17:38:36Z"
 }
