@@ -1,6 +1,16 @@
 # DistributedRateGuard
 
-A proposed C++20/gRPC service for per-tenant API admission across replicas. It compares strict per-request authority checks with fixed-Q credits spent locally, measuring coordination cost against a bounded additional burst.
+## About
+
+DistributedRateGuard explores how replicated services can enforce per-tenant API quotas with less coordination. It compares strict authority checks with fixed-Q credits held by replicas, measuring the trade-off between authority traffic and bounded burst allowance. The project includes specifications for deterministic replay and correctness evaluation; quota enforcement and release-level guarantees are still in development.
+
+## Implementation status
+
+PR23 Docker inspect/stop and Linux recorded-process probe component qualification passed [exact-source Linux qualification](docs/evidence/RG-006-H.md) on run46103748414. This does not launch or activate participants or authorize epoch fencing; full RG-006 remains open.
+
+## Current implementation checkpoint
+
+PR24 adds a pure synthetic strict-sequence oracle for Release A test support. Initial run 46169353785 failed before CTest in a test harness compile; [corrected run46169772434](docs/evidence/RG-011-A.md) passed77 CTest groups in both clean builds and52 sanitizer groups, including the oracle's positives and11 compiled negative controls. It does not establish runtime provenance, one million valid runtime attempts, or Safety PASS. Full deterministic replay remains a Release B deliverable; full RG-011 and release gates remain open.
 
 ## Current specification bundle
 
@@ -8,8 +18,8 @@ Read in this order:
 
 1. [PRD revision 8](docs/PRD.md) — product goals and release gates.
 2. [SRD revision 5](docs/SRD.md) — normative behavior and test obligations.
-3. [HLD revision 4](docs/HLD.md) — proposed process and deployment architecture.
-4. [LLD revision 5](docs/LLD.md) — proposed interfaces, state transitions, classes, and implementation order.
+3. [HLD revision 5](docs/HLD.md) — proposed process and deployment architecture.
+4. [LLD revision 12](docs/LLD.md) — proposed interfaces, state transitions, classes, and implementation order.
 5. [Implementation stories](docs/STORIES.md) and [JSON context blocks](docs/context-blocks.json) — planned work and acceptance evidence.
 6. [Agile sprint plan](docs/SPRINT-PLAN.md) — minute-based effort estimates, sequence, roles, and acceptance gates.
 
@@ -23,9 +33,9 @@ Live policy changes (PRD-013) and long-operation permits (PRD-014) are deferred.
 
 ## Status and implementation notes
 
-The repository currently contains proposed specifications and handoff material; no implementation, tests, benchmarks, or model-checking results are claimed. All product thresholds are goals, not achieved results.
+Component implementations are integrated on `feature/distributed-rateguard`: wire/build contracts, immutable policy and fixed-point arithmetic, clock provenance, security/client guards, bounded history and inspection, local lifecycle, durable manifests/intents, runtime ownership and recovery-artifact diagnostics bounded local Unix HTTP transport and Docker inspect/stop with recorded-process evidence. Read the [per-agent scrum log](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md), [build instructions](docs/build.md) and [latest component evidence](docs/evidence/RG-006-H.md). The [final PR to main](https://github.com/kshiteesh28/DistributedRateGuard/pull/13) remains unmerged. Live quota/forwarding services, process-control orchestration, witness integration, release benchmarks and model checking remain pending. All product thresholds remain goals.
 
-The source of truth is the current `main` branch. The local path hint in the context file currently contains documentation only and is not a verified Git checkout. Clone or sync `main` before implementation. Start at **RG-001**. Capture toolchain versions on the actual build host before compiling instead of guessing or claiming an untested lock. Keep enforcement services fail-closed until shared-clock provenance, witness durability, process fencing, and identity fixtures pass.
+PRD 8 and SRD 5 on `main` remain the product/behavior contracts; current HLD/LLD and implementation evidence are on `feature/distributed-rateguard` until final promotion. The local path hint in the context file currently contains documentation only and is not a verified Git checkout. Use the relevant review branch for implementation; dependent PRs may stack on a verified feature branch. The primary Ubuntu package lock is based on observed CI. A component fixture records the actual Docker/image profile; complete deployment qualification remains open; hosted component tests do not satisfy that deployment gate. Keep enforcement services fail-closed until shared-clock provenance, witness durability, process fencing, and identity fixtures pass.
 
 ## Research foundation
 

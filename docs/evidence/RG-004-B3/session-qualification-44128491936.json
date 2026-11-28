@@ -1,0 +1,19 @@
+{
+  "exit_code": 0,
+  "observation": {
+    "actual_resumed": true,
+    "cache_attempts": 2,
+    "cache_capacity": 1,
+    "client_leaf_pin": true,
+    "client_verifier_calls": 4,
+    "client_verifier_delta": 1,
+    "new_transport": true,
+    "server_leaf_pin": true,
+    "server_verifier_calls": 4,
+    "server_verifier_delta": 1,
+    "status": "qualified",
+    "uncached_reconnects_passed": true
+  },
+  "schema_version": 1,
+  "scope": "SDK qualification only; production cache disabled"
+}

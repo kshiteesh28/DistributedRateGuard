@@ -1,32 +1,34 @@
 {
   "schema_version": "1.0",
-  "generated_date": "2026-11-12",
+  "generated_date": "2026-11-28",
   "recheck_mutable_state": true,
   "objective": "Implement DistributedRateGuard releases A/B/C from the reviewed contracts, with independent acceptance evidence for every story.",
   "repository": {
     "url": "https://github.com/kshiteesh28/DistributedRateGuard",
     "target_branch": "main",
-    "review_branch": "main",
+    "review_branch": "feature/distributed-rateguard",
     "review_base_commit": "5df15b6312edae2a4e6b50808c051d7b4a96e667",
     "documentation_snapshot_before_class_and_story_additions": "5a6c8a1b6bc2338bb601b91ee9b0f504ff5e86ad",
     "local_path_hint": "/Users/kshiteesh/Developer/rateguard",
     "local_checkout_verified": false,
-    "current_source_branch": "main",
+    "current_source_branch": "feature/distributed-rateguard",
     "last_review_branch": "docs/spec-contract-closure-v1",
-    "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present."
+    "local_checkout_note": "Observed path contains documentation only; no .git metadata, source tree, or build output was present.",
+    "implementation_branch": "feature/distributed-rateguard",
+    "implementation_base_branch": "main"
   },
   "document_revisions": {
     "PRD": 8,
     "SRD": 5,
-    "HLD": 4,
-    "LLD": 5
+    "HLD": 5,
+    "LLD": 12
   },
   "state": {
-    "documents": "reviewed_specifications_revision_8_5_4_5",
-    "implementation": "not_created_or_verified",
+    "documents": "reviewed_specifications_revision_8_5_5_12",
+    "implementation": "rg011_a1_component_verified_merged_full_runtime_release_gates_open",
     "benchmarks": "not_run",
     "model_checking": "not_run",
-    "note": "Implementation plan and active-minute estimates are published on main. Await the Product Owner's explicit proceed command before development or test execution. The local path remains documentation-only and is not a verified Git checkout."
+    "note": "PR24 merged to feature as cd218968d9f28a0b95a4fc80f136656b6506ec03 after exact-source acceptance; full RG011/runtime joins/release gates remain open. PR13/main remains unmerged."
   },
   "constraints": [
     "Single Docker Linux VM/shared verified CLOCK_MONOTONIC provenance.",
@@ -56,42 +58,374 @@
       }
     ],
     "not_run": [
-      "Generated implementation compilation/tests",
       "Real authority/replica fault injection",
       "Release benchmarks",
       "TLA/model checker execution"
-    ],
-    "documentation_changes": [
-      "PRD 8 / SRD 5 / HLD 4 / LLD 5 now use one p99 population and timeout/cancellation rule.",
-      "README and spec-to-code status text point to the current main-branch document bundle.",
-      "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
-      "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
     ],
     "previous_spec_merge_documentation_checks": [
       "Source revisions read from GitHub main before changes.",
       "Markdown table widths and code-fence balance checked.",
       "JSON parse, unique story IDs, dependency DAG, acceptance IDs and story/source link targets checked before merge."
-    ]
+    ],
+    "latest_rg001": {
+      "evidence": "docs/evidence/RG-001.md",
+      "run": 43328571076,
+      "status": "component_verified_review_pending",
+      "remaining": "Docker target/image-digest and runtime integration gates are not satisfied by hosted package tests",
+      "pull_request": 5,
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg002": {
+      "status": "component_verified_independent_acceptance_passed",
+      "passed_run": 43353832066,
+      "tested_head": "7640975031aee2af2ee7ae855ce88b76115f1569",
+      "merge_ref": "9be7be9861ddc0f0bd04718e6d500781de5b18ca",
+      "evidence": "docs/evidence/RG-002.md",
+      "scope": "Pure policy/arithmetic; no quota service, runtime certificate or clock claims",
+      "pull_request": 6,
+      "pull_request_status": "merged_to_feature"
+    },
+    "historical_spec_merge_documentation_changes": [
+      "PRD 8 / SRD 5 / HLD 4 / LLD 5 now use one p99 population and timeout/cancellation rule.",
+      "README and spec-to-code status text point to the current main-branch document bundle.",
+      "RG-011 distinguishes Release A oracle/golden-fixture prerequisite from Release B replay CLI delivery.",
+      "Build-lock versions remain unclaimed until selected and reproduced on the actual target Linux environment."
+    ],
+    "latest_rg003": {
+      "status": "component_verified_independent_acceptance_passed",
+      "run": 43355987772,
+      "tested_head": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+      "evidence": "docs/evidence/RG-003.md",
+      "excluded": "Participant topology, actual commit/deadline mapping, Release A strict UNKNOWN gate in RG-011A/005 and C extension in RG-013",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md",
+      "final_documentation_head": "f656648c884ce9bbe6fcb917566898a2f01b4c0e",
+      "final_documentation_run": 43358083253,
+      "pull_request_status": "merged_to_feature",
+      "pull_request": 8
+    },
+    "latest_rg004": {
+      "status": "compatibility_input_independently_accepted",
+      "run": 43980308204,
+      "tested_head": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+      "merge_ref": "a24c820d98aea8916a23c49d6129a4b88d14504b",
+      "pull_request": 9,
+      "pull_request_status": "merged_to_feature",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-security-probes/docs/evidence/RG-004-A.md",
+      "docker_observation_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-A/docker-time-43980308204.json",
+      "docker_result": "OBSERVATIONS_MATCHED_capability_only",
+      "scope": "Exact leaf pin/URI TLS compatibility, independent verifier-bypass detection, trusted UTC primitive; not production registry/authorization, connection-expiry or epoch fencing"
+    },
+    "latest_rg004_b1": {
+      "id": "RG-004-B1",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-certificate-registry",
+      "head": "6366df84903049fde3fd92243b3aa7bd06c43986",
+      "pull_request": 10,
+      "run": 44016873892,
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/docs/contracts/certificate-registry-v1.md",
+      "scope": "Policy-bound typed certificate validation and immutable metadata only; no runtime authorization/readiness/fencing proof",
+      "merge_ref": "e03a5291889bb7fc9078bd5bda6b822657ea3cc7",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B1.md",
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg004_b2": {
+      "id": "RG-004-B2",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-peer-authorization",
+      "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
+      "pull_request": 11,
+      "run": 44023785687,
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
+      "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
+      "documentation_run": 44023785687,
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
+      "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+      "implementation_run": 44022842950,
+      "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
+      "pull_request_status": "merged_to_feature",
+      "public_interfaces": [
+        "PeerAuthenticator::Authenticate",
+        "AuthorizationResolver::Create",
+        "AuthorizationResolver::Resolve"
+      ],
+      "acceptance": "independent_QA_and_senior_review_passed",
+      "full_story_done": false
+    },
+    "latest_rg004_b3": {
+      "id": "RG-004-B3",
+      "status": "verified_review_ready",
+      "branch": "feature/RG-004-client-guards",
+      "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc",
+      "pull_request": 12,
+      "run": 44128491936,
+      "merge_ref": "1fe328849653f92486fa69695e649a6049e961b0",
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
+      "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B3.md",
+      "scope": "Client trust guard/sealed typed calls and native SDK session qualification only; production caching disabled; no actual commit/forward/fencing",
+      "acceptance": "independent_QA_and_senior_review_passed",
+      "session_qualification": {
+        "status": "qualified_test_fixture_only",
+        "actual_resumed": true,
+        "cache_capacity": 1,
+        "new_transport": true,
+        "client_leaf_pin": true,
+        "server_leaf_pin": true,
+        "client_verifier_delta": 1,
+        "server_verifier_delta": 1,
+        "production_session_cache_enabled": false
+      },
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg005": {
+      "status": "component_verified_runtime_pending",
+      "tested_head": "da19ea21800c303acae4646d6159f67a1607a3b1",
+      "run": 45126587562,
+      "evidence": "docs/evidence/RG-005.md",
+      "pull_request": 14,
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg005_inspector": {
+      "status": "component_verified_runtime_pending",
+      "tested_head": "e0c9b5540349a166c5797e0a70c06a02b88290f9",
+      "run": 45129476268,
+      "evidence": "docs/evidence/RG-005-inspector.md",
+      "pull_request": 15,
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg006": {
+      "status": "local_gate_verified_runtime_pending",
+      "tested_head": "6da5d90ce70be41cf9780a64b7bc360492a8d4ab",
+      "run": 45130958093,
+      "evidence": "docs/evidence/RG-006-A.md",
+      "pull_request": 16,
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg006_manifest": {
+      "status": "local_persistence_verified_runtime_pending",
+      "tested_head": "ba2d14731b3f2e9e996049e67b9e4d702a2218d8",
+      "run": 45207019201,
+      "evidence": "docs/evidence/RG-006-B.md",
+      "pull_request": 17,
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature"
+    },
+    "current_design_checks": [
+      "HLD 5 / LLD 6 clarify durable stopped-container intents, non-serving bootstrap and observed process-identity persistence before activation; PRD 8 / SRD 5 unchanged.",
+      "Historical documentation-check entries retain the revisions actually checked at that time.",
+      "LLD 7 records implemented ownership/bootstrap class boundaries; Docker inspect/stop now exists; supervisor process-control orchestration and successor-epoch authorization remain pending.",
+      "LLD 8 records recovery-reader API/caps and distinguishes fatal initial ownership failure from incomplete later diagnostics; read-only scan is not fencing.",
+      "LLD 9 and layout v1 define shared canonical paths, independent manifest retention, ReadyCandidate-only comparison, shared budgets and the generic-store path-binding integration boundary.",
+      "LLD 10 records bounded Unix HTTP transport; LLD 11 records source-present Docker inspect/stop and process-probe components. PR23 component-scope native qualification passed on run 46103748414; full lifecycle and successor authorization remain pending.",
+      "LLD 12 adds the PR24 StrictSequenceOracle boundary, distinct from future ReplayModel/CLI; exact-source CI is pending and no runtime provenance or release gate is claimed.",
+      "LLD12 records accepted RG-011-A1 as a pure model/golden development input; RG-011-A2 runtime provenance/comparison and full Release-B replay remain unimplemented. No production reuse of the oracle is allowed."
+    ],
+    "latest_rg006_runtime_ownership": {
+      "status": "component_verified_merged_to_feature",
+      "tested_head": "abd4a1bb30eecbc3d8eae3f5f582e5c5660d6780",
+      "tested_merge_ref": "79eb61fd0b5e9dd322a97eea0ee7ccd45375f22e",
+      "run": 45286150998,
+      "pull_request": 18,
+      "evidence": "docs/evidence/RG-006-C.md",
+      "full_story_done": false,
+      "merge_commit": "90399f64eb9bd2b6aef81384a9144bcff79f78af",
+      "pull_request_status": "merged_to_feature"
+    },
+    "latest_rg006_bootstrap": {
+      "status": "component_verified_merged_to_feature",
+      "tested_head": "03e618b311056227fe6bccb4b9143ced00d2f28c",
+      "tested_merge_ref": "be6acc0697bca17f70803009327289de19c2abd0",
+      "run": 45287922499,
+      "pull_request": 19,
+      "evidence": "docs/evidence/RG-006-D.md",
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "cb98d7851fdac6f4eedab0d5f55a88a7fd98a798"
+    },
+    "latest_rg006_bootstrap_recovery": {
+      "status": "component_verified_merged_to_feature",
+      "pull_request": 20,
+      "tested_head": "87c784b25d47dd97527709756fd63673671af470",
+      "tested_merge_ref": "0784213de9ec24bf7e111224363f04a56909f4cb",
+      "run": 45292546023,
+      "evidence": "docs/evidence/RG-006-E.md",
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "9d9074601859c67541cd73343249ea11e8e09a95"
+    },
+    "latest_rg006_artifact_layout": {
+      "status": "component_verified",
+      "pull_request": 21,
+      "tested_head": "7fc9895e5f928ad1576d5b2119b79f4a717151e9",
+      "tested_merge_ref": "a93680850e190bb7e4d6a3c11f3dc4bb46a8051f",
+      "run": 45332588272,
+      "evidence": "docs/evidence/RG-006-F.md",
+      "scope": "Shared names and read-only optional manifest diagnostics; no Docker control, serving or successor capability",
+      "full_story_done": false,
+      "ctest_groups_per_clean_build": 52,
+      "clean_builds": 2,
+      "python_tests": 17,
+      "matching_generated_files": 12,
+      "sanitizer_groups": 38,
+      "artifact_id": 14893310876,
+      "artifact_sha256": "55e4f28c6a639bd8a09711b9842f3f40d8eca2cc7c144afe9f70721b951a188d",
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "e2d6aeaef0b9ac4e595eb6c50e26afda3e6ee314"
+    },
+    "latest_rg006_unix_transport": {
+      "status": "component_verified",
+      "pull_request": 22,
+      "branch": "feature/RG-006-docker-unix-transport",
+      "tested_head": "195ed15d2535ff6b599412f009cfb897d2c971d4",
+      "tested_merge_ref": "0df8f68b7770196f0a7e2546b495697993227fc2",
+      "run": 45558880696,
+      "evidence": "docs/evidence/RG-006-G.md",
+      "ctest_groups_per_clean_build": 58,
+      "clean_builds": 2,
+      "python_tests": 17,
+      "matching_generated_files": 12,
+      "sanitizer_groups": 44,
+      "transport_sanitizer_groups": 6,
+      "artifact_id": 14997099492,
+      "artifact_sha256": "8c7e98465d00e0f03f54dfdc690a28c3b11bd5bfebe0a4e4db923a23ce92f595",
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "4db648d85008bb638d579abf54504fe3da711898"
+    },
+    "latest_rg006_docker_control": {
+      "status": "component_verified",
+      "pull_request": 23,
+      "branch": "feature/RG-006-docker-process-control",
+      "tested_head": "dbc1f8fbb3d5d4fc9bc4c59286e2a05e82ee021b",
+      "tested_merge_ref": "36b9c0f484f500236e54ba3ac740094f6831b984",
+      "tested_base": "4db648d85008bb638d579abf54504fe3da711898",
+      "run": 46103748414,
+      "evidence": "docs/evidence/RG-006-H.md",
+      "native_summary": "docs/evidence/RG-006-H/native-summary.json",
+      "ctest_groups_per_clean_build": 63,
+      "clean_builds": 2,
+      "python_tests": 29,
+      "matching_generated_files": 12,
+      "sanitizer_groups": 49,
+      "control_transport_sanitizer_groups": 11,
+      "artifact_id": 15246882215,
+      "artifact_sha256": "57a57e38523657ab09309dd1896ee2c558f97f984a88352255050a84d0fc1932",
+      "native_qualification": {
+        "state": "OBSERVED_AND_STOPPED",
+        "engine": "28.0.4",
+        "api": "1.48",
+        "all_eight_checks": true,
+        "owned_cleanup": true,
+        "scope": "one synthetic component fixture; no host-global placement, launch, epoch fencing or successor authorization"
+      },
+      "full_story_done": false,
+      "pull_request_status": "merged_to_feature",
+      "merge_commit": "dd43694ccb16a394e64914a5f7f85617a835a0a4"
+    },
+    "latest_documentation_checks": {
+      "source_revisions": {
+        "PRD": 8,
+        "SRD": 5,
+        "HLD": 5,
+        "LLD": 12
+      },
+      "local_validation": {
+        "relative_links": 154,
+        "fenced_blocks": 11,
+        "stories": 14,
+        "dependency_edges": 37,
+        "unique_acceptance_ids": 42,
+        "source_revisions": {
+          "PRD": 8,
+          "SRD": 5,
+          "HLD": 5,
+          "LLD": 12
+        }
+      },
+      "full_runtime_acceptance": false,
+      "scope": "PR24 synthetic oracle component; readback and documentation-only comparison required before feature integration",
+      "readback_files": 10,
+      "readback_exact": true,
+      "local_anchors_matched": true,
+      "post_test_comparison": "Only ten documentation files differ from tested source; checked before and after merge."
+    },
+    "latest_rg011a": {
+      "status": "component_verified",
+      "pull_request": 24,
+      "branch": "feature/RG-011A-strict-sequence-oracle",
+      "source_commit": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "run": 46169772434,
+      "contract": "docs/contracts/strict-sequence-oracle-v1.md",
+      "contract_revision": 2,
+      "scope": "Pure typed synthetic ordered strict decisions only; no runtime provenance or full replay",
+      "expected": {
+        "ctest_groups_per_clean_build": 77,
+        "python_tests": 29,
+        "generated_files": 12,
+        "sanitizer_groups": 52
+      },
+      "reported_local_checks": {
+        "compiled_negative_controls": 11,
+        "arithmetic_vectors": 15,
+        "malformed_rows_cap_count": 1000000,
+        "positive_ctest_groups": 3
+      },
+      "full_rg011_done": false,
+      "initial_failed_run": {
+        "run": 46169353785,
+        "status": "failed_before_CTest",
+        "reason": "GCC inlined test-delete/free diagnostic in test harness; excluded from acceptance"
+      },
+      "test_support_paths": [
+        "tests/replay/failing_allocator.h",
+        "tests/replay/failing_allocator.cpp"
+      ],
+      "tested_head": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "tested_merge_ref": "f4ff605fd683921bde16b75e5011546303ba01ab",
+      "tested_base": "270a1cd9cd7327149c8bfa87c74abebbf1d90b49",
+      "evidence": "docs/evidence/RG-011-A.md",
+      "observed": {
+        "ctest_groups_per_clean_build": 77,
+        "clean_builds": 2,
+        "python_tests": 29,
+        "matching_generated_files": 12,
+        "sanitizer_groups": 52,
+        "oracle_positive_sanitizer_groups": 3,
+        "compiled_oracle_negative_controls": 11
+      },
+      "artifact_id": 15273607993,
+      "artifact_sha256": "8257c019bf8aa870def8c0317a3911336a300fec8e8283f3140a76d22a24a7cb",
+      "pull_request_status": "merged_to_feature",
+      "verification_json": "docs/evidence/RG-011-A/verification.json",
+      "merge_commit": "cd218968d9f28a0b95a4fc80f136656b6506ec03"
+    }
   },
   "next_actions": [
-    "Wait for the Product Owner's explicit proceed command; do not begin development or test execution before it.",
-    "After proceed, verify/sync main into a Git checkout and inspect the target Linux build environment, then execute RG-001.",
-    "Re-estimate after RG-001 and the first two implementation PRs using observed environment and review effort."
+    "Use accepted RG-011-A1 as a test-support development input; specify RG-011-A2 runtime joins and continue RG006 diagnostic inventory/launch-fencing contracts without minting reset authority.",
+    "Wait for exact-source Linux CI for PR24 strict-sequence oracle; record component evidence only on green, then continue separate RG-011B full replay and RG-003-D/005/007/008 runtime provenance joins.",
+    "Integrate the verified PR23 control/probe component into separately designed durable launch/recovery orchestration and verified successor authorization. No current component grants serving or reset authority.",
+    "Then RG006 manifest/fencing and RG007 witness before strict runtime/adapter/Release A acceptance.",
+    "Keep production session caching disabled; native SDK qualification is test-only.",
+    "Maintain per-agent logs and leave main implementation merges to Product Owner control."
   ],
   "authorization": {
     "documentation_and_merge": "Explicitly authorized by user in this task.",
-    "implementation": "Not requested in this documentation task; context does not itself authorize deployment or claim implementation.",
+    "implementation": "Development/testing authorized; main merge remains under Product Owner review.",
     "planning_documentation_main": "Explicitly authorized by the user in this task.",
-    "development_and_testing": "Wait for the user's explicit proceed command."
+    "development_and_testing": "Authorized by Product Owner on 2026-11-12: begin the implementation.",
+    "main_implementation_merge": "Component PRs merge into feature/distributed-rateguard after verification. Final feature-to-main promotion is PR #13 and remains pending Product Owner review."
   },
   "stories": [
     {
       "id": "RG-001",
       "title": "Freeze wire contracts and build manifest",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-001",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-001",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "component_accepted_merged_to_feature",
       "depends_on": [],
       "prd_ids": [
         "PRD-005",
@@ -104,19 +438,19 @@
       "planned_files": [
         {
           "path": "proto/rateguard/v1/admission.proto",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "proto/rateguard/v1/authority.proto",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "CMakeLists.txt",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "build-lock.json",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         }
       ],
       "classes": [
@@ -141,13 +475,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -158,7 +492,7 @@
             "AT-04",
             "AT-06"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-001-AC02",
@@ -167,7 +501,7 @@
             "AT-13",
             "AT-20"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-001-AC03",
@@ -175,18 +509,25 @@
           "evidence_ids": [
             "AT-07"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_evidence": {
+        "path": "docs/evidence/RG-001.md",
+        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/5",
+        "run": 43327798021,
+        "tested_head": "4c924495a1303054a2c3b26edfae757430ea4d72",
+        "scope": "API/helpers/build/synthetic transport; no quota service"
+      }
     },
     {
       "id": "RG-002",
       "title": "Implement immutable policy and checked arithmetic",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-002",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-002",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "component_accepted_merged_to_feature",
       "depends_on": [
         "RG-001"
       ],
@@ -203,19 +544,19 @@
       "planned_files": [
         {
           "path": "src/policy/policy_snapshot.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "src/policy/policy_loader.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "src/policy/canonical_codec.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         },
         {
           "path": "src/authority/bucket_math.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_feature_branch"
         }
       ],
       "classes": [
@@ -241,13 +582,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -258,7 +599,7 @@
             "AT-01",
             "AT-04"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-002-AC02",
@@ -267,7 +608,7 @@
             "AT-02",
             "AT-03"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-002-AC03",
@@ -275,18 +616,25 @@
           "evidence_ids": [
             "AT-21"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "implementation_evidence": {
+        "path": "docs/evidence/RG-002.md",
+        "pull_request": "https://github.com/kshiteesh28/DistributedRateGuard/pull/6",
+        "run": 43353832066,
+        "tested_head": "7640975031aee2af2ee7ae855ce88b76115f1569",
+        "scope": "Pure policy/encoding/arithmetic; independent component acceptance"
+      }
     },
     {
       "id": "RG-003",
       "title": "Implement shared clock provenance and commit timing",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-003",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-003",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "component_verified_integration_pending",
       "depends_on": [
         "RG-001"
       ],
@@ -301,11 +649,11 @@
       "planned_files": [
         {
           "path": "src/platform/clock.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_RG003_feature_branch"
         },
         {
           "path": "src/platform/clock_linux.h",
-          "status": "proposed_not_present"
+          "status": "implemented_on_RG003_feature_branch"
         }
       ],
       "classes": [
@@ -329,13 +677,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -346,7 +694,7 @@
             "AT-01",
             "AT-17"
           ],
-          "status": "not_run"
+          "status": "passed_component_scope_see_evidence"
         },
         {
           "id": "RG-003-AC02",
@@ -355,7 +703,7 @@
             "AT-02",
             "AT-07"
           ],
-          "status": "not_run"
+          "status": "integration_pending_named_owner"
         },
         {
           "id": "RG-003-AC03",
@@ -363,18 +711,81 @@
           "evidence_ids": [
             "AT-17"
           ],
-          "status": "not_run"
+          "status": "integration_pending_named_owner"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "dependency_contracts": [
+        {
+          "id": "RG-003-A",
+          "interface": "IClock/LinuxMonotonicClock",
+          "status": "verified_component",
+          "tested_revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "run": 43355987772,
+          "permitted_consumers": [
+            "RG-006",
+            "RG-007",
+            "RG-008"
+          ],
+          "excluded_guarantees": [
+            "Docker participant provenance",
+            "Service commit/deadline mapping",
+            "Checker UNKNOWN classification"
+          ],
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md"
+        },
+        {
+          "id": "RG-003-B",
+          "status": "pending",
+          "owners": [
+            "RG-006"
+          ]
+        },
+        {
+          "id": "RG-003-C",
+          "status": "pending",
+          "owners": [
+            "RG-007",
+            "RG-008"
+          ],
+          "acceptance": [
+            "RG-003-AC02"
+          ]
+        },
+        {
+          "id": "RG-003-D",
+          "status": "pending",
+          "owners": [
+            "RG-011"
+          ],
+          "acceptance": [
+            "RG-003-AC03"
+          ],
+          "owner_deliverable": "RG-011A",
+          "release": "A",
+          "inputs": [
+            "RG-005 completeness",
+            "RG-006 participant/epoch provenance",
+            "RG-007/008 commit mapping"
+          ],
+          "acceptance_owner": "Tester",
+          "required_behavior": "Missing, incomparable, inconsistent or incomplete clock/history evidence produces UNKNOWN with reason and blocks strict safety PASS.",
+          "required_before": [
+            "RG-008 strict acceptance",
+            "Release A completion"
+          ],
+          "release_c_extension": "RG-013 credit conservation, interval bound and formal trace/model checks"
+        }
+      ]
     },
     {
       "id": "RG-004",
       "title": "Implement mTLS identity and operation authorization",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-004",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-004",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "a_b1_b2_b3_component_verified_full_integration_pending",
       "depends_on": [
         "RG-001",
         "RG-002"
@@ -388,17 +799,64 @@
       ],
       "planned_files": [
         {
-          "path": "src/security/peer_authenticator.h",
-          "status": "proposed_not_present"
+          "path": "include/rateguard/security/peer_authenticator.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
         },
         {
-          "path": "src/security/authorization.h",
-          "status": "proposed_not_present"
+          "path": "src/security/peer_authenticator.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/authorization_resolver.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/authorization_resolver.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/client_call_guard.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "src/security/client_call_guard.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "include/rateguard/security/pinned_peer_rpc_client.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
+        },
+        {
+          "path": "src/security/pinned_peer_rpc_client.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc"
         }
       ],
       "classes": [
         "PeerAuthenticator",
-        "AuthorizationResolver"
+        "AuthenticatedPeer",
+        "AuthorizationResolver",
+        "AuthorizedOperation",
+        "AuthorizedGrant",
+        "ClientCallGuard",
+        "PreparedClientCall",
+        "PinnedPeerRpcClient",
+        "Invoked"
       ],
       "code_design_notes": [
         "Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy.",
@@ -417,13 +875,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -454,15 +912,154 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Integrate verified security inputs at actual service precommit/pregrant/preforward points, with RG006 manifest/fencing and RG005 event/export privacy; full-story ACs remain unverified.",
+      "implementation_decisions": {
+        "path": "docs/decisions/RG-004-security-v1.md",
+        "revision": 2,
+        "branch": "docs/scrum-work-log",
+        "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/decisions/RG-004-security-v1.md",
+        "status": "selected_defaults_partial_implementation_verified",
+        "remaining_evidence": [
+          "Production manifest binding, credential provisioning and participant readiness/fenced rotation",
+          "Actual service precommit/pregrant/preforward wiring and deadline/epoch checks; B3 supplies only reusable certificate/time primitives",
+          "Real service no-allocation fault cases, event/export privacy and remaining full-story acceptance"
+        ]
+      },
+      "component_inputs": [
+        {
+          "id": "RG-004-A",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-security-probes",
+          "head": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+          "run": 43980308204,
+          "scope": "Exact leaf pin/URI TLS compatibility, independent verifier-bypass detection, trusted UTC primitive; not production registry/authorization, connection-expiry or epoch fencing"
+        },
+        {
+          "id": "RG-004-B1",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986",
+          "pull_request": 10,
+          "run": 44016873892,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-certificate-registry/docs/contracts/certificate-registry-v1.md",
+          "scope": "Typed public-certificate validation and immutable metadata only; no manifest/auth/service readiness claim",
+          "merge_ref": "e03a5291889bb7fc9078bd5bda6b822657ea3cc7",
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B1.md"
+        },
+        {
+          "id": "RG-004-B2",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "20210d5fbabcd891dbbb20ab89eca26f3a73a1db",
+          "pull_request": 11,
+          "run": 44023785687,
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-peer-authorization/docs/contracts/peer-authorization-v1.md",
+          "verified_implementation_head": "9d14bb74bd937401471e96e039f651c17c226c43",
+          "documentation_run": 44023785687,
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B2.md",
+          "scope": "Peer identity and policy authorization with actual TLS fixture/dispatch expiry; no quota, commit, forwarding, epoch fencing or reconnect/resumption proof",
+          "implementation_run": 44022842950,
+          "merge_ref": "31084e66433126412a5e22457c13fde1f34350b1",
+          "pull_request_status": "ready_unmerged"
+        },
+        {
+          "id": "RG-004-B3",
+          "status": "verified_review_ready",
+          "branch": "feature/RG-004-client-guards",
+          "head": "0a1b37b6147adb39c885459253d59c8561c9c5cc",
+          "pull_request": 12,
+          "run": 44128491936,
+          "merge_ref": "1fe328849653f92486fa69695e649a6049e961b0",
+          "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-004-client-guards/docs/contracts/pinned-client-v1.md",
+          "evidence_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/docs/scrum-work-log/docs/evidence/RG-004-B3.md",
+          "scope": "Client trust guard/sealed typed calls and native SDK session qualification only; production caching disabled; no actual commit/forward/fencing",
+          "acceptance": "independent_QA_and_senior_review_passed",
+          "session_qualification": {
+            "status": "qualified_test_fixture_only",
+            "actual_resumed": true,
+            "cache_capacity": 1,
+            "new_transport": true,
+            "client_leaf_pin": true,
+            "server_leaf_pin": true,
+            "client_verifier_delta": 1,
+            "server_verifier_delta": 1,
+            "production_session_cache_enabled": false
+          },
+          "full_story_done": false,
+          "pull_request_status": "ready_unmerged"
+        }
+      ],
+      "integration_dependencies": [
+        {
+          "producer_story": "RG-006",
+          "contract": "epoch_manifest_and_positive_fencing",
+          "status": "pending",
+          "required_for": [
+            "RG-004-AC02"
+          ],
+          "purpose": "Fenced trust replacement; full-story acceptance follows supervisor lifecycle evidence"
+        },
+        {
+          "producer_story": "RG-005",
+          "contract": "real_event_and_export_privacy",
+          "status": "pending",
+          "required_for": [
+            "RG-004-AC03"
+          ]
+        }
+      ],
+      "implemented_input_files": [
+        {
+          "path": "include/rateguard/security/certificate_registry.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        },
+        {
+          "path": "src/security/certificate_registry.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-certificate-registry",
+          "head": "6366df84903049fde3fd92243b3aa7bd06c43986"
+        },
+        {
+          "path": "include/rateguard/security/peer_authenticator.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/peer_authenticator.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "include/rateguard/security/authorization_resolver.h",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        },
+        {
+          "path": "src/security/authorization_resolver.cpp",
+          "status": "verified_on_unmerged_review_branch",
+          "branch": "feature/RG-004-peer-authorization",
+          "head": "9d14bb74bd937401471e96e039f651c17c226c43"
+        }
+      ],
+      "authorization_contract": {
+        "path": "docs/contracts/peer-authorization-v1.md",
+        "revision": 1,
+        "branch": "feature/RG-004-peer-authorization",
+        "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/20210d5fbabcd891dbbb20ab89eca26f3a73a1db/docs/contracts/peer-authorization-v1.md"
+      }
     },
     {
       "id": "RG-005",
       "title": "Implement bounded events and incomplete-history accounting",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-005",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-005",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "in_progress",
       "depends_on": [
         "RG-001"
       ],
@@ -477,11 +1074,39 @@
       "planned_files": [
         {
           "path": "src/events/event_recorder.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/events/history_exporter.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/events/history_validator.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/events/file_publisher.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/events/aggregate_metrics.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/history_reader.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/strict_reconciliation.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/retention.py",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/history/inspect_main.cpp",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
@@ -505,13 +1130,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -522,7 +1147,7 @@
             "AT-10",
             "AT-11"
           ],
-          "status": "not_run"
+          "status": "component_verified_runtime_pending"
         },
         {
           "id": "RG-005-AC02",
@@ -530,7 +1155,7 @@
           "evidence_ids": [
             "AT-11"
           ],
-          "status": "not_run"
+          "status": "component_verified_runtime_pending"
         },
         {
           "id": "RG-005-AC03",
@@ -539,22 +1164,23 @@
             "AT-10",
             "AT-13"
           ],
-          "status": "not_run"
+          "status": "component_verified_runtime_pending"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Finish runtime/supervisor event owner binding, stop propagation, private output lifecycle and persisted incomplete evidence; integrate RG006/RG007 and RG011A before full RG005/Release A acceptance.",
+      "component_evidence": "docs/evidence/RG-005.md",
+      "inspector_evidence": "docs/evidence/RG-005-inspector.md"
     },
     {
       "id": "RG-006",
       "title": "Implement supervisor lifecycle and positive fencing",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-006",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-006",
       "link_type": "repository_story",
       "release": "A",
-      "status": "planned_not_implemented",
+      "status": "component_qualified_full_runtime_in_progress",
       "depends_on": [
         "RG-002",
         "RG-003",
-        "RG-004",
         "RG-005"
       ],
       "prd_ids": [
@@ -571,14 +1197,30 @@
       "planned_files": [
         {
           "path": "src/supervisor/epoch_gate.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
         },
         {
           "path": "src/supervisor/manifest_store.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
         },
         {
-          "path": "src/supervisor/process_controller.h",
+          "path": "src/supervisor/docker_process_controller.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/docker_process_controller.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_process_probe.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_process_probe.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/container_launcher.h",
           "status": "proposed_not_present"
         },
         {
@@ -586,20 +1228,112 @@
           "status": "proposed_not_present"
         },
         {
-          "path": "src/supervisor/docker_process_controller.h",
-          "status": "proposed_not_present"
+          "path": "src/supervisor/manifest_codec.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/manifest_codec.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/manifest_store.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/runtime_owner.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/runtime_owner.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_inventory.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_inventory.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_store.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_store.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_recovery_reader.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/bootstrap_recovery_reader.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/epoch_artifact_layout.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/unix_http_transport.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/unix_http_transport.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/http1_parser.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/supervisor/http1_parser.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_proc_stat_parser.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "src/platform/linux_pidfd_helper.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/probes/docker_controller_linux_probe.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/probes/docker_controller_preflight.py",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/tests/supervisor/docker_probe_fixture_parser_test.cpp",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
         "EpochGate",
+        "IProcessController (legacy EpochGate interface)",
+        "IRecoveryProcessController",
+        "DockerProcessController",
+        "IRecordedProcessProbe",
+        "RuntimeOwner",
+        "InitialEpochClaim",
+        "BootstrapInventory",
+        "BootstrapStore",
+        "BootstrapRecoveryReader",
         "ManifestStore",
-        "IProcessController",
-        "EpochSupervisor",
-        "DockerProcessController"
+        "ContainerLauncher (future)",
+        "EpochSupervisor"
       ],
       "code_design_notes": [
         "Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch.",
-        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+        "DockerProcessController implements IRecoveryProcessController; EpochGate's IProcessController is a distinct legacy interface and is not implemented by the Docker controller.",
+        "Inspect/RequestStop accept exact pending or observed targets. All eight identity labels and the full canonical container ID are checked; no names, prefixes, CLI, redirect or automatic stop retry.",
+        "Pending targets can provide runtime-only exit evidence. Observed targets require matching PID/start ticks and recorded shared-clock identity, plus same-boot/qualified observer context and proc ENOENT corroborated by pidfd_open ESRCH. Any ambiguity is UNKNOWN.",
+        "Stop ACK and point-in-time process absence are not an epoch fence. This component does not launch, activate, join starts, recover, close an epoch, or authorize a successor.",
+        "LLD 11 §21.4 documents these boundaries; PR23 component-scope native qualification passed on run 46103748414; full RG-006 remains not accepted."
       ],
       "files_to_refer": [
         {
@@ -614,13 +1348,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -652,12 +1386,47 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Proceed with separately designed launch/recovery and successor-fencing integration; preserve the full RG-006 AC01-03 gates and do not infer full lifecycle acceptance from PR23 component qualification.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        },
+        {
+          "contract": "RG-004-A",
+          "producer_story": "RG-004",
+          "revision": "f5b3e975225c869e4a9638af57ab9f7c8a06e546",
+          "status": "verified",
+          "purpose": "TLS pin verifier/trusted UTC development input; not full authentication acceptance"
+        },
+        {
+          "contract": "RG-004-B1",
+          "producer_story": "RG-004",
+          "status": "verified",
+          "purpose": "Validated immutable certificate metadata for manifest implementation; runtime authorization, service activation and final fencing gates remain separate",
+          "revision": "6366df84903049fde3fd92243b3aa7bd06c43986",
+          "run": 44016873892
+        }
+      ],
+      "component_evidence": "docs/evidence/RG-006-A.md",
+      "manifest_evidence": "docs/evidence/RG-006-B.md",
+      "runtime_ownership_evidence": "docs/evidence/RG-006-C.md",
+      "bootstrap_evidence": "docs/evidence/RG-006-D.md",
+      "bootstrap_recovery_evidence": "docs/evidence/RG-006-E.md",
+      "artifact_layout_contract": "docs/contracts/epoch-artifact-layout-v1.md",
+      "artifact_layout_evidence": "docs/evidence/RG-006-F.md",
+      "unix_http_transport_contract": "docs/contracts/docker-engine-unix-http-v1.md",
+      "unix_http_transport_evidence": "docs/evidence/RG-006-G.md",
+      "docker_process_control_contract": "docs/contracts/docker-process-control-v1.md",
+      "docker_process_control_evidence": "docs/evidence/RG-006-H.md",
+      "native_qualification_status": "passed_component_scope_run_46103748414"
     },
     {
       "id": "RG-007",
       "title": "Implement independently validated witness transactions",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-007",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-007",
       "link_type": "repository_story",
       "release": "A",
       "status": "planned_not_implemented",
@@ -722,13 +1491,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -759,15 +1528,23 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        }
+      ]
     },
     {
       "id": "RG-011",
       "title": "Build independent oracle (A acceptance prerequisite; replay CLI in B)",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-011",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-011",
       "link_type": "repository_story",
       "release": "B",
-      "status": "planned_not_implemented",
+      "status": "rg011_a1_component_verified_full_story_incomplete",
       "depends_on": [
         "RG-002",
         "RG-005"
@@ -782,19 +1559,52 @@
       "planned_files": [
         {
           "path": "tools/replay/reference_model.h",
-          "status": "proposed_not_present"
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/replay/replay_model.h",
+          "status": "proposed_future_RG-011B"
         },
         {
           "path": "tools/replay/main.cpp",
-          "status": "proposed_not_present"
+          "status": "proposed_future_RG-011B"
+        },
+        {
+          "path": "tests/replay/failing_allocator.h",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/failing_allocator.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/strict_sequence_oracle_test.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/strict_sequence_oracle_independent_test.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tests/replay/strict_sequence_oracle_resource_test.cpp",
+          "status": "implemented_component_verified"
+        },
+        {
+          "path": "tools/tests/generate_sequence_mutants.py",
+          "status": "implemented_component_verified"
         }
       ],
       "classes": [
-        "ReplayModel"
+        "rateguard::replay::StrictSequenceOracle",
+        "ReplayModel (future RG-011B)",
+        "ReplayCLI (future RG-011B)"
       ],
       "code_design_notes": [
-        "Build a minimal independent strict serial oracle and golden fixtures before strict A acceptance. Complete the full offered-trace replay CLI in Release B. Never import production BucketMath or AuthorityEngine logic.",
-        "Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic."
+        "StrictSequenceOracle is a pure C++20 model for already-ordered synthetic strict requests; consumes typed policy/initial buckets/attempts and returns owned expected rows or one ModelError; whole-run errors expose no partial prefix.",
+        "Invalid selectors return per-step Invalid and do not mutate/refill/debit; known-tenant invalid operation has identical before/after view. Structural time/order/resource errors reject the entire scenario.",
+        "Use divide-before-multiply saturation with checked integer intermediates, independent of production BucketMath. No production policy/service/clock/recorder import.",
+        "Model's 1,000,000 row cap and malformed-row cap tests are resource bounds only; do not count them as 1,000,000 valid runtime or release attempts. Not formal proof or runtime Safety PASS.",
+        "Keep full offered-trace ReplayModel/CLI in B; runtime provenance join and concurrency/interval checking remain separate gates."
       ],
       "files_to_refer": [
         {
@@ -809,13 +1619,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -842,16 +1652,47 @@
             "AT-20",
             "AT-21"
           ],
-          "status": "not_run"
+          "status": "component_source_independence_verified_full_replay_integration_pending"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files.",
-      "release_prerequisite": "The independent strict oracle and golden fixtures are required before Release A acceptance; the full replay CLI remains a Release B deliverable."
+      "first_action": "Use accepted RG-011-A1 only as a development/test input for RG008. Specify RG-011-A2 runtime comparison/provenance joins before runtime acceptance; full RG011 replay/hash/report CLI remains Release B.",
+      "release_prerequisite": "RG-011-A1 pure strict oracle and golden fixtures are an input prerequisite for RG-008 development and a prerequisite before RG-008 strict Release A acceptance. Separate RG-011-A2 runtime comparison/provenance evidence is required for full acceptance; full RG-011B replay remains Release B.",
+      "contract_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-011A-strict-sequence-oracle/docs/contracts/strict-sequence-oracle-v1.md",
+      "component_branch": "feature/RG-011A-strict-sequence-oracle",
+      "component_source": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "ci_status": "passed_component_scope",
+      "expected_ci": {
+        "ctest_groups_per_clean_build": 77,
+        "python_tests": 29,
+        "generated_files": 12,
+        "sanitizer_groups": 52
+      },
+      "reported_local_component_checks": {
+        "compiled_negative_controls": 11,
+        "arithmetic_vectors": 15,
+        "malformed_rows_resource_case_attempt_count": 1000000,
+        "scope_note": "Reported component checks; not formal proof or runtime release gate.",
+        "positive_ctest_groups": 3
+      },
+      "ci_run": 46169772434,
+      "initial_ci_run": {
+        "run": 46169353785,
+        "status": "failed_before_CTest",
+        "reason": "GCC inlined test-delete/free diagnostic in test harness; excluded from acceptance"
+      },
+      "test_support_paths": [
+        "tests/replay/failing_allocator.h",
+        "tests/replay/failing_allocator.cpp"
+      ],
+      "component_evidence": "docs/evidence/RG-011-A.md",
+      "component_tested_head": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+      "component_merge_commit": "cd218968d9f28a0b95a4fc80f136656b6506ec03",
+      "component_pull_request_status": "merged_to_feature"
     },
     {
       "id": "RG-008",
       "title": "Implement strict authority and admission service",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-008",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-008",
       "link_type": "repository_story",
       "release": "A",
       "status": "planned_not_implemented",
@@ -925,13 +1766,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -964,12 +1805,44 @@
           "status": "not_run"
         }
       ],
-      "first_action": "Read the linked source contracts and confirm prerequisite stories have evidence before editing proposed files."
+      "first_action": "Begin development after the named RG-011-A1 pure-model/golden-fixture input is accepted; do not wait for full RG-011B. Keep RG-011-A2 runtime comparison/provenance joins as a separate full-acceptance gate; missing evidence is UNKNOWN.",
+      "input_dependency_contracts": [
+        {
+          "contract": "RG-003-A",
+          "revision": "2d55c6e032ae75947f045ac76ffa383b2b1dd9d8",
+          "evidence": "docs/evidence/RG-003.md",
+          "purpose": "Verified clock for development; full RG-003 integration not waived"
+        },
+        {
+          "contract": "RG-011-A1",
+          "revision": "b26d4fa4aa8e6e6a9126d83e1299217431594a5a",
+          "evidence": "docs/evidence/RG-011-A.md",
+          "purpose": "Pure typed oracle and synthetic golden fixtures may inform/test RG-008 development; this does not waive full RG-011 or authorize production reuse.",
+          "status": "component_verified",
+          "run": 46169772434
+        }
+      ],
+      "acceptance_dependency_contracts": [
+        {
+          "contract": "RG-003-D",
+          "owner_story": "RG-011",
+          "owner_deliverable": "RG-011A",
+          "status": "pending",
+          "scope": "Required before strict acceptance, not before development"
+        },
+        {
+          "contract": "RG-011-A2",
+          "owner_story": "RG-011",
+          "owner_deliverable": "Runtime comparison/provenance join",
+          "status": "pending",
+          "scope": "Required for RG-008 full strict acceptance; joins RG-003-D, RG-005, and RG-007/008 actual commits. Missing/incomplete evidence remains UNKNOWN. Not a prerequisite for RG-008 development."
+        }
+      ]
     },
     {
       "id": "RG-009",
       "title": "Implement trusted adapter forwarding gate",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-009",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-009",
       "link_type": "repository_story",
       "release": "A",
       "status": "planned_not_implemented",
@@ -1017,13 +1890,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1059,7 +1932,7 @@
     {
       "id": "RG-010",
       "title": "Implement fixed-Q grants and replica credit state",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-010",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-010",
       "link_type": "repository_story",
       "release": "C",
       "status": "planned_not_implemented",
@@ -1119,13 +1992,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1162,7 +2035,7 @@
     {
       "id": "RG-012",
       "title": "Implement frozen workloads and comparative reports",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-012",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-012",
       "link_type": "repository_story",
       "release": "B",
       "status": "planned_not_implemented",
@@ -1226,13 +2099,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1271,7 +2144,7 @@
     {
       "id": "RG-013",
       "title": "Implement bounded formal model and history checker",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-013",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-013",
       "link_type": "repository_story",
       "release": "C",
       "status": "planned_not_implemented",
@@ -1325,13 +2198,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1368,7 +2241,7 @@
     {
       "id": "RG-014",
       "title": "Assemble release evidence and reproducible handoff",
-      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/STORIES.md#rg-014",
+      "story_url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/STORIES.md#rg-014",
       "link_type": "repository_story",
       "release": "C",
       "status": "planned_not_implemented",
@@ -1423,13 +2296,13 @@
         },
         {
           "path": "docs/HLD.md",
-          "revision": 4,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/HLD.md"
+          "revision": 5,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/HLD.md"
         },
         {
           "path": "docs/LLD.md",
-          "revision": 5,
-          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/LLD.md#17-class-design-and-construction-contracts"
+          "revision": 12,
+          "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/LLD.md"
         }
       ],
       "acceptance_criteria": [
@@ -1480,7 +2353,7 @@
   "sprint_plan": {
     "path": "docs/SPRINT-PLAN.md",
     "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/main/docs/SPRINT-PLAN.md",
-    "status": "planning_only_waiting_for_product_owner_proceed",
+    "status": "sprint_1_foundations_in_progress_sprint_0_deployment_gate_open",
     "estimates_unit": "active_agent_minutes",
     "baseline_total_minutes": 15250,
     "feasibility_spike_minutes": {
@@ -1488,6 +2361,13 @@
       "max": 240
     },
     "target_branch": "main",
-    "no_development_or_test_execution_before_proceed": true
-  }
+    "no_development_or_test_execution_before_proceed": false
+  },
+  "work_log": {
+    "path": "docs/SCRUM-WORK-LOG.md",
+    "canonical_branch": "feature/distributed-rateguard",
+    "historical_actual_effort": "unknown_not_recorded",
+    "url": "https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/distributed-rateguard/docs/SCRUM-WORK-LOG.md"
+  },
+  "generated_at_utc": "2026-11-28T17:38:36Z"
 }

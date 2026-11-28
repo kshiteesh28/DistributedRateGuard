@@ -1,8 +1,16 @@
 # Agile Sprint Plan — DistributedRateGuard
 
-**Date:** 2026-11-12  
-**Status:** Planning only. This plan authorizes no implementation or test execution.  
-**Source of truth:** `main` — [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json).
+**Date:** 2026-11-28  
+**Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1/B2/B3 implementation inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
+**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 12 startup, artifact-layout, diagnostic-recovery, bounded transport/control and strict-oracle clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
+
+## Current delivery checkpoint — 2026-11-28
+
+PR24 / RG-011A corrected source `b26d4fa4aa8e6e6a9126d83e1299217431594a5a` passed [exact-source Linux verification](evidence/RG-011-A.md) (run46169772434). Initial run 46169353785 failed during test-harness compilation before CTest and is excluded. Observed checks passed:77 CTest groups in each clean build,29 Python tests,12 generated-file matches and52 sanitizer groups, including3 positive oracle sanitizer groups; both clean builds also ran11 negative controls. The one-million-malformed-row case is only a model resource-cap test. The 120–185 active-minute contract estimate is a scoped estimate, not actual effort; CI wait time is excluded. PR24 merged as cd218968 after documentation-only verification. Full RG-011, runtime joins and release gates remain open.
+
+
+
+PRs #5–12 and #14–24 are merged into the integration feature. PR23's Docker inspect/stop and recorded-process evidence component passed [exact-source Linux qualification](evidence/RG-006-H.md):63 CTest groups in each of two clean builds,29 Python tests,12 matching generated files,49 sanitizer groups and all eight real Docker checks with owned cleanup. PR23 merged as dd43694c after exact readback and documentation-only comparison; these are component results, not release metrics. RG006 remains In progress: durable launch/old-Start exclusion, orphan reconciliation, authenticated activation, whole-epoch fencing and successor authorization are open. Quota services, witness, independent sequence/replay evidence, evaluation and distributed-credit assurance remain dependent work. Historical entries retain their original status. Only PR13 promotes the feature to main and remains unmerged.
 
 ## Team and control
 
@@ -75,12 +83,36 @@ Implement credits only after Release A acceptance. Keep fixed-Q grants, same-seq
 
 ## Workflow, acceptance, and PR rules
 
-- A story is **Ready** only when its dependencies are accepted, its source requirements/design are linked, failure behavior is explicit, and acceptance evidence is identified.
+- A story is **Ready** only when its explicitly named input dependency contracts are verified, its source requirements/design are linked, failure behavior is explicit, and acceptance evidence is identified.
 - A story is **Done** only when code is reviewed, required tests have actually run, independent evidence is recorded against the commit and environment, and the story/context status is updated. Planned tests or documentation alone are not evidence.
-- After the Product Owner’s proceed command, use a separate feature branch and PR for each coherent story or vertical slice, based on the current `main`. PRs include story IDs, PRD/SRD IDs, failure cases, evidence IDs, and observed results.
+- After the Product Owner’s proceed command, use a separate feature branch and PR for each coherent story or vertical slice, based on current `main` or a verified prerequisite feature branch for a stacked PR. Stacked PRs target that feature branch so their diff remains independent; main merge requires Product Owner authorization. Rebase/retarget and rerun checks after the base changes. PRs include story IDs, PRD/SRD IDs, failure cases, evidence IDs, and observed results.
 - Senior Dev reviews implementation and concurrency; Tester independently reviews acceptance; Scrum Master tracks dependencies and status; Master reviews integration. Do not merge or mark releases complete without the Product Owner’s authorization.
 - Track work as **Ready → In Progress → Review → Acceptance → Done**, or **Blocked** with the unmet dependency/evidence stated. Do not pull blocked credit work forward to fill capacity.
 
-## Current gates and explicit wait
+## Current gates and work log
 
-The design is specified, but implementation, tests, benchmarks, model checking, shared-clock proof, witness durability evidence, process-fencing evidence, and certificate fixtures are not claimed as completed. The actual target build environment and local Git checkout still need verification. This document and its planning metadata may be committed now; **all development and test work waits for the Product Owner’s explicit proceed command.**
+RG-001 API/helpers and the primary hosted Ubuntu package build are verified in [PR #5](https://github.com/kshiteesh28/DistributedRateGuard/pull/5); this is component acceptance. **Sprint 0 remains open for the actual Docker target, image digest and topology evidence**, owned by Master/Senior Dev. The optional gRPC source-build experiment remains unverified.
+
+RG-002 policy/arithmetic is implemented on a stacked branch in [PR #6](https://github.com/kshiteesh28/DistributedRateGuard/pull/6); its final cap/crypto extensions passed both clean builds in run 43353832066 and independent Tester acceptance. See [RG-002 evidence](evidence/RG-002.md). RG-003-A clock component passed Linux/sanitizer checks and independent review; full RG-003 integration remains pending. Pure foundations may proceed; enforcement cannot activate until its runtime prerequisites pass. RG-004-A TLS/UTC compatibility is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9); [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204) passed normal/clean/sanitizer checks. Constrained Docker clock observations matched, but service topology and the actual target deployment gate remain open. Typed certificate-registry input B1 is verified separately below. Production manifest binding, authorization, expiry wrappers, full-system tests, benchmarks, model checking, witness durability and process fencing remain pending.
+
+The [per-agent scrum work log](SCRUM-WORK-LOG.md) records handoffs, findings, failures, corrections and exact evidence. Earlier agent-minute estimates remain estimates; actual historical effort was not recorded. No release completion or main merge is claimed.
+
+## Named dependency contracts
+
+Implementation readiness depends on verified input deliverables rather than completion of their entire parent stories. Each contract identifies interface, tested revision/evidence, permitted consumers and excluded guarantees. Component acceptance permits dependent development only; system activation, story completion and release acceptance still require all applicable integration/product gates. Changes to a consumed contract require affected consumers to be reviewed and retested.
+
+**RG-003-A** supplies IClock/LinuxMonotonicClock at `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, [run 43355987772](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43355987772). RG-006/007/008 may consume its verified startup identity, initial sample, serialized sampling and sticky failure behavior. **RG-003-B** (RG-006) still must prove every participant's topology; **RG-003-C** (RG-007/008) must complete actual commit/deadline mapping; **RG-003-D** is the Release A strict provenance evidence gate, delivered in RG-011A using RG-005 completeness and RG-006/007/008 runtime provenance/commit inputs. Missing, inconsistent or uncertain evidence must produce UNKNOWN and block a strict safety PASS before RG-008 acceptance and Release A completion. RG-013 extends this guard for credit/formal checks in C; it cannot postpone the A obligation. Full RG-003 remains incomplete until its applicable A integrations close. This removes a scheduling dependency cycle without changing any acceptance criterion or release gate.
+
+
+**RG-004-A** supplies the pin-verifier compatibility and trusted UTC primitive at `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, run 43980308204. It permits registry/authorization development; it does not permit enforcement activation or close RG-004 AC01–03. Verified RG-004-B1 supplies immutable certificate metadata; RG-006 owns manifest/topology/epoch fencing; RG-008/009 own live commit/forward guard integration. SEC-01–11 revision 2 remains the selected default contract. The 4,980-minute expanded estimate overlaps other stories and is not adopted; neither it nor the historical 720-minute estimate is measured actual effort.
+
+**Dependency correction (2026-11-16):** RG-006 consumes named verified RG-004-A/B1 security inputs rather than full RG-004 Done. Full RG-004-AC02 consumes RG-006 manifest/fencing evidence and AC03 consumes RG-005 real export/privacy evidence. This removes the implicit story-level cycle; all integration and activation gates remain required. RG-004-B1 is typed public-certificate validation and an immutable metadata snapshot, with no manifest format, authorization or service readiness claim. Its 64 KiB/certificate and 64 MiB aggregate PEM caps are implementation bounds; the 10,000 principal cap comes from policy-v1, not SRD D6's tenant cap.
+
+
+**RG-004-B1** passed [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892) at `6366df84903049fde3fd92243b3aa7bd06c43986`; [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10) is ready and unmerged. [Independent evidence](evidence/RG-004-B1.md) covers typed public-certificate validation and owned metadata only. RG-006 may consume it for manifest development; B2 runtime authorization and all lifecycle/service activation gates remain open.
+
+
+**RG-004-B2** peer authentication/authorization passed run 44022842950 at `9d14bb74bd937401471e96e039f651c17c226c43`; QA and Senior accepted the scoped input. [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) is ready and unmerged after final run 44023785687 passed at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`. [B2 evidence](evidence/RG-004-B2.md) covers actual TLS dispatch/spy/expiry and two isolated unsafe variants, not quota/commit/forward/fencing or reconnect/resumption. RG-006 retains A/B1 named prerequisites; B2 does not create a new lifecycle cycle. Remaining integration and full-story gates are unchanged.
+
+
+**RG-004-B3** passed [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) at `0a1b37b6147adb39c885459253d59c8561c9c5cc`; [PR #12](https://github.com/kshiteesh28/DistributedRateGuard/pull/12) is ready and unmerged. [Evidence](evidence/RG-004-B3.md) covers the sealed client/guards, independent mTLS/mutant and test-only SDK resumption qualification. Production caching remains disabled; actual service commit/forward/fencing and full RG004 ACs stay open. RG005 is the next ready component from RG001; freeze run-wide budget/producer/encoding decisions before implementation.

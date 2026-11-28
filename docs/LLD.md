@@ -1,20 +1,24 @@
 # DistributedRateGuard — Low-Level Design
 
-**Revision:** 5 · **Date:** 2026-11-12 · **Status:** Proposed design; implementation/evidence pending  
-**Current source branch:** `main` (the review design has been merged)  
-**Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)  
-**Architecture input:** [proposed HLD revision 4](HLD.md), delivered with this LLD.  
+**Revision:** 12 · **Date:** 2026-11-28 UTC · **Status:** Proposed design; RG-011A pure strict-sequence oracle source present on PR24 review branch; exact-source component verification passed; full RG-011 replay, runtime joins and release gates remain open
+**Current source branch:** `feature/distributed-rateguard`; layout contract on `feature/RG-006-epoch-artifact-layout`
+**Binding sources:** [PRD revision 8](PRD.md), [SRD revision 5](SRD.md)
+**Architecture input:** [proposed HLD revision 5](HLD.md), delivered with this LLD.
+**Revision input:** LLD revision 11 from `feature/distributed-rateguard` (blob `a7069d9fbcf184e501f685ce34d8d15ce7a7fab08`).
+**Component input:** PR24 corrected source `b26d4fa4aa8e6e6a9126d83e1299217431594a5a`, branch `feature/RG-011A-strict-sequence-oracle`; selected contract [revision 2](contracts/strict-sequence-oracle-v1.md). [Exact-source component verification](evidence/RG-011-A.md) passed on run46169772434.
+**Component input:** Docker inspect/stop and process-probe source on review branch `feature/RG-006-docker-process-control`; source `dbc1f8fbb3d5d4fc9bc4c59286e2a05e82ee021b`; [scoped component qualification](evidence/RG-006-H.md) passed on run 46103748414.
+**Selected contract input:** `docs/contracts/epoch-artifact-layout-v1.md` from `feature/RG-006-epoch-artifact-layout` (blob `9e262317fd7ea029b48723805bf7b063d1bb78c5`).
 **Input blob identities before principal review (historical):** PRD `04456d95ed2474700198361db2314c50a73cb300`; SRD `dd82770809e1a56900336070404360c33b3b08a2`; HLD `fb835c70b4d53f1f4bf980dde1f0cd3065212cf3`.
 
 ## 1. Scope and implementation status
 
 This LLD serves implementers and reviewers of a tenant admission service. A delivers strict quota decisions, B delivers deterministic replay and evaluation, and C delivers fixed-Q credits and independent model/history validation. PRD-013 live policy changes and PRD-014 long-operation permits remain deferred. Multi-host operation, transparent failover, automatic credit reclamation, and continuous cross-epoch quota guarantees are excluded.
 
-The repository root inspected on main contains README and docs; all implementation paths below are proposed. There is no established build layout to preserve. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD proposes interfaces and synchronization; §15 lists implementation gates rather than silently resolving product behavior. No code, tests, model checks, benchmarks, or deployment are claimed.
+The implementation feature contains component code for RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore, BootstrapRecoveryReader, the pure epoch-artifact layout helper, Docker inspect/stop control and Linux recorded-process probing; their boundaries are listed in §17.1 and §21. The PR23 control/probe code has passed scoped native qualification on run 46103748414; it is not composed into participant activation. Container launch, complete supervisor lifecycle, and successor-epoch recovery remain integration work. PRD/SRD are binding; SRD §8 explicitly supersedes historical open decisions. The HLD's in-memory authority is a proposal conditional on integrity/fencing decisions. This LLD distinguishes component qualification from integration: PR23 component CI/native qualification passed, but full lifecycle and release acceptance, benchmarks, production deployment, and complete fencing are not claimed.
 
 ## 2. Modules and dependency graph
 
-All paths in this table are **proposed**. Public means a process boundary; internal means a C++ library boundary.
+Public means a process boundary; internal means a C++ library boundary. Rows labeled implemented identify component code present on the integration feature; the remaining rows are proposed or partially implemented and do not imply end-to-end acceptance.
 
 | Module/path | Boundary; dependencies | State owned; source |
 | --- | --- | --- |
@@ -25,7 +29,15 @@ All paths in this table are **proposed**. Public means a process boundary; inter
 | `src/admission/` | Public CheckAdmission; policy, authority client, credits | Bounded in-flight calls; FR-005/006/010 |
 | `src/authority/` | Internal strict/grant engine plus internal gRPC | Buckets, grant journal, tenant transition order; FR-002/015 |
 | `src/credits/` | Internal; authority client, clock | Fixed-slot confirmed credit and pending sequence; FR-014–018 |
-| `src/supervisor/` and `src/supervisor/witness.*` | Local CLI/control and authenticated witness protocol; process controller, manifest, journal | Independent expected image, journal, inventory and epoch lifecycle; FR-001/007/008 |
+| `src/supervisor/` and `src/supervisor/witness.*` | Local CLI/control and authenticated witness protocol; manifest, journal and lifecycle orchestration | Independent expected image, journal, inventory and epoch lifecycle; FR-001/007/008; supervisor integration proposed |
+| `src/supervisor/runtime_owner.h/.cpp` | Internal; POSIX filesystem and lock ownership | One configured runtime-root owner, anchor/lock identity, fresh/recovery mode, one-use initial claim; implemented component |
+| `src/supervisor/unix_http_transport.h/.cpp`, `http1_parser.h/.cpp` | Internal bounded local Docker HTTP transport and pure parser | Immutable socket binding, per-call descriptors and atomic in-flight cap; component code present, verification tracked separately |
+| `src/supervisor/bootstrap_inventory.h/.cpp` | Internal immutable value model and canonical codec | Fixed planned roster, observed process identities, monotonic revision and recovery latch; implemented component |
+| `src/supervisor/bootstrap_store.h/.cpp` | Internal; RuntimeOwner claim, BootstrapInventory, POSIX durable file operations | Initial epoch intent creation, revision/digest CAS, last durable snapshot and candidate data handoff; implemented component |
+| `src/supervisor/epoch_artifact_layout.h` | Pure internal path/name utility; no filesystem access or state | Shared epoch artifact names and checked epoch-directory parse/format; no ownership or fencing capability |
+| `src/supervisor/bootstrap_recovery_reader.h/.cpp` | Internal read-only diagnostic scan; recovery-mode RuntimeOwner, BootstrapInventory and ManifestCodec | Bounded scan contract covers recorded intents and optional manifest-store artifacts, including pending identities; bootstrap/optional-manifest reader component code is present; full orchestration pending |
+| `src/supervisor/epoch_gate.h` | Internal lifecycle gate and legacy `IProcessController` interface | Fixed single-epoch candidate, commit leases, generic stop/inspect seam and local phase; component-verified, not durable successor authorization; not implemented by the PR23 recovery controller |
+| `src/supervisor/manifest_store.h/.cpp` | Internal POSIX manifest store | Prepared/Active/Draining/Closed manifest snapshots and recovery-only existing open; component-verified, not launch or exit proof |
 | `adapter/` | Public sample API; admission client | Forwarding attempt state; FR-006 |
 | `src/events/` | Internal; bounded recorder/export | Event buffers and bounded aggregate metrics; FR-009 |
 | `tools/loadgen/`, `tools/report/` | Offline CLI; traces and manifest | Schedule, paired samples, gate calculations; FR-013/019 |
@@ -238,7 +250,7 @@ The witness appends an ordered hash-chained journal, with flush before acknowled
 
 The witness detects declared single-record deletion, version rollback and inconsistent grant results before subsequent authority use. It is not a claim to detect coordinated corruption of both independent images or malicious rollback of the whole host; such evidence is UNKNOWN. Witness/supervisor loss terminates the authority incarnation and blocks reset until all old processes are confirmed stopped. Crash-window, acknowledgment-loss, journal corruption and record-rollback checks are mandatory evidence before this mechanism can satisfy FR-008/AT-09. Added coordination and flush cost may miss performance gates; thresholds must not be reduced to conceal it.
 
-**A-03 — lifecycle recovery:** One supervisor holds an exclusive local runtime lock and durably records exact container IDs, boot identity and PID start identities before launching each participant. No participant is unregistered or automatically restarted. Confirm stop with runtime inspect plus OS exit evidence for the recorded identity; a reused PID or an absent response is not proof. Supervisor death does not permit a new supervisor to resume service: recovery loads the last inventory, fences/stops every recorded participant including the old authority and witness, confirms exit, then creates a new epoch. On host reboot, verified changed kernel boot identity proves old kernel processes cannot survive, but the supervisor still inventories/stops any newly auto-started containers before activation. Unreadable or untrusted inventory blocks reset until a controlled complete VM shutdown provides positive fencing evidence. A stop command is monotonic and idempotent by operation ID; activation is never inferred from a partially written manifest.
+**A-03 — lifecycle recovery:** One supervisor holds the exclusive lock for the deployment's single trusted runtime root across epoch creation, serving and recovery. Before starting a participant, durably record its exact created/stopped container ID, role, slot/incarnation, epoch and policy binding in a launch-intent artifact. OS creation enters a non-serving bootstrap phase. After start, obtain and verify the exact host PID, PID-start identity, boot/time-namespace provenance and container identity while admission remains disabled. Persist those observations before acknowledging activation. Complete inventory, policy, clock, trust and witness readiness are required before the epoch becomes ACTIVE; adapters activate last. No participant is unregistered or automatically restarted. Recovery from supervisor loss reads every recorded intent, including containers whose process identity was never completed, stops each exact container/process and verifies exit before any successor epoch. Existing ownership or manifest acquisition never adopts serving state. Host reboot requires verified changed boot identity plus inventory and cessation of any auto-started containers. Missing or untrusted intent/inventory blocks reset until controlled complete-VM shutdown supplies positive fencing evidence. Stop operations remain monotonic and idempotent by operation ID; partial writes never authorize activation.
 
 
 ## 9. mTLS and authorization
@@ -321,7 +333,7 @@ Inject internal ClockSource/ProvenanceProvider, authority port, fault-capable RP
 | 002–003 | FR-002/003; NFR-001 | Strict engine/D3, exact permissive bucket decision | AT-02–04/21 |
 | 004 | FR-004; NFR-002 | Separate tenant state, noisy-tenant service | AT-05/22 |
 | 005 | FR-005/006 | API/adapter, deadlines and forwarding CAS | AT-06/07 |
-| 006 | FR-011/012 | Independent replay, complete trace/comparison | AT-12 |
+| 006 | FR-011/012 | RG-011A StrictSequenceOracle for typed synthetic ordered decisions; RG-011B ReplayModel/CLI remains future Release B | AT-12; no runtime provenance PASS |
 | 007–008 | FR-001/003/007/008 | Lifecycle/identity, no unsafe restart | AT-01/04/08/09 |
 | 009 | FR-009 | Event owners and reconciliation | AT-10 |
 | 010–012 | FR-013; NFR-003/006/007 | Generator/report, p99 and clean reproductions | AT-13/23/25 |
@@ -447,7 +459,7 @@ The recorded semantic findings are resolved in this revision. Conformance tests,
 
 ## 17. Class design and construction contracts
 
-All classes/files below are **planned**. C++20 is the implementation language baseline; use std::variant<T,Error> as Result<T>, not an undeclared exception convention or C++23-only std::expected. Error has category, stable code, retry disposition, commitment (NotCommitted/Possible/Committed) and optional bounded diagnostics; no credential values. Constructors return validated factories when validation can fail. Runtime dependencies outlive services and are injected by reference; no hidden global mutable state.
+Unless marked implemented, classes/files below are **planned**. C++20 is the implementation language baseline; use std::variant<T,Error> as Result<T>, not an undeclared exception convention or C++23-only std::expected. Error has category, stable code, retry disposition, commitment (NotCommitted/Possible/Committed) and optional bounded diagnostics; no credential values. Constructors return validated factories when validation can fail. Runtime dependencies outlive services and are injected by reference; no hidden global mutable state.
 
 ### 17.1 Class ownership and interfaces
 
@@ -462,14 +474,23 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | LinuxMonotonicClock / src/platform/clock_linux.h | Verified boot/namespace/clock identity | Implements IClock; syscall/provenance/backwards failures return typed integrity error |
 | PeerAuthenticator / src/security/peer_authenticator.h | Immutable trust registry + trusted wall-time provider | Authenticate(TransportPeer)→Result<AuthenticatedPeer>; role/SAN/EKU/expiry checked every RPC |
 | AuthorizationResolver / src/security/authorization.h | PolicySnapshot reference | Resolve(peer,tenant,operation)→Result<AuthorizedOperation>; sole constructor of trusted operation/cost |
-| EpochGate / src/supervisor/epoch_gate.h | Atomic observed phase + epoch identity | ObserveDrain, PermitCommit(expectedEpoch), Phase; transitions monotonic ACTIVE→DRAINING→CLOSED |
+| EpochGate / src/supervisor/epoch_gate.h (component-verified) | Mutex-protected shared fixed-epoch candidate, lifecycle phase, in-flight commit count; injected `IProcessController` | Create, Activate, TryAcquireCommitPermit, BeginDrain, FenceAndClose, phase; PreActivation→Active→Draining→Closed. This gate is local to one candidate and cannot authorize a successor epoch |
+| IProcessController / src/supervisor/epoch_gate.h (implemented interface only) | Abstract boundary injected into EpochGate; no concrete Docker implementation | RequestStop(exact participant, operation ID), Inspect(exact participant); errors/unknown states do not count as positive exit |
+| RuntimeOwner / src/supervisor/runtime_owner.h + runtime_owner.cpp (implemented component) | Exclusive lock and immutable anchor for one configured runtime root; process identity and owner validation | CreateNew, OpenExisting, ValidateOwnership, ClaimInitialEpoch; existing roots are recovery-only and cannot mint a fresh claim |
+| InitialEpochClaim / src/supervisor/runtime_owner.h (implemented component) | Move-only one-use capability retaining the RuntimeOwner lock state | Supplies validated domain/epoch ownership and a duplicated root descriptor; proves neither process launch nor fencing |
+| BootstrapInventory / src/supervisor/bootstrap_inventory.h + bootstrap_inventory.cpp (implemented component) | Immutable planned roster, observations, canonical digest inputs, revision and recovery state | Create, RecordIdentity, RequireRecovery, ReadyCandidate; exact replay is idempotent, identity mismatch irreversibly requires recovery |
+| BootstrapStore / src/supervisor/bootstrap_store.h + bootstrap_store.cpp (implemented component) | InitialEpochClaim plus durable per-epoch intent file and last committed snapshot | CreateNew, RecordIdentity(revision,digest CAS), ReadyCandidate; distinguishes NotVisible, Durable and VisibleDurabilityUnknown; uncertainty blocks further writes |
+| BootstrapRecoveryReader / src/supervisor/bootstrap_recovery_reader.h + bootstrap_recovery_reader.cpp (component code present) | Read-only bounded scan; recovery-mode RuntimeOwner, bootstrap decoder, and manifest codec | `Read(owner,test_io) → variant<shared_ptr<const BootstrapRecoverySnapshot>, RecoveryReaderFatal>`; returns diagnostic inventories/manifests/issues, including pending process identities; no claim, candidate, store, stop proof or fencing capability |
 | TenantLedger / src/authority/tenant_ledger.h | Mutex, immutable identity, bucket, fixed grant-result array, version, reservation state | BeginReservation→Result<TenantReservation>; ReadSnapshot; no public balance setter |
 | TenantReservation / src/authority/tenant_reservation.h | Move-only reservation token, original version/snapshot, phase | ValidateSnapshot, CommitCandidate, CompleteAck, Fail; only this token can change the reserved tenant |
 | BucketMath / src/authority/bucket_math.h | Stateless production arithmetic | Refill, Decide, RetryDelay; checked 128-bit D3 arithmetic, never accesses clock or global state |
 | IStateWitness / src/authority/witness_port.h | Abstract authority boundary | Validate, Commit, QueryAck; exact identity/fingerprint/version per §16.1 |
 | LocalStateWitnessClient / src/authority/local_witness_client.h | Unix-socket client bound to supervisor identity; implements IStateWitness | Validate, Commit, QueryAck; authenticates expected server and keeps exact transaction fingerprint |
 | WitnessServer / src/supervisor/witness_server.h | Supervisor-owned local socket; refs peer identity, WitnessStateMachine and JournalWriter | Dispatch validated authority requests; reject unrelated process identity before touching witness state |
-| DockerProcessController / src/supervisor/docker_process_controller.h | Implements IProcessController using local runtime API and recorded identities | Start, InspectIdentity, Stop, ConfirmExited; never infer exit from missing network reply |
+| `IRecoveryProcessController` / `src/supervisor/docker_process_controller.h` | Internal bounded recovery-control port; borrowed clock outlives calls | `Inspect(exact pending/observed target, deadline, cancel)` and `RequestStop(target, operation ID, deadline, cancel)`; unknown/mismatched evidence never counts as exit; no start, activation, retry, or successor authorization |
+| DockerProcessController / `src/supervisor/docker_process_controller.h/.cpp` (component code present; scoped native qualification passed, run 46103748414) | Owns bounded Unix transport and process probe; explicit API version and fixed socket/proc configuration | Implements `IRecoveryProcessController`; exact-ID/eight-label Inspect and one SIGTERM stop request; ACK is not exit evidence; no automatic stop retry |
+| `IRecordedProcessProbe` / `src/platform/linux_process_probe.h` (component code present; scoped native qualification passed, run 46103748414) | Read-only process evidence; qualified observer PID namespace, boot identity and recorded clock identity | `Check(recorded PID/start ticks, deadline, cancel)`; PID-directory ENOENT requires pidfd-open ESRCH plus provenance rechecks; returns point-in-time evidence only |
+| ContainerLauncher / proposed `src/supervisor/container_launcher.h` | Future supervisor-owned launch boundary; exact durable inventory and owner gate | Create/register/start non-serving participants; no implementation or launch-fencing guarantee exists in PR23 |
 | WitnessStateMachine / src/supervisor/witness_state.h | Independent expected tenant images and last acknowledgments; own arithmetic validator | ValidateSnapshot, ValidateTransition, PublishAck; cannot import BucketMath as its validator |
 | JournalWriter / src/supervisor/journal_writer.h | Single joined worker, append fd, chain/index, fixed queue and 2 GiB budget | AppendAndFlush→Result<DurableAck>; ack only after flush; no active-epoch recovery |
 | AuthorityEngine / src/authority/authority_engine.h | Preloaded TenantLedger objects; refs clock, witness, policy, gate, recorder | StrictCheck, AllocateCredit, ReplayGrant; private shared ExecuteTransition follows reservation/ack protocol |
@@ -481,16 +502,71 @@ Signatures are contract sketches; strong domain types and cancellation/deadline 
 | AuthorityService / src/authority/authority_service.h | Internal gRPC facade; refs auth and AuthorityEngine | StrictCheck and AcquireCredit RPCs; only registered replica identity can call |
 | ForwardAttempt / adapter/forward_attempt.h | Attempt ID, deadline, atomic Pending/ForwardStarted/Expired/Failed | TryForwardTransition; exactly one CAS winner; does not retry backend automatically |
 | SampleAdapter / adapter/sample_adapter.h | Trusted fixture mapping and bounded active ForwardAttempt objects | Handle; derive authorized context, call admission, enforce receipt/epoch/deadline, never replay after crash |
-| ManifestStore / src/supervisor/manifest_store.h | Supervisor-owned directory/lock fd; immutable validated manifest snapshots | Load, AtomicReplace; fsync/rename/dir-fsync failures prevent activation; no anti-rollback claim from rename |
-| IProcessController / src/supervisor/process_controller.h | Abstract local runtime boundary | Start, InspectIdentity, Stop, ConfirmExited; identity includes boot/container/PID-start values |
+| ManifestStore / src/supervisor/manifest_store.h/.cpp (component-verified) | Caller-supplied directory/lock fd; immutable validated manifest snapshots | CreateNew, OpenExisting, snapshot, digest, Transition; existing opens are recovery-only; caller must compose the exact `<root>/epoch-<id>/manifest-store` path under validated global ownership; layout strings do not grant path authority; fsync/rename/directory-fsync uncertainty blocks writes; no anti-rollback claim from rename |
 | EpochSupervisor / src/supervisor/epoch_supervisor.h | Exclusive control thread, inventory/operation state, WitnessStateMachine, JournalWriter | StartEpoch, Drain, FenceAndClose, RecoverAfterCrash; never adopts old ACTIVE epoch |
 | EventRecorder / src/events/event_recorder.h | Fixed run-wide budget, producer sequences and reserved slots | Reserve→Result<EventReservation>, Publish, SealIncomplete; no identifiers as metric labels |
 | HistoryExporter / src/events/history_exporter.h | Bounded streaming file writer | Export with count/hash/complete markers; cleanup follows D7; missing producer seal yields incomplete |
 | TraceGenerator / tools/loadgen/trace_generator.h | Immutable workload spec and integer index | Next; exact PRD-026 schedule, no output-dependent retry/routing |
 | BenchmarkRunner / tools/loadgen/runner.h | Open-loop scheduler and pinned manifest | RunPair; scheduled membership, 50 ms settlement, counts and invalid-run reasons |
-| ReplayModel / tools/replay/reference_model.h | Independent pure model state | ApplyOffered, ComparePolicies; no production BucketMath/AuthorityEngine imports |
+| StrictSequenceOracle / tools/replay/reference_model.h (PR24 component verified; run46169772434) | Pure in-memory typed strict-sequence input/expected-result model; owns no runtime or product state | `Run(const StrictScenario&) noexcept → RunResult`; independent implementation, no production math/policy/service imports |
+| ReplayModel / tools/replay/replay_model.h (future Release B) | Full offered-trace replay state | ApplyOffered, ComparePolicies, first divergence; separate from the RG-011A sequence oracle |
+| ReplayCLI / tools/replay/main.cpp (future Release B) | Trace I/O and deterministic report orchestration | Parse versioned replay inputs, call the future ReplayModel and publish complete outputs; not part of RG-011A |
 | HistoryChecker / tools/history_checker/checker.h | Independent parser/model/config | Check, ExplainCounterexample; prefix interval check plus serial/provenance validation; UNKNOWN on missing evidence/resource limit |
 | ModelHarness / model/runner | Pinned external model-check tool/config | EnumerateDeclaredBounds, Mutate, ExportCounterexample; tool output cannot self-certify production code |
+
+The recovery-reader dependency boundary is read-only:
+
+```mermaid
+classDiagram
+  class RuntimeOwner {
+    +OpenExisting(root, domain)
+    +mode()
+    +ValidateOwnership()
+    +DuplicateRootFd()
+  }
+  class BootstrapStore {
+    +CreateNew(claim, plan)
+    +RecordIdentity(revision, digest, observed)
+    +ReadyCandidate()
+  }
+  class BootstrapRecoveryReader {
+    +Read(owner, test_io)
+  }
+  class BootstrapRecoverySnapshot {
+    +domain_id
+    +scan_complete
+    +epochs
+    +issues
+    +issues_truncated
+  }
+  class RecoveryEpochDiagnostic {
+    +directory_name
+    +intent_identity
+    +canonical_digests
+    +issues
+    +issues_truncated
+  }
+  class BootstrapInventory {
+    +records()
+    +recovery_required()
+  }
+  class ManifestV1 {
+    +candidate
+    +phase
+    +generation
+  }
+  BootstrapRecoveryReader ..> RuntimeOwner : validates mode and duplicates root
+  BootstrapRecoveryReader ..> BootstrapInventory : bounded intent decode
+  BootstrapRecoveryReader ..> ManifestV1 : bounded manifest decode
+  BootstrapRecoveryReader --> BootstrapRecoverySnapshot : diagnostic result
+  BootstrapRecoverySnapshot o-- RecoveryEpochDiagnostic : per-epoch results
+  RecoveryEpochDiagnostic o-- BootstrapInventory : optional intent model
+  RecoveryEpochDiagnostic o-- ManifestV1 : optional manifest model
+  BootstrapStore *-- InitialEpochClaim : consumes and retains lock capability
+  BootstrapStore ..> BootstrapInventory : durable initial writes
+```
+
+The shared `epoch_layout_v1` helper is a pure header utility, not a service or capability. It defines the literal names `epoch-`, `intent.json`, `intent.tmp`, `manifest-store`, `owner.lock`, `manifest.json`, and `manifest.tmp`, plus checked `ParseEpochDirectoryName` / `FormatEpochDirectoryName` functions. Parsing accepts only the exact `epoch-<32 lowercase hexadecimal digits>` form for a nonzero ID; formatting rejects a zero ID and reports allocation failure. BootstrapStore, BootstrapRecoveryReader, and ManifestStore reuse these names. The helper performs no filesystem checks and cannot grant path ownership.
 
 ### 17.2 Construction, lifetime and threading
 
@@ -500,12 +576,17 @@ TenantReservation is move-only. Destruction before CommitCandidate cancels reser
 
 JournalWriter owns its descriptor and joined worker exclusively. Queue capacity is fixed at 1,024 transition records, each bounded to 16 KiB; reservation/queue acquisition occurs before commit so overload cannot silently strand a postcommit append. Per-tenant ordering and durable indices are maintained; batching never changes commit timestamps. Grant result snapshots contain ≤8 fixed-slot records, so encoding must be size-validated at startup; configuration whose transition record cannot fit is rejected before traffic. Existing in-flight records finish or become uncertain when the 2 GiB cap/IO failure occurs. Supervisor continues to account old credit holders until CLOSED.
 
-AuthorityService exposes both the strict internal check and credit grant port. AdmissionService never exposes the witness socket or a balance-reset endpoint. Only Supervisor constructs a new epoch and authority identity; local mutexes cannot authorize a second authority instance. IProcessController positively verifies identity/exit; container names alone cannot prove fencing.
+AuthorityService exposes both the strict internal check and credit grant port. AdmissionService never exposes the witness socket or a balance-reset endpoint. Only Supervisor constructs a new epoch and authority identity; local mutexes cannot authorize a second authority instance. The `IProcessController` contract requires identity-bound stop/inspection evidence; the interface alone and container names alone do not prove that an OS process exited.
 
 ### 17.3 Class collaboration
 
 ```mermaid
 classDiagram
+  RuntimeOwner --> InitialEpochClaim : issues once for fresh root
+  BootstrapStore *-- InitialEpochClaim : consumes and retains
+  BootstrapStore --> BootstrapInventory : durable CAS snapshots
+  BootstrapInventory --> EpochCandidate : complete roster data only
+  EpochGate --> EpochCandidate : validates fixed candidate
   AdmissionService --> AuthorizationResolver
   AdmissionService --> IAuthorityClient
   AdmissionService --> CreditManager
@@ -518,23 +599,35 @@ classDiagram
   LocalStateWitnessClient --> WitnessServer
   WitnessServer --> WitnessStateMachine
   IAuthorityClient <|.. GrpcAuthorityClient
-  IProcessController <|.. DockerProcessController
+  DockerProcessController ..|> IRecoveryProcessController
+  EpochSupervisor --> IRecoveryProcessController
+  EpochSupervisor ..> ContainerLauncher : future launch integration
   EpochSupervisor *-- WitnessStateMachine
   EpochSupervisor *-- JournalWriter
   EpochSupervisor --> ManifestStore
   EpochSupervisor --> IProcessController
   AuthorityEngine --> IClock
   CreditManager --> IClock
+  class StrictSequenceOracle {
+    +Run(StrictScenario const&) RunResult
+  }
+  class ReplayModel : Future Release B
+  class ReplayCLI : Future Release B
+  StrictSequenceOracle ..> StrictScenario
+  StrictSequenceOracle ..> StrictSequenceResult
+  ReplayCLI ..> ReplayModel
   SampleAdapter *-- ForwardAttempt
   AuthorityEngine --> EventRecorder
   CreditManager --> EventRecorder
 ```
 
-Class-level seam acceptance: substitute IClock, IAuthorityClient, IStateWitness and IProcessController through constructors only. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; all stop/fencing outcomes against EpochSupervisor. Independent ReplayModel/HistoryChecker use only versioned artifacts and policy input, not production decision functions. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
+The `InitialEpochClaim` edge is a move-only capability that retains root-lock ownership; `BootstrapStore` consumes and owns it. `BootstrapInventory` can produce only complete candidate data. The diagram does not imply that `ReadyCandidate` activates the gate or authorizes a later epoch.
+
+Class-level seams: `EpochGate` retains its legacy `IProcessController` seam; the PR23 Docker component separately implements `IRecoveryProcessController`. Neither interface substitution nor a component observation grants successor authority. Test duplicate RPC callbacks against ReplicaTenantCredits; injected mutation during reservation against TenantLedger/WitnessStateMachine; fsync/ack loss against JournalWriter/AuthorityEngine; forwarding races against ForwardAttempt; lifecycle gate outcomes against EpochGate. Docker native qualification, supervisor composition, launch fencing, recovery and successor authorization remain open. The RG-011A `StrictSequenceOracle` is separate from the future Release B `ReplayModel`/`ReplayCLI` and the Release C `HistoryChecker`; none may reuse production decision functions as its oracle. Every proposed class maps to a story in [implementation stories](STORIES.md) and the machine-readable [context blocks](context-blocks.json).
 
 ### 17.4 Per-process composition
 
-SupervisorRuntime owns ManifestStore, DockerProcessController, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime refers to this per-process construction pattern; it is not one address space for all components. All cross-process transitions use the explicit authenticated ports.
+The proposed SupervisorRuntime composition is RuntimeOwner, BootstrapStore, BootstrapRecoveryReader, ManifestStore, EpochGate, DockerProcessController through `IRecoveryProcessController`, a future ContainerLauncher, EpochSupervisor, WitnessServer, WitnessStateMachine and JournalWriter. RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore, BootstrapRecoveryReader, DockerProcessController and the native recorded-process probe have component source present; PR23 scoped native qualification passed on run 46103748414. `IProcessController` remains the separate legacy interface declared in `epoch_gate.h`; DockerProcessController does not implement it. No current composition joins launch calls, activates participants, proves all processes stopped, or authorizes successor epochs. Full recovery orchestration, launcher, activation and successor-epoch recovery remain pending. AuthorityRuntime owns TenantLedgers, AuthorityEngine/AuthorityService and LocalStateWitnessClient; it never shares a pointer to supervisor witness memory. ReplicaRuntime owns AdmissionService, CreditManager and GrpcAuthorityClient. AdapterRuntime owns SampleAdapter and its gRPC admission client. Evaluation tools own independent ReplayModel/HistoryChecker. ServiceRuntime is a per-process construction pattern, not one address space for all components. All cross-process transitions use the explicit authenticated ports.
 
 Witness Validate pre-reserves a bounded journal queue slot and maximum record byte budget before returning permission to prepare a transition; no automatic eviction/lease expiry can remove it while the authority may commit. It is released only on explicit precommit abort, committed acknowledgment, or fenced epoch shutdown. This prevents postcommit capacity rejection from becoming an unrecorded ordinary overload. Duplicate Validate with identical transaction identity returns its existing reservation. Only crashes/I/O/integrity failures can invalidate a postcommit reservation, and those follow DRAINING/uncertainty rules.
 
@@ -543,4 +636,188 @@ Witness Validate pre-reserves a bounded journal queue slot and maximum record by
 
 PRD 8 / SRD 5 define the p99 population as all delivered attempts, including error responses; a missing response contributes the caller-deadline duration. The latency measurement begins at adapter receipt and ends at the first terminal application response or deadline. This prevents completion-only sampling from hiding timed-out calls.
 
-The implementation toolchain is intentionally not pre-pinned in this document: the current local path has documentation only and no verified Git checkout or Linux build environment. RG-001 must capture compiler, CMake, gRPC, Protocol Buffers, crypto, and model-tool versions from the actual supported build host and produce a successful reproducible build before the lock is treated as validated. This is a sequencing decision, not a guessed compatibility matrix. Clock, witness, fencing, and certificate tests remain required before activating enforcement services or claiming acceptance. No implementation or evidence is claimed here.
+The implementation toolchain and component evidence are tracked with the integration feature and RG-001 build records. A successful component build does not establish Docker runtime identity, participant activation, recovery fencing, performance gates, or release acceptance. Clock, witness, fencing, certificate, and end-to-end integration evidence remain required before activating enforcement services or claiming acceptance.
+
+
+## 19. RG-002 representation addendum — version 1
+
+[Canonical policy v1 revision 1](contracts/policy-v1.md) fixes the aggregate byte/JSON layout and finite startup parsing caps before codec implementation. It preserves D3 quotas, fixed membership, full-B initialization in §5, identity roles in §9, and release/deferred scope. The loader normalizes input order and rejects duplicates; a digest cannot depend on JSON iteration order. The public trust fingerprint belongs in canonical bytes; live CA/X.509 validation remains RG-004, so offline policy replay does not need exported certificates.
+
+The implementation uses immutable sorted vectors with binary-search lookups and no insertion for unknown IDs. This is a recorded implementation choice replacing the proposed hash-table estimate in §14: lookup is O(log T), with bounded T≤10,000; canonical bytes remain independent of this storage choice. Performance gates remain measurements, not assertions. The representation record is a versioned implementation decision; it does not claim the policy code or its acceptance evidence exists yet.
+
+
+## 20. RG-003 clock implementation addendum — version 1
+
+[Linux clock v1](contracts/clock-v1.md) fixes the internal provenance grammar, Linux namespace source checks, mandatory manifest matching and initial successful clock sample, and serialized sticky failure behavior before component acceptance. Namespace offsets describe the children namespace, so current/children device and inode must agree across all four startup snapshots. A process-leader startup probe precedes worker creation; runtime namespace changes are prohibited.
+
+Sampling uses the shared CLOCK_MONOTONIC source; lock direction is tenant transition → process clock. Factory success is clock-component readiness, not authority/replica activation: RG-006 must verify every participant and trusted manifest. Actual commit/deadline mapping remains RG-007/008 and strict UNKNOWN history semantics the RG-011A/005 Release A evidence gate, extended by RG-013 for C. Inadequate clock/history provenance cannot produce a safety PASS in A; this obligation is not deferred to the formal checker. A local or fork/exec smoke test alone cannot claim the Docker shared-clock premise or a quota bound. This addendum records implementation decisions, not completed tests or measured latency.
+
+## Startup ordering clarification — 2026-11-23
+
+Revision 5 of the HLD and revision 7 of the LLD clarify A-03 without changing PRD 8 or SRD 5. A PID-start identity becomes available after OS process creation. The previous pre-launch wording could not be implemented literally. The selected sequence preserves durable registration before process start and complete verified identity before serving.
+
+1. Hold ownership of the one configured runtime root. Fresh initialization requires a new root; existing acquisition enters recovery.
+2. Create stopped containers and persist the complete fixed launch plan before any container start.
+3. Start registered containers with admission disabled. Record exact runtime-observed identity and common clock provenance.
+4. Persist every identity. A failed or uncertain write keeps startup unavailable and requires recovery.
+5. Construct the complete epoch manifest and validate policy/trust/witness/clock readiness. Activate the epoch and acknowledge participants, with adapters last.
+6. After failure, fence every recorded container, including pending-identity entries. An omitted/missing record cannot be replaced by an empty inventory.
+
+```mermaid
+sequenceDiagram
+    participant S as Supervisor
+    participant D as Durable artifacts
+    participant R as Container runtime
+    participant P as Bootstrap participant
+    S->>R: Create stopped registered containers
+    R-->>S: Exact container IDs
+    S->>D: Persist fixed launch intents
+    D-->>S: Durable result
+    S->>R: Start non-serving bootstrap
+    R->>P: Create process
+    S->>R: Inspect exact process and clock identity
+    R-->>S: Verified identity observations
+    S->>D: Persist identity-complete inventory
+    D-->>S: Durable result
+    S->>S: Validate all epoch readiness gates
+    S->>P: Activate matching epoch and policy
+```
+
+Runtime ownership is global across epoch directories within the deployment's one trusted configured root. Different configured roots require deployment-level reconciliation before serving; changing that root while an old epoch may act cannot bypass fencing. A fresh ownership claim alone supplies no launch or durability proof. Bootstrap models supply no actual OS observation, authenticated control-channel or persistence guarantee. Those guarantees require the corresponding controller, durable store and participant integration tests.
+
+
+## 21. RG-006 implementation boundary — revision 9
+
+These components support PRD-007, PRD-024 and PRD-025 / FR-001, FR-007, FR-008 and FR-022. Component fixtures exercise ownership, intent and identity persistence; the end-to-end restart, state-integrity and fencing evidence in AT-08, AT-09 and AT-28 remains pending.
+
+The integration feature contains five bounded supervisor-side components:
+
+- **RuntimeOwner** (`src/supervisor/runtime_owner.h`, `src/supervisor/runtime_owner.cpp`) acquires exclusive ownership of one configured runtime root, validates its owner lock and immutable anchor, and distinguishes a newly created root from recovery-only opening. `ClaimInitialEpoch` can issue one move-only `InitialEpochClaim` from a fresh root. The claim retains owner state and provides the root descriptor only while ownership validates. It is not a successor-epoch or process-fencing token.
+- **BootstrapInventory** (`src/supervisor/bootstrap_inventory.h`, `src/supervisor/bootstrap_inventory.cpp`) is an immutable planned roster plus observed identity records. It binds domain, epoch, authority incarnation, policy digest, and expected clock identity. Revisions start at one, advance without wrapping on new observations/recovery latches, and remain unchanged for an exact duplicate observation unless recovery is already latched. A new observation at revision exhaustion cannot wrap and enters recovery-required state. Unknown or mismatched observations latch recovery-required state.
+- **BootstrapStore** (`src/supervisor/bootstrap_store.h`, `src/supervisor/bootstrap_store.cpp`) consumes the initial claim to create one epoch intent directory and its canonical inventory file. Updates use expected revision and digest as a compare-and-swap precondition. The returned visibility is `NotVisible`, `Durable`, or `VisibleDurabilityUnknown`; only a durable write advances the acknowledged in-memory snapshot. `store_error` reports persistence/ownership outcomes independently from `transition_status`: for example, a detected identity mismatch can be durably recorded as recovery-required while the transition reports the mismatch. An uncertain publication makes the store unavailable for further writes. `ReadyCandidate` checks ownership, canonical persisted bytes, domain/epoch binding, and complete observed inventory before returning candidate data.
+- **BootstrapRecoveryReader** (`src/supervisor/bootstrap_recovery_reader.h`, `src/supervisor/bootstrap_recovery_reader.cpp`) is the component reader for recovery diagnostics. `Read(const RuntimeOwner&, IRecoveryReaderIo*)` accepts only a valid `RecoveryRequired` owner, validates ownership, duplicates the root descriptor, scans bounded root/epoch entries, and validates ownership again. Fatal results are limited to wrong owner mode, invalid owner, unavailable root descriptor, and allocation failure. Other scan uncertainty is returned in an immutable `BootstrapRecoverySnapshot` with typed issues and truncation flags where allocation permits. The reader retains safely decoded inventories and their planned container IDs even when a record has no PID/start identity; it preserves historical clock/boot provenance and does not compare it with the current boot. It does not open a BootstrapStore, return an `EpochCandidate`, adopt an epoch, issue stop commands, prove exit, or authorize reset/activation.
+- **InitialEpochClaim** is a one-use ownership capability, not proof that a participant has started or stopped. `RuntimeOwner::OpenExisting` is recovery-only; the current code has no API to reopen an existing bootstrap intent for serving or to authorize a successor epoch. Any diagnostic read of an existing intent is not authority to serve or reset.
+
+The intended startup handoff is: after the controller confirms the fixed containers exist in a stopped state, persist their exact IDs and bindings before process start; start each container in a non-serving mode; inspect its exact host PID, PID-start identity, container identity and shared clock provenance; persist each observation; then obtain candidate data and continue through the remaining readiness gates. These ownership/bootstrap components implement durable roster/observation storage, candidate-data validation, and the diagnostic recovery reader only. They do not implement a Docker process controller, participant activation acknowledgment, authority/witness readiness, `ACTIVE` transition, stopping, positive exit confirmation, supervisor-crash recovery orchestration, or a fenced-successor authorization.
+
+A create operation that succeeds in the container runtime while persisting its returned container ID fails or becomes uncertain cannot be treated as an empty roster. Recovery remains blocked until the container is reconciled or the HLD/LLD-required controlled complete-VM shutdown supplies positive fencing evidence. No token or API currently proves that all prior participants are stopped and authorizes a successor epoch.
+
+### 21.1 BootstrapRecoveryReader v1 component contract
+
+The [bootstrap-only base contract](contracts/bootstrap-recovery-v1.md) is extended by [Epoch artifact layout v1](contracts/epoch-artifact-layout-v1.md) for optional manifest-store validation. Sources are PRD 8, SRD 5 and HLD 5 A-03. The bootstrap and optional-manifest reader components are implemented; full recovery orchestration/controller remains pending. Verification evidence is tracked separately, and this document makes no end-to-end recovery or fencing claim.
+
+**API and result semantics.** `BootstrapRecoveryReader::Read(const RuntimeOwner&, IRecoveryReaderIo*) noexcept` returns either `shared_ptr<const BootstrapRecoverySnapshot>` or `RecoveryReaderFatal`. The owner must be in `RecoveryRequired` mode and pass initial validation; otherwise the call returns a fatal outcome. The reader duplicates its root descriptor and revalidates ownership after scanning; later failure returns incomplete diagnostic evidence. The snapshot carries the domain, `scan_complete`, per-epoch diagnostics, global issues, and `issues_truncated`. An epoch diagnostic may include its canonical directory name and identity, intent identity, a safely decoded immutable `BootstrapInventory`, an optional safely decoded immutable `ManifestV1`, canonical digests, epoch-local issues, and an `issues_truncated` flag. File identities record device, inode, owner UID, link count, mode, size, mtime, and ctime. Arbitrary raw filesystem names and file contents are excluded.
+
+`scan_complete=true` means only that the bounded structural scan was stable and all examined artifacts were valid. It does not mean all planned participants have recorded process identities, that a previous write was durably synced, that an epoch was active, that any process exited, that rollback did not occur, or that reset/serve is safe. A structurally valid inventory may contain pending identities. Empty roots, missing or invalid intents, unknown entries, collisions, detected mutation, and every resource-limit/truncation condition make the scan incomplete. The result is diagnostic data only: it is not a `BootstrapStore`, `EpochCandidate`, `InitialEpochClaim`, stop/exit acknowledgment, fencing token, or successor authorization.
+
+**Scan order and validation.** The reader validates recovery-mode ownership and duplicates the root descriptor; it enumerates all root entries rather than choosing a newest epoch. It recognizes only canonical nonzero `epoch-<32 lowercase hex>` directories with owner-only `0700` permissions. An epoch directory contains `intent.json` and may contain `manifest-store`; absence of that directory is valid for a bootstrap-only structural scan and proves no activation state. The epoch child-entry cap includes both names. `intent.json` must be an owner-only `0600` regular single-link file within the existing 4 MiB inventory codec cap. If `manifest-store` exists, it must be owner-only `0700` and have no more than 16 entries; its only accepted entries are an empty, owner-owned regular single-link `0600` `owner.lock` and an owner-owned regular single-link `0600` `manifest.json`. The manifest has its own 4 MiB codec cap. It opens entries with no-follow and nonblocking flags. It records symlinks, special files, hard links, malformed names, unknown or temporary entries (`intent.tmp`, `manifest.tmp`), missing required files, invalid checksums/schema, domain or directory-epoch mismatch, and identity collisions across epochs as issues. Safely decoded sibling artifacts remain in the result when another artifact is invalid. A readable manifest remains in its epoch diagnostic even if the intent is missing, corrupt, or inconsistent, when remaining caps permit. It revalidates file/directory identities and entry listings around reads, repeats root enumeration, and validates ownership again. These checks detect observed changes; they are not an atomic filesystem snapshot or protection against a hostile same-UID writer. The scan never writes, repairs, removes, fsyncs, starts, stops, or adopts filesystem/process state.
+
+Every safely decoded inventory contributes each planned container ID as a diagnostic target, whether or not `identity_recorded` is true. PID and PID-start identity are included only when recorded. This preserves exact container targets for pending identities. If an intent is unreadable, malformed, missing, or absent, unknown targets may exist; the reader reports uncertainty and retains known targets from other valid artifacts rather than presenting a complete empty set. Historical boot/clock identity remains diagnostic evidence; decoding does not require it to match the current boot.
+
+If both artifacts decode, candidate comparison occurs only when `BootstrapInventory::ReadyCandidate` succeeds. Compare exact epoch ID, authority incarnation, policy digest, shared clock identity, and every participant identity, using canonical ordering by role, participant ID, and slot. Incomplete comparison data or any mismatch makes the scan incomplete; do not select the newer artifact or repair one from the other. Same-epoch duplicate representations that match are expected and are not cross-epoch collisions. `Prepared`, `Active`, `Draining`, and `Closed` are recorded metadata only; no phase, including `Closed`, proves process cessation. Manifest and intent checksums detect corruption only; they do not authenticate a writer, prove rollback freshness, or prove that a prior directory fsync completed.
+
+**Finite reader limits.** The component uses these fixed caps. Exceeding a cap retains collected evidence where possible, reports a limit/truncation condition, and forces `scan_complete=false`.
+
+| Resource | Limit | Overflow behavior |
+| --- | ---: | --- |
+| Epoch directories | 1,024 | Stop enumerating more epoch directories and report a limit issue |
+| Root entries (excluding `.` and `..`) | 4,096 | Truncate the root listing and report a limit issue |
+| Entries per epoch directory | 16 | Truncate that child listing and report an epoch issue |
+| Entries in `manifest-store` | 16 | Truncate nested listing and report an epoch issue |
+| Aggregate attempted intent and manifest bytes | 64 MiB | Shared budget before read/decode; failed attempts still consume budget |
+| Retained bootstrap and manifest participant records | 16,384 | Shared record budget; count both matching representations, preserve prior records, report a limit issue |
+| Global issues | 256 | Stop retaining issues and set `issues_truncated` |
+| Issues per epoch | 16 | Stop retaining local issues and set epoch `issues_truncated` |
+
+Each intent and manifest also obey its 4 MiB codec cap. These reader bounds do not amend product quota limits. Issue truncation, any resource cap, and allocation failure cannot become a clean scan. Matching bootstrap/manifest records in the same epoch do not collide; duplicate container or process identities across epoch directories remain conflicts.
+
+**Recovery handoff and remaining gates.** `EpochSupervisor` may use decoded container IDs as inputs to a future stop/reconcile operation, but it must independently inspect and positively confirm exit for each exact process/container. The reader cannot report “all stopped.” Unknown targets, missing/untrusted artifacts, or incomplete evidence block successor activation until reconciliation or the contracts' controlled complete-VM shutdown evidence. Full recovery orchestration, the Docker process controller, stop/exit evidence, participant activation, and successor-epoch authorization remain pending. Independent tests and pinned Linux/sanitizer CI evidence for the reader are required before component acceptance; no end-to-end recovery or fencing result is claimed.
+
+### 21.2 Epoch artifact layout v1
+
+The selected names and structure are specified in [Epoch artifact layout v1](contracts/epoch-artifact-layout-v1.md). The pure `epoch_layout_v1` utility is shared by BootstrapStore, BootstrapRecoveryReader, and ManifestStore: one canonical parser/formatter for nonzero epoch IDs and one source for all artifact name constants. Format/parse helpers produce or validate strings only. They do not validate filesystem ownership, authorize file access, prove an epoch is active, or issue any capability.
+
+The per-epoch layout is `epoch-<id>/intent.json`, optionally followed by `epoch-<id>/manifest-store/{owner.lock,manifest.json}`. BootstrapStore persists the launch intent before process start. ManifestStore may create a new private manifest-store directory only after the complete observed candidate exists; it cannot initialize an existing directory or adopt an ACTIVE epoch. These are separate durable transitions, not one transaction. `manifest.tmp` is uncertain evidence. Until witness/journal and recovery-operation path validators are defined and integrated, their names/directories are not recognized or accepted; an unknown entry remains a scan issue.
+
+The generic ManifestStore factory receives a caller-supplied directory and does not itself bind that path to the validated runtime root and epoch directory. Supervisor integration must construct exactly `<configured-root>/epoch-<formatted-id>/manifest-store` while holding and validating global RuntimeOwner ownership. Shared path constants are not path capabilities. This complete supervisor-to-manifest-store binding and the recovery controller remain unimplemented; layout conformance alone does not authorize serving, stopping, or successor creation.
+
+
+
+### 21.3 Docker Engine Unix HTTP transport — revision 11
+
+[Transport v1](contracts/docker-engine-unix-http-v1.md) supplies the internal local HTTP exchange used by the PR23 inspect/stop component (RG-006; PRD-007/024/025, FR-007/008/022). The transport itself does not interpret container identity/state or prove process control, and neither it nor the controller implements EpochSupervisor activation, orphan reconciliation or successor authorization. HLD 5 architecture and PRD 8/SRD 5 product semantics remain unchanged. The transport is outside admission/quota latency measurements.
+
+| Element | Ownership, lifetime and synchronization |
+| --- | --- |
+| `IUnixHttpTransport` | Internal interface; caller owns the transport and must finish calls before destruction |
+| Private `NativeUnixHttpTransport` | Owns canonical pathname and pinned socket device/inode/owner; immutable after factory construction; owns atomic active-call count |
+| `detail::ParseHttpResponse` | Pure complete-response parser; owns no cross-call state; input remains caller-owned; returned body is independently owned |
+| `IClock&` | Borrowed; must outlive transport and all calls; clock exceptions become `ClockFailure` rather than escaping a noexcept boundary |
+| Cancellation flag | Borrowed atomic; caller retains it until return; no detached worker or callback retains it |
+| Socket descriptor and wire buffer | Per-call RAII state, never shared; four calls maximum, no queue; no mutex held across I/O |
+
+**Exchange.** A caller supplies GET/POST, bounded origin-form target, future absolute monotonic deadline and cancellation flag. The transport generates fixed headers and an empty body. Each Linux call uses a fresh nonblocking close-on-exec AF_UNIX descriptor, revalidates pinned pathname metadata and checks peer credentials before writing. Production controller composition must fix socket owner/peer UID to 0; configurable UID fields are an internal native-test seam. There is no TCP/proxy/Docker-context lookup, CLI subprocess, redirect or automatic retry. A failed Unix connect with EAGAIN fails safely; only EINPROGRESS enters completion polling. Non-Linux factory use returns UnsupportedPlatform.
+
+**Bounds.** Target/request caps are 2,048/4,096 bytes. Header bytes/fields are 8,192/64; complete wire/decoded body caps are 512/256 KiB; chunk count/size-line caps are 4,096/128 bytes. At most 4 active exchanges are allowed; the fifth returns Overloaded before connecting or writing. Factory pins the configured canonical socket; missing/replaced socket or wrong owner/peer prevents dispatch. These are internal component bounds, not amendments to product tenant/queue limits.
+
+**Framing and outcomes.** The parser requires strict CRLF HTTP/1.0 or 1.1 and rejects informational responses, duplicate/ambiguous lengths/codings, folded headers, truncation, invalid chunks, extensions, nonempty trailers and trailing framed bytes. Exactly one Content-Length, chunked encoding, or EOF-delimited body is supported. This narrow Docker profile accepts 204/304 only with no transfer coding, absent/zero Content-Length and zero body. Every response requires EOF within the same deadline. Valid HTTP error/redirect statuses are returned as data and never followed; the Docker controller interprets only its allowed statuses (§21.4). Parser allocation failure maps distinctly to transport AllocationFailure.
+
+**Deadline and uncertainty.** Initial deadline must be future and at most 30 seconds away. Reads/writes and readiness waits use that absolute deadline, never restarted after interruption. Cancellation/clock/deadline are checked at I/O boundaries and again after parsing before allocation-free move of a successful response. Failures are known-unsent only until the first positive write; every later failure preserves request_possibly_sent=true. A possible stop dispatch requires higher-layer inspection/reconciliation; transport completion alone proves no stop, cessation or fence. No late result authorizes serving or forwarding.
+
+**Choice and evidence.** Direct local HTTP avoids CLI executable/environment selection and subprocess-tree cleanup; the cost is a deliberately limited, independently tested HTTP parser. Socket UID checks do not authenticate a particular daemon binary; trusted local rootful-daemon placement and actual API compatibility remain deployment qualification obligations. The transport never chooses an API version. Fake peers and synthetic version strings are not real Docker qualification. Independent parser/bounds/allocation and Linux socket/UID/replacement/cancel/deadline/concurrency/throwing-clock fixtures are separate from production functions. [RG-006-G evidence](evidence/RG-006-G.md) records actual run status and exclusions; no forced short-write or exact post-EOF scheduling-race result is implied by source review.
+
+
+### 21.4 Docker inspect/stop and recorded-process evidence component — revision 11
+
+The selected internal boundary is specified in [Docker process control v1](contracts/docker-process-control-v1.md), based on PRD 8, SRD 5 and HLD 5 A-03. Source is present on PR23 review branch `feature/RG-006-docker-process-control`; scoped native qualification passed on run 46103748414; [exact-source evidence](evidence/RG-006-H.md) records the accepted component run and limits. No PRD, SRD or HLD behavior is changed by this component.
+
+`IRecoveryProcessController` is a separate recovery-control interface in `src/supervisor/docker_process_controller.h`. `DockerProcessController` implements it in `src/supervisor/docker_process_controller.cpp`. It is not an implementation of the older `IProcessController` interface in `epoch_gate.h`; that legacy seam remains local to EpochGate. The recovery interface accepts a structurally valid exact target supplied by its future trusted supervisor caller: either a pending container binding or an observed container binding. Structural validation does not authorize arbitrary caller-selected containers.
+
+For Docker requests, the controller uses a canonical full 64-character container ID and checks all eight immutable identity labels against the expected binding. It requires an explicit numeric Engine API version qualified against the daemon's advertised minimum/maximum and at least v1.42; it does not choose a default, negotiate transparently, use container names/prefixes, follow redirects, invoke CLI tools, or retry. The production factory fixes a root-owned local Unix socket peer and native `/proc` probe; observer PID-namespace placement and rootful local-daemon use remain deployment qualifications, not facts inferred by the factory.
+
+`Inspect` yields positive `MatchedExited` only when the exact container ID and labels match, restart policy is disabled, state is exited, and Docker reports PID 0 with Running/Restarting false. A pending target can provide only `RuntimeOnlyPendingTarget` evidence. An observed target additionally requires `RecordedProcessAbsent` from the Linux process probe and yields `RuntimeAndRecordedProcessAbsent`; any unavailable, malformed, mismatched, zombie, reused-PID, hidden-proc or uncertain observation remains Unknown. For an observed PID, the probe checks recorded PID/start ticks, qualified observer namespace, boot identity, and recorded shared-clock identity. If the proc PID directory is ENOENT, absence is corroborated only when `pidfd_open` returns ESRCH and the boot/observer context rechecks match. A returned pidfd or any other error is Unknown. It does not signal, wait for, or adopt the process; a dead target's time namespace is not presented as freshly observed.
+
+`RequestStop` re-inspects the exact ID/labels before POST. A logically bound known container may still be drained despite bad PID/restart-policy evidence, but those conditions prevent positive exit classification. It sends one bounded SIGTERM request with the fixed one-second grace. A 204/304 result is only an acknowledgement; after every result, a future supervisor must separately inspect/reconcile. Any post-dispatch failure preserves possibly-sent uncertainty and cannot trigger an automatic retry; pre-dispatch failure is known-unsent only where the transport proves no request byte was written. Deadline, cancellation and clock health are rechecked before returning a positive result.
+
+This component owns transport/probe objects and per-call state only. It does not create or start containers, join in-flight launch requests, latch launch uncertainty, activate participants, drain all registered participants, prove a whole epoch CLOSED, recover/adopt an old epoch, or mint a fencing/successor token. The future `ContainerLauncher` and `EpochSupervisor` must be separately designed and integrated. Native Linux/Docker qualification, including actual container inspect/stop/exited transitions and constrained cleanup of only the exact test-owned container, passed for this component scope on run 46103748414. [Exact-source evidence](evidence/RG-006-H.md) records the accepted component run and limits. No full RG-006, end-to-end recovery, or fencing acceptance is claimed.
+
+
+## 22. RG-011A pure strict-sequence oracle — revision 12
+
+**Readiness handoff.** The accepted RG-011-A1 pure model and golden fixtures may be used as an input dependency for RG-008 development; that named component is not equivalent to full RG-011 completion, and the oracle remains test-support-only with no production reuse. RG-008 strict acceptance still depends on distinct RG-011-A2 runtime comparison/provenance evidence joining RG-003-D, RG-005, and RG-007/008 actual commit records. Until that complete evidence exists, the safety result is UNKNOWN and the Release A gate remains blocked. This clarifies the existing story dependency without changing the DAG or acceptance criteria.
+
+The selected test-support boundary is [Strict Sequence Oracle v1, revision 2](contracts/strict-sequence-oracle-v1.md), sourced from PRD 8, SRD 5 (D3/D4, FR-011/012/020, AT-12 and strict arithmetic FR-002/003, AT-02/03), HLD 5 and this LLD. The C++20 source is present at `tools/replay/reference_model.h` on PR24 branch `feature/RG-011A-strict-sequence-oracle`, source commit `b26d4fa4aa8e6e6a9126d83e1299217431594a5a`. The initial run 46169353785 failed during GCC test-harness compilation before CTest; it is not acceptance evidence. The correction isolates the allocation-failure injector under `tests/replay/failing_allocator.h/.cpp` and links it only to the resource-test executable; production model, assertions and compiler flags are unchanged. [Corrected exact-source run46169772434](evidence/RG-011-A.md) passed77 CTest groups in each of two clean builds,29 Python tests,12 matching generated files and52 selected sanitizer groups. These are component results, not product release metrics. This component is A test support, not a delivered Release B replay product.
+
+**Ownership and type boundary.** `rateguard::replay::StrictSequenceOracle` is a stateless pure entry point over caller-owned `StrictScenario`; `Run` borrows a const scenario synchronously and callers must not mutate it concurrently. It does not copy the whole input trace or retain caller views. It returns either `StrictSequenceResult` with owned `StepResult` rows or one `ModelError`. Types include typed tenant/operation policy, an explicit initial bucket per tenant, ordered `SyntheticAttempt` rows, `Decision::{Allow,Limited,Invalid}`, optional `InvalidReason`, before/after `BucketView`, and optional retry nanoseconds. Invalid syntax/unknown-selector results are model decisions representing policy-invalid requests, not corrupted or omitted serialized trace records; full trace/wire completeness checking remains outside this slice. Malformed policy, state, order, chronology, resource overflow or implementation failure is a whole-run `ModelError`. A `ModelError` never exposes a partial prefix.
+
+**Validation and invalid-row semantics.** Validate in the contract order: finite resource caps; policy and identifier syntax; identifier uniqueness and exact initial-state membership/balances; contiguous ordinals and globally nondecreasing logical timestamps; then per-attempt classification. The per-attempt classification order is malformed tenant selector, unknown tenant, malformed operation selector, unknown operation. An oversized selector returns `ResourceLimit` before result copying. For a known tenant, check that the attempt time is not earlier than that tenant's current refill time before classifying the operation; even an invalid operation cannot hide a chronology regression. An invalid selector never creates, refills, or debits state. For known tenant plus invalid operation, before and after views are identical; an unresolved tenant has no bucket views. Unknown/extra/missing initial tenant membership maps to `MissingInitialState`; it never synthesizes a balance. Exact error precedence is structural phase order, then ordinal before time within an attempt.
+
+`ModelError` distinguishes `InvalidScenario`, `DuplicateIdentifier`, `MissingInitialState`, `InvalidInitialBalance`, `InvalidAttemptOrder`, `TimeRegression`, `ResourceLimit`, `ArithmeticInvariant`, `AllocationFailure`, and `InternalFailure`. `bad_alloc` becomes `AllocationFailure`; `length_error` becomes `ResourceLimit`; unexpected exceptions become `InternalFailure`, not an invented arithmetic defect. An empty attempt sequence with a valid nonempty policy and complete initial state yields an empty result, but proves no gate.
+
+**Strict transition math.** Use D3 exactly: `S=10^9` subunits per unit; integer units/nanoseconds; `1≤B,r≤10^9`, `1≤c≤B`, and `0≤balance≤B*S`. Cost derives only from the configured operation table. For known valid attempts, refill advances on both ALLOW and LIMITED; LIMITED debits nothing. To preserve implementation independence, the oracle uses divide-before-multiply saturation rather than production `BucketMath`'s direct refill product:
+
+```text
+cap = B*S
+headroom = cap - balance
+elapsed = now_ns - last_refill_ns
+ns_to_full = ceil(headroom / r)
+if elapsed >= ns_to_full:
+    available = cap
+else:
+    refill = checked_u128(r * elapsed)  // proven < headroom
+    available = checked_u64(checked_u128(balance + refill))
+if available >= c*S:
+    ALLOW; next_balance = available - c*S
+else:
+    LIMITED; next_balance = available
+    retry_ns = ceil((c*S - available) / r)
+next_refill_ns = now_ns
+```
+
+All products, additions and narrowing conversions are checked; no floating point or wraparound. Ceilings use quotient/remainder. Equal timestamps preserve caller ordinal and are never reordered. Golden sequence fixtures cover exact balance boundaries, weighted costs, saturation, partial refill, LIMITED time advance, ties, isolation, invalid selectors, maximum legal values and regressions. Fifteen fixed arithmetic transition vectors also match the existing independent Python reference.
+
+**Bounds and evidence scope.** The model cap is 1–10,000 tenants, 1–64 operations per tenant, 100,000 total operations, 128-byte identifiers and 0–1,000,000 attempts/results. Counts and identifiers are validated before result allocation; fixed record and identifier limits bound the model input/output shape, but no model byte-budget or production D6 cap is claimed. A one-million-row malformed-input resource-cap fixture tests only rejection/cap behavior; it is not one million valid attempts, runtime attempts, or a PRD performance/correctness gate.
+
+The PR24 review report lists 3 positive CTest groups, 11 generated/compiled negative controls that were rejected at runtime, 15 arithmetic vectors compared with the independent Python big-integer reference, and allocation-failure/resource-cap cases. `tests/replay/failing_allocator.h/.cpp` are test-only fault-injection support, not enforcement code. These are component test reports, not formal proof; the exact-source Linux run passed and successful mutation controls do not establish all executions safe. The independent C++ model imports none of production `BucketMath`, `PolicyLoader`, `AuthorityEngine`, clock, event recorder or service code. It performs no I/O, hashing, wire parsing, CLI, deadline/transport simulation or runtime timestamp validation.
+
+**Release and integration boundary.** The oracle accepts synthetic logical times and already-ordered attempts; it cannot label inputs trusted, runtime-valid or provenance-passed. Runtime conformance requires a separate complete join of offered attempt, tenant/operation, policy/epoch, committed outcome/cost and verified commit time. Existing event/run-plan data is insufficient. RG-003-D, RG-005 and RG-007/008 runtime joins remain required. This slice supports FR-011/012 and AT-12 only, not FR-017; it cannot authorize runtime Safety PASS or claim one million real strict attempts. Full RG-011B first-divergence replay, full replay CLI/report, concurrency/interval history checking, and all runtime/Release A gates remain open.

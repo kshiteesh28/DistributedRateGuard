@@ -1,12 +1,12 @@
 # Implementation stories
 
-**Date:** 2026-11-12 · **Status:** Planned; no implementation or acceptance results claimed.
+**Updated:** 2026-11-28 · **Status:** Foundation/security/history/lifecycle components are integrated on `feature/distributed-rateguard`; full runtime story acceptance remains pending. PR #13 is the final promotion to `main`. Earlier per-increment PR notes below record historical states.
 
 Machine-readable handoff: [context blocks](context-blocks.json). Follow dependency IDs rather than numeric order. Release labels indicate the deliverable; independent oracle work precedes dependent correctness checks even when delivered with release B.
 
 ## RG-001
 
-**Freeze wire contracts and build manifest** · Release A · Planned
+**Freeze wire contracts and build manifest** · Release A · Component accepted; merged to feature
 
 Dependencies: none.
 
@@ -16,9 +16,9 @@ Proposed files: `proto/rateguard/v1/admission.proto`, `proto/rateguard/v1/author
 
 Classes: AdmissionService, AuthorityService.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-005, PRD-021, FR-005, FR-020.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-005, PRD-021, FR-005, FR-020.
 
-Acceptance criteria (not run):
+Acceptance criteria: component PASS; see [RG-001 evidence](evidence/RG-001.md). Product/service integration remains assigned to later stories.
 
 - **RG-001-AC01** — Golden protobuf/encoding fixtures reject unspecified enums, invalid widths and malformed payloads without quota mutation. Evidence: AT-04, AT-06.
 - **RG-001-AC02** — Build manifest records exact tool/compiler/library versions and reproducible build commands; no runtime metric is claimed. Evidence: AT-13, AT-20.
@@ -26,7 +26,7 @@ Acceptance criteria (not run):
 
 ## RG-002
 
-**Implement immutable policy and checked arithmetic** · Release A · Planned
+**Implement immutable policy and checked arithmetic** · Release A · Component accepted; merged to feature
 
 Dependencies: RG-001.
 
@@ -36,9 +36,9 @@ Proposed files: `src/policy/policy_snapshot.h`, `src/policy/policy_loader.h`, `s
 
 Classes: PolicySnapshot, PolicyLoader, CanonicalPolicyCodec, BucketMath.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, FR-001, FR-002, FR-003.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, FR-001, FR-002, FR-003.
 
-Acceptance criteria (not run):
+Acceptance criteria: component PASS after corrected [run 43353832066](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43353832066) and independent Tester review. See [RG-002 evidence](evidence/RG-002.md) and [scrum log](SCRUM-WORK-LOG.md). Runtime quota/identity/clock integration remains separately gated.
 
 - **RG-002-AC01** — Canonical byte fixtures produce identical digests regardless of input map order; duplicate IDs and invalid policy bounds reject. Evidence: AT-01, AT-04.
 - **RG-002-AC02** — At available=c*S admit; at c*S-1 limit. Maximum bounds, saturation, fractions and overflow fixtures agree with independent arithmetic. Evidence: AT-02, AT-03.
@@ -46,7 +46,7 @@ Acceptance criteria (not run):
 
 ## RG-003
 
-**Implement shared clock provenance and commit timing** · Release A · Planned
+**Implement shared clock provenance and commit timing** · Release A · Component verified; integration pending
 
 Dependencies: RG-001.
 
@@ -56,9 +56,18 @@ Proposed files: `src/platform/clock.h`, `src/platform/clock_linux.h`.
 
 Classes: IClock, LinuxMonotonicClock.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-002, PRD-024, FR-001, FR-017.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-002, PRD-024, FR-001, FR-017.
 
-Acceptance criteria (not run):
+Component evidence: [RG-003](https://github.com/kshiteesh28/DistributedRateGuard/blob/feature/RG-003-clock-provenance/docs/evidence/RG-003.md), head `2d55c6e032ae75947f045ac76ffa383b2b1dd9d8`, run 43355987772, independent acceptance. Full story is not Done.
+
+| Deliverable | Status / owner |
+| --- | --- |
+| RG-003-A clock API/startup/sampling | Verified input for RG-006/007/008 development |
+| RG-003-B participant topology | Pending RG-006; Master/Senior Dev |
+| RG-003-C actual commit/deadline mapping | Pending RG-007/008; Senior Dev/Tester; AC02 |
+| RG-003-D strict UNKNOWN evidence gate | Pending RG-011A with RG-005 completeness/runtime inputs; before RG-008 acceptance; AC03. RG-013 adds C credit/formal extensions |
+
+Acceptance criteria (unchanged; disposition above):
 
 - **RG-003-AC01** — Wrong namespace/boot/clock ID prevents readiness; backwards time or syscall failure stops transitions. Evidence: AT-01, AT-17.
 - **RG-003-AC02** — Clock samples and ordered state transitions have an auditable linearization mapping; late responses cannot move timestamps. Evidence: AT-02, AT-07.
@@ -66,19 +75,27 @@ Acceptance criteria (not run):
 
 ## RG-004
 
-**Implement mTLS identity and operation authorization** · Release A · Planned
+**Implement mTLS identity and operation authorization** · Release A · RG-004-A/B1/B2/B3 implementation inputs accepted; full story in progress
 
 Dependencies: RG-001, RG-002.
 
 Validate role/SAN/EKU/expiry every RPC including reused channels. Bind peer to tenant/operation and derive cost from policy. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
-Proposed files: `src/security/peer_authenticator.h`, `src/security/authorization.h`.
+Implemented component paths on review branches: `include/rateguard/security/{peer_authenticator,authorization_resolver,client_call_guard,pinned_peer_rpc_client}.h` and corresponding `src/security/*.cpp`. Service/lifecycle integration remains pending.
 
-Classes: PeerAuthenticator, AuthorizationResolver.
+Classes: PeerAuthenticator, AuthorizationResolver, ClientCallGuard, PinnedPeerRpcClient.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-008, PRD-024, FR-003.
 
-Acceptance criteria (not run):
+Compatibility input **RG-004-A** is independently accepted in [PR #9](https://github.com/kshiteesh28/DistributedRateGuard/pull/9), head `f5b3e975225c869e4a9638af57ab9f7c8a06e546`, [run 43980308204](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/43980308204). Exact URI/leaf pin verification, real TLS rejection controls, compiled bypass detection and trusted UTC primitive passed. Docker observations matched under restricted permissions; [the record](evidence/RG-004-A/docker-time-43980308204.json) is capability evidence only. This initial compatibility slice alone does not provide registry, authorization or connection-expiry guards; B1/B2/B3 supply the scoped inputs below. Manifest binding and epoch/service integration remain open. All full-story acceptance criteria below remain unverified.
+
+Registry input **RG-004-B1** is independently accepted in [PR #10](https://github.com/kshiteesh28/DistributedRateGuard/pull/10), head `6366df84903049fde3fd92243b3aa7bd06c43986`, [run 44016873892](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44016873892). Both 21-test builds and targeted sanitizers passed; the independent suite detects a separately compiled root-pin bypass. [Evidence](evidence/RG-004-B1.md). This permits typed-registry/manifest development, not service activation or full authentication acceptance.
+
+Peer/policy input **RG-004-B2** passed [run 44022842950](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44022842950) and independent QA/senior review: actual TLS handler/spy/dispatch-expiry and isolated permission/pin controls, 25 tests twice and 9 security sanitizer checks. [Evidence](evidence/RG-004-B2.md). [PR #11](https://github.com/kshiteesh28/DistributedRateGuard/pull/11) is ready and unmerged after final run 44023785687 at `20210d5fbabcd891dbbb20ab89eca26f3a73a1db`; no implementation has been merged. Actual commit/forward, manifest/fencing and full service acceptance remain open; B3 supplies the client primitives described next.
+
+Client input **RG-004-B3** passed [run 44128491936](https://github.com/kshiteesh28/DistributedRateGuard/actions/runs/44128491936) at `0a1b37b6147adb39c885459253d59c8561c9c5cc`; [PR #12](https://github.com/kshiteesh28/DistributedRateGuard/pull/12) is ready and unmerged. [Evidence](evidence/RG-004-B3.md) covers the sealed typed client, current root/own-client/server validity guards, pre-forward time/identity primitive, independent mTLS/mutation checks and native SDK resumption qualification. Production caching remains disabled. This is not actual ALLOW/forwarding, epoch lifecycle, provisioning or full-story acceptance.
+
+Acceptance criteria (full integration not run):
 
 - **RG-004-AC01** — Wrong principal/role/SAN/EKU and spoofed overrides reject without quota allocation. Evidence: AT-04.
 - **RG-004-AC02** — Expired certificate on an existing connection is rejected; fenced new epoch is required for trust rotation. Evidence: AT-04, AT-14.
@@ -86,19 +103,19 @@ Acceptance criteria (not run):
 
 ## RG-005
 
-**Implement bounded events and incomplete-history accounting** · Release A · Planned
+**Implement bounded events and incomplete-history accounting** · Release A · In progress
 
 Dependencies: RG-001.
 
 Reserve slots before commit. Published checksummed records and producer seals distinguish complete evidence from crash gaps. Run-wide cap is 1 GiB. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
-Proposed files: `src/events/event_recorder.h`, `src/events/history_exporter.h`.
+Component files include `src/events/` and `tools/history/`. See [RG-005 evidence](evidence/RG-005.md) for exact scope and test results.
 
 Classes: EventRecorder, HistoryExporter.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-009, PRD-015, FR-009, FR-010.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-009, PRD-015, FR-009, FR-010.
 
-Acceptance criteria (not run):
+Component verification passed in Linux run 45126587562. Full acceptance remains pending service/supervisor wiring and the RG-011A provenance gate.
 
 - **RG-005-AC01** — Reserved but unpublished slots, gaps, checksum loss and missing producer seals mark a run incomplete/UNKNOWN. Evidence: AT-10, AT-11.
 - **RG-005-AC02** — Cap exhaustion stops correctness traffic; no event is silently dropped and no debit is refunded. Evidence: AT-11.
@@ -106,19 +123,23 @@ Acceptance criteria (not run):
 
 ## RG-006
 
-**Implement supervisor lifecycle and positive fencing** · Release A · Planned
+**Implement supervisor lifecycle and positive fencing** · Release A · In progress
 
-Dependencies: RG-002, RG-003, RG-004, RG-005.
+Local [gate](evidence/RG-006-A.md), [manifest](evidence/RG-006-B.md) and [runtime ownership](evidence/RG-006-C.md) components are verified on the integration feature. [Bootstrap inventory/store](evidence/RG-006-D.md), [recovery reader](evidence/RG-006-E.md), [artifact composition](evidence/RG-006-F.md) and [Unix HTTP transport](evidence/RG-006-G.md) are verified component inputs. PR23 adds Docker inspect/stop and Linux recorded-process source, and its scoped native qualification passed on run 46103748414. The final evidence write-up remains with the integration owner; full runtime acceptance remains open.
 
-Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
+Implemented component paths include `src/supervisor/epoch_gate.h`, `manifest_codec.{h,cpp}`, `manifest_store.{h,cpp}`, `runtime_owner.{h,cpp}`, `bootstrap_inventory.{h,cpp}`, `bootstrap_store.{h,cpp}`, `bootstrap_recovery_reader.{h,cpp}`, `epoch_artifact_layout.h`, `unix_http_transport.{h,cpp}`, `http1_parser.{h,cpp}`, `docker_process_controller.{h,cpp}`, and `src/platform/linux_process_probe.{h,cpp}`. This list records source presence, not acceptance. The Docker controller implements `IRecoveryProcessController`; it is separate from the legacy EpochGate `IProcessController`. It inspects and requests stop for exact registered targets; it does not create/start containers, activate participants, join launch operations, or authorize a successor. See [PR23 control contract](contracts/docker-process-control-v1.md) and [review evidence checkpoint](evidence/RG-006-H.md).
 
-Proposed files: `src/supervisor/epoch_gate.h`, `src/supervisor/manifest_store.h`, `src/supervisor/process_controller.h`, `src/supervisor/epoch_supervisor.h`, `src/supervisor/docker_process_controller.h`.
+Dependencies: RG-002, RG-003-A, RG-005 and named verified RG-004-A/B1 inputs. B1 supplies typed certificate metadata only; RG-006 does not require full RG-004 completion. Full RG-004-AC02 later consumes RG-006 manifest/fencing evidence. This separates development inputs from final integration acceptance without waiving either gate.
 
-Classes: EpochGate, ManifestStore, IProcessController, EpochSupervisor, DockerProcessController.
+Use ACTIVE/DRAINING/CLOSED; preserve exact process/container inventory. Supervisor failure never adopts a running old epoch. Use LLD sections 16, 17 and 21 for ownership and control boundaries. A point-in-time inspect or stop acknowledgement is not whole-epoch exit proof.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-024, PRD-025, FR-001, FR-007, FR-008, FR-022.
+Remaining proposed integration files: `src/supervisor/container_launcher.h`, `src/supervisor/epoch_supervisor.h`, durable recovery/orphan reconciliation, participant activation, and verified successor authorization. PR23 scoped native Docker qualification passed on run 46103748414; full RG006 story acceptance is not claimed.
 
-Acceptance criteria (not run):
+Classes/components: EpochGate, legacy IProcessController, IRecoveryProcessController, DockerProcessController, IRecordedProcessProbe, RuntimeOwner, InitialEpochClaim, BootstrapInventory, BootstrapStore, BootstrapRecoveryReader, ManifestStore, future ContainerLauncher, EpochSupervisor.
+
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-024, PRD-025, FR-001, FR-007, FR-008, FR-022.
+
+Acceptance criteria (not run / not accepted for the full story):
 
 - **RG-006-AC01** — Isolated confirmed-credit process blocks fresh epoch activation until positive exact-identity exit evidence exists. Evidence: AT-09, AT-28.
 - **RG-006-AC02** — Partial manifest write, lost inventory, PID reuse and supervisor crash cannot silently reset state. Evidence: AT-08, AT-09.
@@ -136,7 +157,7 @@ Proposed files: `src/authority/witness_port.h`, `src/supervisor/witness_state.h`
 
 Classes: IStateWitness, WitnessStateMachine, JournalWriter, LocalStateWitnessClient, WitnessServer.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-015, PRD-024, FR-008, FR-010.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-007, PRD-015, PRD-024, FR-008, FR-010.
 
 Acceptance criteria (not run):
 
@@ -146,29 +167,33 @@ Acceptance criteria (not run):
 
 ## RG-011
 
-**Build the independent oracle (A acceptance prerequisite; replay CLI in B)** · Release B deliverable · Planned
+**Build the independent oracle (A acceptance prerequisite; replay CLI in B)** · Release B deliverable · RG-011A component in progress; full story incomplete
 
 Dependencies: RG-002, RG-005.
 
-Before RG-008 strict acceptance, implement the minimal independent serial oracle and strict golden fixtures needed for AT-01–03/21. This test-support subset is a Release A prerequisite and is not the user-facing replay deliverable. Complete deterministic offered-trace parsing, policy comparison, first-divergence reporting, and replay CLI in Release B. Full traces include order, initial state and immutable policy hashes. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
+RG-011 is split by scope without changing its dependencies or release order. **RG-011A** supplies a pure independent strict-sequence oracle and synthetic golden fixtures. Once accepted, this named A1 component is an input RG-008 may use during development; it does not require the full RG-011 story to be Done. RG-008 full acceptance still requires separate RG-011-A2 runtime comparison/provenance evidence joining RG-003-D, RG-005, and RG-007/008 actual commits. Missing evidence remains UNKNOWN and blocks the strict safety gate. **RG-011B** remains the future Release B full deterministic offered-trace replay, policy comparison, first-divergence report and replay CLI. RG-011A is not full PRD-006 replay and does not prove runtime event provenance.
 
-Proposed files: `tools/replay/reference_model.h`, `tools/replay/main.cpp`.
+Current component source: `tools/replay/reference_model.h` on PR24 branch `feature/RG-011A-strict-sequence-oracle`; corrected source commit `b26d4fa4aa8e6e6a9126d83e1299217431594a5a`; canonical contract: [revision 2](contracts/strict-sequence-oracle-v1.md). The actual class is `rateguard::replay::StrictSequenceOracle`, returning typed `StrictSequenceResult` or `ModelError`. Future full replay uses separate `ReplayModel`/`ReplayCLI` files; keep this oracle focused on already-ordered synthetic strict decisions.
 
-Classes: ReplayModel.
+Scope details in [LLD 12 §22](LLD.md#22-rg-011a-pure-strict-sequence-oracle--revision-12): whole-run structural/model errors expose no partial rows; invalid selectors produce per-step Invalid without bucket mutation; bounds include a 1,000,000-attempt model cap, not a million runtime-attempt gate. No production math, policy loader, authority, clock, recorder, I/O, hash, or service imports. Full RG011 replay, runtime provenance joins, concurrency/interval checking and all release gates remain open.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-006, FR-011, FR-012.
+Proposed/future files: `tools/replay/replay_model.h`, `tools/replay/main.cpp`. Component-present files: `tools/replay/reference_model.h` and test-only `tests/replay/failing_allocator.h/.cpp` (PR24 branch; component verification passed on run46169772434).
 
-Acceptance criteria (not run):
+Classes: StrictSequenceOracle; future ReplayModel, ReplayCLI.
 
-- **RG-011-AC01** — Before RG-008 acceptance, strict golden fixtures cover equal-time order, weighted costs, partial refill and admission boundaries; Release B replay fixtures additionally cover first divergence and changed decisions. Evidence: AT-01–03/12.
-- **RG-011-AC02** — Missing/invalid rows fail the whole comparison; identical input yields identical complete outputs and hashes. Evidence: AT-12.
-- **RG-011-AC03** — The oracle does not import production BucketMath or AuthorityEngine logic. Evidence: AT-20, AT-21.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-006, FR-011, FR-012; RG-011A also supplies the strict-oracle prerequisite for FR-002/003 verification.
+
+Acceptance criteria (the current slice has pending exact-source CI; full story remains not accepted):
+
+- **RG-011-AC01** — RG-011A typed synthetic strict golden fixtures cover equal-time ordinal order, weighted operation costs, partial refill, saturation, exact/one-subunit-short admission and retry boundaries before RG-008 acceptance. Full RG-011B replay fixtures additionally cover first divergence and changed decisions. Evidence: AT-01–03/12.
+- **RG-011-AC02** — The pure oracle returns no partial trace on whole-run errors; invalid selectors do not mutate buckets. Full Release B replay separately rejects missing/invalid rows and produces deterministic complete outputs/hashes. Evidence: AT-12.
+- **RG-011-AC03** — The oracle imports no production BucketMath or AuthorityEngine logic; synthetic input cannot claim trusted runtime provenance or Safety PASS. Evidence: AT-20/21; runtime gate remains separate.
 
 ## RG-008
 
 **Implement strict authority and admission service** · Release A · Planned
 
-Dependencies: RG-001, RG-003, RG-004, RG-005, RG-007, RG-011.
+Dependencies: RG-001, RG-003, RG-004, RG-005, RG-007, RG-011. The RG-011 edge is a readiness dependency for the named RG-011-A1 pure-model/golden-fixture input only; it does not mean the full RG-011B replay story must be complete before RG-008 development. Full RG-008 acceptance separately requires RG-011-A2 runtime comparison and provenance joins; absent or incomplete evidence remains UNKNOWN.
 
 Per-tenant reservation spans witness work without mutex held over RPC/I/O. Commit under lock, respond after durable witness ack. Invalid/expired precommit calls never debit. Use LLD sections 16 and 17 for exact sequencing and class ownership; evidence must be independent of production decision logic.
 
@@ -176,7 +201,7 @@ Proposed files: `src/authority/tenant_ledger.h`, `src/authority/tenant_reservati
 
 Classes: TenantLedger, TenantReservation, AuthorityEngine, AuthorityService, AdmissionService, GrpcAuthorityClient.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, PRD-005, FR-002, FR-005, FR-006.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-001, PRD-002, PRD-003, PRD-005, FR-002, FR-005, FR-006.
 
 Acceptance criteria (not run):
 
@@ -196,7 +221,7 @@ Proposed files: `adapter/forward_attempt.h`, `adapter/sample_adapter.h`.
 
 Classes: ForwardAttempt, SampleAdapter.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-004, PRD-005, FR-004, FR-006.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-004, PRD-005, FR-004, FR-006.
 
 Acceptance criteria (not run):
 
@@ -216,7 +241,7 @@ Proposed files: `src/credits/tenant_credits.h`, `src/credits/credit_manager.h`, 
 
 Classes: ReplicaTenantCredits, CreditManager, IAuthorityClient.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-016, PRD-017, PRD-018, PRD-019, FR-014, FR-015, FR-016, FR-017, FR-018.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-016, PRD-017, PRD-018, PRD-019, FR-014, FR-015, FR-016, FR-017, FR-018.
 
 Acceptance criteria (not run):
 
@@ -236,7 +261,7 @@ Proposed files: `tools/loadgen/trace_generator.h`, `tools/loadgen/runner.h`, `to
 
 Classes: TraceGenerator, BenchmarkRunner.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-020, PRD-022, PRD-026, FR-013, FR-019, FR-023, NFR-002, NFR-003, NFR-004, NFR-005, NFR-006, NFR-007, NFR-009.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-020, PRD-022, PRD-026, FR-013, FR-019, FR-023, NFR-002, NFR-003, NFR-004, NFR-005, NFR-006, NFR-007, NFR-009.
 
 Acceptance criteria (not run):
 
@@ -256,7 +281,7 @@ Proposed files: `model/runner`, `model/RateGuard.tla`, `tools/history_checker/ch
 
 Classes: HistoryChecker, ModelHarness.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-018, PRD-021, PRD-023, FR-017, FR-020, FR-021.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-018, PRD-021, PRD-023, FR-017, FR-020, FR-021.
 
 Acceptance criteria (not run):
 
@@ -276,7 +301,7 @@ Proposed files: `docs/releases/manifest.json`, `docs/releases/requirements-evide
 
 Classes: release artifacts and runner integration.
 
-Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 4](HLD.md), [LLD 5](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-021, PRD-023, FR-013, FR-020, FR-021, NFR-001, NFR-006.
+Sources: [PRD 8](PRD.md), [SRD 5](SRD.md), [HLD 5](HLD.md), [LLD 12](LLD.md#17-class-design-and-construction-contracts). Requirements: PRD-010, PRD-011, PRD-012, PRD-021, PRD-023, FR-013, FR-020, FR-021, NFR-001, NFR-006.
 
 Acceptance criteria (not run):
 
@@ -287,4 +312,4 @@ Acceptance criteria (not run):
 
 ## Readiness clarification — 2026-11-12
 
-The full replay command/report remains a Release B deliverable. Its independent strict decision oracle and golden fixtures are required earlier as test support for Release A; this does not move replay product scope into A. The performance p99 population and target-build lock are defined in PRD 8 / SRD 5 / LLD 5. No story is implemented or accepted by this clarification.
+The full replay command/report remains a Release B deliverable. Its independent strict decision oracle and golden fixtures are required earlier as test support for Release A; this does not move replay product scope into A. The performance p99 population and target-build lock are defined in PRD 8 / SRD 5 / LLD 9. No story is implemented or accepted by this clarification.

@@ -1,0 +1,155 @@
+{
+  "container": {
+    "clock": {
+      "error": null,
+      "return_code": 0,
+      "sample": {
+        "identity_fields": [
+          "77cd888a49bc4d4a850644166ba31cf7",
+          "5",
+          "4026531834",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1"
+        ],
+        "monotonic_ns": 488029541631
+      }
+    },
+    "wall": {
+      "error": null,
+      "probe": {
+        "failure_reason": null,
+        "nanoseconds": 985044081,
+        "platform": "linux",
+        "status_flags": 0,
+        "sync_state": 0,
+        "trusted": true,
+        "unix_seconds": 1794889621
+      },
+      "return_code": 0,
+      "valid_json": true
+    }
+  },
+  "docker": {
+    "available": true,
+    "error": null,
+    "image_id": "sha256:7da97f743f397971f35dd21cd2d19a7da070a150e0cfa3eda559e71891ec7533",
+    "image_metadata_result": {
+      "image_id": "sha256:7da97f743f397971f35dd21cd2d19a7da070a150e0cfa3eda559e71891ec7533",
+      "inspect_after": {
+        "error": null,
+        "return_code": 0,
+        "started": true,
+        "timed_out": false
+      },
+      "inspect_before": {
+        "error": null,
+        "return_code": 1,
+        "started": true,
+        "timed_out": false
+      },
+      "pull": {
+        "error": null,
+        "return_code": 0,
+        "started": true,
+        "timed_out": false
+      },
+      "repo_digests": [
+        "ubuntu@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8"
+      ]
+    },
+    "repo_digest": "ubuntu@sha256:73b999393d07f2bf65a40373778a44dc9a6d54ad7718d29247d8ff9413c4d6a8",
+    "version": "28.0.4|28.0.4",
+    "version_result": {
+      "error": null,
+      "return_code": 0,
+      "stdout": "28.0.4|28.0.4"
+    }
+  },
+  "host": {
+    "clock_after": {
+      "error": null,
+      "return_code": 0,
+      "sample": {
+        "identity_fields": [
+          "77cd888a49bc4d4a850644166ba31cf7",
+          "5",
+          "4026531834",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1"
+        ],
+        "monotonic_ns": 488077736885
+      }
+    },
+    "clock_before": {
+      "error": null,
+      "return_code": 0,
+      "sample": {
+        "identity_fields": [
+          "77cd888a49bc4d4a850644166ba31cf7",
+          "5",
+          "4026531834",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1"
+        ],
+        "monotonic_ns": 487144472141
+      }
+    },
+    "wall_after": {
+      "error": null,
+      "probe": {
+        "failure_reason": null,
+        "nanoseconds": 169658036,
+        "platform": "linux",
+        "status_flags": 0,
+        "sync_state": 0,
+        "trusted": true,
+        "unix_seconds": 1794889622
+      },
+      "return_code": 0,
+      "valid_json": true
+    },
+    "wall_before": {
+      "error": null,
+      "probe": {
+        "failure_reason": null,
+        "nanoseconds": 236326197,
+        "platform": "linux",
+        "status_flags": 0,
+        "sync_state": 0,
+        "trusted": true,
+        "unix_seconds": 1794889621
+      },
+      "return_code": 0,
+      "valid_json": true
+    }
+  },
+  "limitations": [
+    "A matched observation does not prove shared Docker deployment topology, epoch fencing, supervisor behavior, or a quota guarantee.",
+    "The image tag is mutable; the observed RepoDigest and image ID are recorded for this run.",
+    "No Docker permissions or capabilities are broadened to force a ready observation."
+  ],
+  "observed_at_utc": "2026-11-17T04:26:57.875934+00:00",
+  "readiness": {
+    "comparison": {
+      "container_ns": 488029541631,
+      "host_after_ns": 488077736885,
+      "host_before_ns": 487144472141,
+      "identity_fields_match": true,
+      "monotonic_samples_ordered": true
+    },
+    "reason": null,
+    "state": "OBSERVATIONS_MATCHED"
+  },
+  "requested_image_tag": "ubuntu:24.04",
+  "schema_version": 1,
+  "scope": "capability observation only, not full deployment/epoch supervision"
+}

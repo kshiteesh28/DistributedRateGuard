@@ -1,0 +1,25 @@
+{
+  "docker_api_version": "1.48",
+  "docker_engine_version": "28.0.4",
+  "image_id": "sha256:2b147973fd863c93ced60f325461fe0e262b91317b008e6a2d961f13e81af0e4",
+  "image_repo_digest": "ubuntu@sha256:562111b88caa79c71391c0c4d3c2114a7d5c35915c20561fd893cb1e07929e6b",
+  "independent_terminal_check": "MATCHED_EXITED_PID_ZERO_RESTART_DISABLED",
+  "owned_container_removed": true,
+  "probe_checks": {
+    "observed_running": true,
+    "observed_runtime_and_process_exit": true,
+    "one_stop_acknowledged": true,
+    "original_still_running": true,
+    "pending_running": true,
+    "pending_runtime_exit": true,
+    "repeat_stop_already_stopped": true,
+    "tampered_stop_rejected_unsent": true
+  },
+  "probe_exit_code": 0,
+  "schema_version": 1,
+  "scope": "single synthetic process-controller preflight; not epoch fencing or deployment acceptance",
+  "state": "OBSERVED_AND_STOPPED",
+  "source_commit": "dbc1f8fbb3d5d4fc9bc4c59286e2a05e82ee021b",
+  "workflow_run": 46103748414,
+  "tested_merge_ref": "36b9c0f484f500236e54ba3ac740094f6831b984"
+}
