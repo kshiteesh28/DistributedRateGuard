@@ -1,8 +1,10 @@
 # Strict Sequence Oracle v1
 
-**Status:** Selected RG-011A test-support contract, revision 2 (2026-11-28). Component code is present on the review branch; Linux acceptance is pending. No runtime conformance or release gate is claimed.
+**Status:** Selected RG-011A test-support contract, revision 2 (2026-11-28). Component code passed scoped Linux verification on run46169772434. No runtime conformance or release gate is claimed.
 
 **Sources:** PRD 8, SRD 5 (D3/D4, FR-011/012/020, AT-12, strict arithmetic FR-002/003 and AT-02/03), [HLD 5](../HLD.md) and [LLD 11](../LLD.md). Existing arithmetic is `src/authority/bucket_math.h`; the independent secondary reference is `tools/tests/bucket_math_oracle.py`. Proposed new C++ path: `tools/replay/reference_model.h`.
+
+**Component ID:** `RG-011-A1`; future `RG-011-A2` runtime comparison/provenance is not included.
 
 ## Scope
 

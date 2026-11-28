@@ -8,6 +8,10 @@ DistributedRateGuard explores how replicated services can enforce per-tenant API
 
 PR23 Docker inspect/stop and Linux recorded-process probe component qualification passed [exact-source Linux qualification](docs/evidence/RG-006-H.md) on run46103748414. This does not launch or activate participants or authorize epoch fencing; full RG-006 remains open.
 
+## Current implementation checkpoint
+
+PR24 adds a pure synthetic strict-sequence oracle for Release A test support. Initial run 46169353785 failed before CTest in a test harness compile; [corrected run46169772434](docs/evidence/RG-011-A.md) passed77 CTest groups in both clean builds and52 sanitizer groups, including the oracle's positives and11 compiled negative controls. It does not establish runtime provenance, one million valid runtime attempts, or Safety PASS. Full deterministic replay remains a Release B deliverable; full RG-011 and release gates remain open.
+
 ## Current specification bundle
 
 Read in this order:
@@ -15,7 +19,7 @@ Read in this order:
 1. [PRD revision 8](docs/PRD.md) — product goals and release gates.
 2. [SRD revision 5](docs/SRD.md) — normative behavior and test obligations.
 3. [HLD revision 5](docs/HLD.md) — proposed process and deployment architecture.
-4. [LLD revision 11](docs/LLD.md) — proposed interfaces, state transitions, classes, and implementation order.
+4. [LLD revision 12](docs/LLD.md) — proposed interfaces, state transitions, classes, and implementation order.
 5. [Implementation stories](docs/STORIES.md) and [JSON context blocks](docs/context-blocks.json) — planned work and acceptance evidence.
 6. [Agile sprint plan](docs/SPRINT-PLAN.md) — minute-based effort estimates, sequence, roles, and acceptance gates.
 
