@@ -61,6 +61,26 @@ jobs:
       - name: Build code-generation smoke and available product contracts
         run: cmake --build build --parallel 2
 
+      - name: Observe constrained Docker time capabilities (not service deployment)
+        run: |
+          python3 tools/probes/docker_time_preflight.py \
+            --wall-probe "$(realpath build/trusted_wall_clock_probe)" \
+            --clock-probe "$(realpath build/rateguard_clock_linux_smoke)" \
+            --image ubuntu:24.04 > build/docker-time-preflight.json
+          cat build/docker-time-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Qualify local Docker inspect and stop (component only)
+        run: |
+          set +e
+          python3 tools/probes/docker_controller_preflight.py --probe "$(realpath build/rateguard_docker_controller_linux_probe)" --clock-observation build/docker-time-preflight.json --output build/docker-controller-preflight.json
+          rg_control_status=$?
+          set -e
+          if [ -f build/docker-controller-preflight.json ]
+          then
+            cat build/docker-controller-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$rg_control_status"
+
       - name: Run contract tests
         run: ctest --test-dir build --output-on-failure
 
@@ -81,14 +101,14 @@ jobs:
           print(f"Clean reproduction: {len(first)} generated files match")
           PY
 
-      - name: Check bounded Docker Unix HTTP transport under sanitizers
+      - name: Check bounded Docker transport and control under sanitizers
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
           UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
         run: |
-          cmake -S . -B build-docker-transport-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_DOCKER_TRANSPORT=ON
-          cmake --build build-docker-transport-sanitized --parallel 2 --target rateguard_http1_parser_tests rateguard_http1_parser_independent_tests rateguard_http1_parser_allocation_independent_tests rateguard_unix_http_transport_linux_tests rateguard_unix_http_transport_independent_tests rateguard_unix_http_fault_independent_tests
-          ctest --test-dir build-docker-transport-sanitized --output-on-failure -R '^rateguard[.](http1_parser(_(allocation_)?independent)?|unix_http_transport_(linux|independent)|unix_http_fault_independent)$'
+          cmake -S . -B build-docker-transport-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_DOCKER_TRANSPORT=ON -DRATEGUARD_SANITIZE_DOCKER_CONTROL=ON
+          cmake --build build-docker-transport-sanitized --parallel 2 --target rateguard_http1_parser_tests rateguard_http1_parser_independent_tests rateguard_http1_parser_allocation_independent_tests rateguard_unix_http_transport_linux_tests rateguard_unix_http_transport_independent_tests rateguard_unix_http_fault_independent_tests rateguard_linux_process_probe_tests rateguard_linux_process_probe_independent_tests rateguard_docker_process_controller_tests rateguard_docker_process_controller_independent_tests rateguard_docker_probe_fixture_parser_tests
+          ctest --test-dir build-docker-transport-sanitized --output-on-failure -R '^rateguard[.](http1_parser(_(allocation_)?independent)?|unix_http_transport_(linux|independent)|unix_http_fault_independent|linux_process_probe(_independent)?|docker_process_controller(_independent)?|docker_probe_fixture_parser)$'
 
       - name: Check bootstrap inventory and persistence under sanitizers
         env:
@@ -175,14 +195,6 @@ jobs:
           print("NATIVE_UTC_READY_OBSERVATION" if result.returncode == 0 else "NATIVE_UTC_NOT_READY_DEPLOYMENT_BLOCKED")
           PY
 
-      - name: Observe constrained Docker time capabilities (not service deployment)
-        run: |
-          python3 tools/probes/docker_time_preflight.py \
-            --wall-probe "$(realpath build/trusted_wall_clock_probe)" \
-            --clock-probe "$(realpath build/rateguard_clock_linux_smoke)" \
-            --image ubuntu:24.04 > build/docker-time-preflight.json
-          cat build/docker-time-preflight.json | tee -a "$GITHUB_STEP_SUMMARY"
-
       - name: Capture observed build manifest
         run: |
           python3 tools/capture_build_manifest.py \
@@ -204,6 +216,7 @@ jobs:
             build/build-manifest.json
             build/native-trusted-time.json
             build/docker-time-preflight.json
+            build/docker-controller-preflight.json
             build/b3-session-qualification.json
             build/Testing/Temporary/LastTest.log
             build-clean/Testing/Temporary/LastTest.log

@@ -1,12 +1,12 @@
 # Agile Sprint Plan — DistributedRateGuard
 
-**Date:** 2026-11-25  
+**Date:** 2026-11-28  
 **Status:** RG-001 component verified; Sprint 0 deployment gate open. RG-002 component verified; RG-003-A and RG-004-A/B1/B2/B3 implementation inputs verified; full integration pending. Product Owner authorized development and testing on 2026-11-12.  
-**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 10 startup, artifact-layout, diagnostic-recovery and bounded-transport clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
+**Source contracts:** PRD 8 / SRD 5 from `main`; HLD 5 / LLD 11 startup, artifact-layout, diagnostic-recovery and bounded transport/control clarification and current implementation tracking on `feature/distributed-rateguard`. See [PRD](PRD.md), [SRD](SRD.md), [HLD](HLD.md), [LLD](LLD.md), [stories](STORIES.md), and [JSON context blocks](context-blocks.json). Final promotion to `main` remains PR #13.
 
-## Current delivery checkpoint — 2026-11-24
+## Current delivery checkpoint — 2026-11-28
 
-PRs #5–12 and #14–21 are merged into the integration feature. Artifact-layout [Linux verification](evidence/RG-006-F.md) passed. PR #22 supplies a bounded parser/Unix HTTP exchange; [Linux verification](evidence/RG-006-G.md) passed; the component remains separate from runtime acceptance. RG-006 is still In progress: real process control, authenticated activation, durable recovery/orphan reconciliation and successor authorization remain open. Full quota services, replay/evaluation and distributed-credit assurance are later dependent work. Historical progress entries below retain their original status. Only PR #13 promotes the feature to `main`, and remains unmerged.
+PRs #5–12 and #14–22 are merged into the integration feature. PR23's Docker inspect/stop and recorded-process evidence component passed [exact-source Linux qualification](evidence/RG-006-H.md):63 CTest groups in each of two clean builds,29 Python tests,12 matching generated files,49 sanitizer groups and all eight real Docker checks with owned cleanup. Component integration follows documentation-only comparison; these are component results, not release metrics. RG006 remains In progress: durable launch/old-Start exclusion, orphan reconciliation, authenticated activation, whole-epoch fencing and successor authorization are open. Quota services, witness, independent sequence/replay evidence, evaluation and distributed-credit assurance remain dependent work. Historical entries retain their original status. Only PR13 promotes the feature to main and remains unmerged.
 
 ## Team and control
 

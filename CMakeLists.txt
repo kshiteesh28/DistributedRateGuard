@@ -733,3 +733,64 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_link_options(rateguard_unix_http_fault_independent_tests PRIVATE
     "-Wl,--wrap=send" "-Wl,--wrap=poll" "-Wl,--wrap=connect" "-Wl,--wrap=__poll_chk")
 endif()
+
+
+# RG-006 read-only native process evidence and bounded Docker inspect/stop.
+option(RATEGUARD_SANITIZE_DOCKER_CONTROL "Instrument Docker control components with ASan and UBSan" OFF)
+add_library(rateguard_linux_process_probe STATIC src/platform/linux_process_probe.cpp)
+target_include_directories(rateguard_linux_process_probe PUBLIC
+  "${CMAKE_CURRENT_SOURCE_DIR}/src" "${CMAKE_CURRENT_SOURCE_DIR}/include")
+target_link_libraries(rateguard_linux_process_probe PUBLIC Threads::Threads)
+target_compile_options(rateguard_linux_process_probe PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_DOCKER_CONTROL)
+  target_compile_options(rateguard_linux_process_probe PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_linux_process_probe PUBLIC -fsanitize=address,undefined)
+endif()
+function(add_docker_control_test target source name)
+  add_executable(${target} ${source})
+  target_link_libraries(${target} PRIVATE rateguard_linux_process_probe)
+  target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -pedantic)
+  add_test(NAME rateguard.${name} COMMAND ${target})
+  set_tests_properties(rateguard.${name} PROPERTIES TIMEOUT 90)
+endfunction()
+add_docker_control_test(rateguard_linux_process_probe_tests
+  tests/platform/linux_process_probe_test.cpp linux_process_probe)
+
+add_library(rateguard_docker_process_controller STATIC src/supervisor/docker_process_controller.cpp)
+target_link_libraries(rateguard_docker_process_controller PUBLIC
+  rateguard_linux_process_probe rateguard_unix_http_transport)
+target_link_libraries(rateguard_docker_process_controller PRIVATE nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_docker_process_controller PRIVATE -Wall -Wextra -Werror -pedantic)
+if(RATEGUARD_SANITIZE_DOCKER_CONTROL)
+  target_compile_options(rateguard_docker_process_controller PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_docker_process_controller PUBLIC -fsanitize=address,undefined)
+endif()
+add_docker_control_test(rateguard_docker_process_controller_tests
+  tests/supervisor/docker_process_controller_test.cpp docker_process_controller)
+target_link_libraries(rateguard_docker_process_controller_tests PRIVATE
+  rateguard_docker_process_controller nlohmann_json::nlohmann_json)
+
+add_docker_control_test(rateguard_linux_process_probe_independent_tests
+  tests/platform/linux_process_probe_independent_test.cpp linux_process_probe_independent)
+add_docker_control_test(rateguard_docker_process_controller_independent_tests
+  tests/supervisor/docker_process_controller_independent_test.cpp docker_process_controller_independent)
+target_link_libraries(rateguard_docker_process_controller_independent_tests PRIVATE
+  rateguard_docker_process_controller nlohmann_json::nlohmann_json)
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  add_executable(rateguard_docker_controller_linux_probe
+    tools/probes/docker_controller_linux_probe.cpp)
+  target_link_libraries(rateguard_docker_controller_linux_probe PRIVATE
+    rateguard_docker_process_controller rateguard_clock nlohmann_json::nlohmann_json)
+  target_compile_options(rateguard_docker_controller_linux_probe PRIVATE
+    -Wall -Wextra -Werror -pedantic)
+endif()
+
+# Real probe fixture parser; no Docker access and no public test endpoint.
+add_executable(rateguard_docker_probe_fixture_parser_tests
+  tools/tests/supervisor/docker_probe_fixture_parser_test.cpp)
+target_link_libraries(rateguard_docker_probe_fixture_parser_tests PRIVATE
+  rateguard_docker_process_controller nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_docker_probe_fixture_parser_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.docker_probe_fixture_parser COMMAND rateguard_docker_probe_fixture_parser_tests)
+set_tests_properties(rateguard.docker_probe_fixture_parser PROPERTIES TIMEOUT 30)
