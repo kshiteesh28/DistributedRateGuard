@@ -785,3 +785,12 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   target_compile_options(rateguard_docker_controller_linux_probe PRIVATE
     -Wall -Wextra -Werror -pedantic)
 endif()
+
+# Real probe fixture parser; no Docker access and no public test endpoint.
+add_executable(rateguard_docker_probe_fixture_parser_tests
+  tools/tests/supervisor/docker_probe_fixture_parser_test.cpp)
+target_link_libraries(rateguard_docker_probe_fixture_parser_tests PRIVATE
+  rateguard_docker_process_controller nlohmann_json::nlohmann_json)
+target_compile_options(rateguard_docker_probe_fixture_parser_tests PRIVATE -Wall -Wextra -Werror -pedantic)
+add_test(NAME rateguard.docker_probe_fixture_parser COMMAND rateguard_docker_probe_fixture_parser_tests)
+set_tests_properties(rateguard.docker_probe_fixture_parser PROPERTIES TIMEOUT 30)

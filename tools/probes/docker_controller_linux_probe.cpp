@@ -3,6 +3,7 @@
 
 #include <nlohmann/json.hpp>
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <charconv>
@@ -33,6 +34,7 @@ constexpr std::size_t kJsonMaxNodes = 512;
 constexpr std::size_t kJsonMaxFields = 64;
 constexpr std::size_t kJsonMaxStringBytes = 4096;
 
+#ifndef RATEGUARD_PROBE_PARSER_TEST
 struct Checks final {
   bool pending_running{};
   bool observed_running{};
@@ -42,6 +44,8 @@ struct Checks final {
   bool observed_exit_proven{};
   bool pending_exit_proven{};
   bool repeat_stop_acknowledged{};
+  std::array<std::string, 8> status{
+      "not_run", "not_run", "not_run", "not_run", "not_run", "not_run", "not_run", "not_run"};
 
   [[nodiscard]] bool All() const noexcept {
     return pending_running && observed_running && tampered_stop_rejected &&
@@ -124,6 +128,7 @@ bool ReadFixture(std::string_view path, std::string& bytes) noexcept {
     return !bytes.empty();
   } catch (...) { return false; }
 }
+#endif  // RATEGUARD_PROBE_PARSER_TEST
 
 bool ExactKeys(const Json& value, std::initializer_list<std::string_view> expected) {
   if (!value.is_object() || value.size() != expected.size()) return false;
@@ -245,9 +250,11 @@ bool ParseFixture(const Json& root, std::string& socket, std::string& api,
   if (!ExactKeys(n, {"device", "inode"}) ||
       !ReadUnsigned(n, "device", observer_ns.device) || !ReadUnsigned(n, "inode", observer_ns.inode)) return false;
   if (!ParseHex(root, "stop_operation_id", stop_op)) return false;
+  observed.clock_identity = clock_id;
   return ValidateRecoveryContainerTarget(RecoveryContainerTarget{observed});
 }
 
+#ifndef RATEGUARD_PROBE_PARSER_TEST
 bool IsRunning(const DockerInspectResult& result) noexcept {
   const auto* observation = std::get_if<DockerContainerObservation>(&result);
   return observation != nullptr && observation->disposition == DockerObservationDisposition::MatchedRunning;
@@ -271,21 +278,62 @@ bool IsExited(const DockerInspectResult& result, DockerExitEvidenceScope scope) 
          observation->exit_evidence_scope == scope;
 }
 
+std::string InspectStatus(const DockerInspectResult& result) {
+  if (const auto* failure = std::get_if<DockerControllerFailure>(&result)) {
+    return "controller_error_" + std::to_string(static_cast<unsigned>(failure->code));
+  }
+  const auto& value = std::get<DockerContainerObservation>(result);
+  if (value.disposition == DockerObservationDisposition::MatchedRunning) return "matched_running";
+  if (value.disposition == DockerObservationDisposition::MatchedExited) {
+    return value.exit_evidence_scope == DockerExitEvidenceScope::RuntimeAndRecordedProcessAbsent
+        ? "matched_exited_runtime_and_process" : "matched_exited_runtime_only";
+  }
+  return "unknown_reason_" + std::to_string(static_cast<unsigned>(value.reason));
+}
+
+std::string StopStatus(const DockerStopResult& result) {
+  if (const auto* failure = std::get_if<DockerControllerFailure>(&result)) {
+    return "controller_error_" + std::to_string(static_cast<unsigned>(failure->code)) +
+        (failure->stop_request_possibly_sent ? "_possibly_sent" : "_unsent");
+  }
+  const auto& ack = std::get<DockerStopAcknowledgement>(result);
+  return ack.kind == DockerStopAcknowledgement::Kind::Accepted
+      ? "acknowledged" : "already_stopped";
+}
+
 bool InspectObservedUntilExited(IRecoveryProcessController& controller, IClock& clock,
                                 const RecoveryContainerTarget& observed,
-                                const std::atomic_bool& cancel) {
+                                const std::atomic_bool& cancel,
+                                std::string& final_status) {
   const auto deadline_result = MakeDockerDeadline(clock, kDockerInspectDefaultTimeoutNanos);
   const auto* deadline = std::get_if<ControllerDeadline>(&deadline_result);
-  if (deadline == nullptr) return false;
+  if (deadline == nullptr) {
+    final_status = "reconciliation_deadline_unavailable";
+    return false;
+  }
 
   for (;;) {
-    if (!clock.Healthy()) return false;
+    if (!clock.Healthy()) {
+      final_status = "reconciliation_clock_unhealthy";
+      return false;
+    }
     const auto now_result = clock.Now();
     const auto* now = std::get_if<MonoNanos>(&now_result);
-    if (now == nullptr || now->value >= deadline->at.value) return false;
+    if (now == nullptr) {
+      final_status = "reconciliation_clock_read_failed";
+      return false;
+    }
+    if (now->value >= deadline->at.value) {
+      final_status = "reconciliation_deadline_expired";
+      return false;
+    }
 
     const auto result = controller.Inspect(observed, *deadline, cancel);
-    if (IsExited(result, DockerExitEvidenceScope::RuntimeAndRecordedProcessAbsent)) return true;
+    if (IsExited(result, DockerExitEvidenceScope::RuntimeAndRecordedProcessAbsent)) {
+      final_status = InspectStatus(result);
+      return true;
+    }
+    final_status = InspectStatus(result);
 
     const auto* observation = std::get_if<DockerContainerObservation>(&result);
     if (observation == nullptr || observation->disposition != DockerObservationDisposition::Unknown ||
@@ -306,7 +354,8 @@ bool InspectObservedUntilExited(IRecoveryProcessController& controller, IClock& 
 }
 
 bool ParseAndRun(const Json& root, Checks& checks, std::string& api_text,
-                 std::string& clock_scope) {
+                 std::string& clock_scope, std::string& setup_stage) {
+  setup_stage = "fixture_validation";
   std::string socket, api;
   DockerTargetBinding binding{};
   ObservedContainerTarget observed{};
@@ -315,11 +364,13 @@ bool ParseAndRun(const Json& root, Checks& checks, std::string& api_text,
   OperationId stop_op{};
   if (!ParseFixture(root, socket, api, binding, observed, identity, observer_ns, stop_op)) return false;
 
+  setup_stage = "trusted_linux_clock_factory";
   auto clock_result = CreateLinuxClock(identity);
   auto* clock_ptr = std::get_if<std::unique_ptr<LinuxMonotonicClock>>(&clock_result);
   if (clock_ptr == nullptr || !*clock_ptr) return false;
   auto& clock = **clock_ptr;
 
+  setup_stage = "docker_controller_factory";
   DockerProcessControllerConfig config{};
   config.unix_socket_path = std::move(socket);
   config.engine_api_version = api;
@@ -346,31 +397,49 @@ bool ParseAndRun(const Json& root, Checks& checks, std::string& api_text,
     return controller.RequestStop(target, stop_op, *deadline, cancel);
   };
 
-  checks.pending_running = IsRunning(inspect(pending));
-  checks.observed_running = IsRunning(inspect(seen));
+  setup_stage = "runtime_checks";
+  auto result = inspect(pending);
+  checks.pending_running = IsRunning(result);
+  checks.status[0] = InspectStatus(result);
+  result = inspect(seen);
+  checks.observed_running = IsRunning(result);
+  checks.status[1] = InspectStatus(result);
 
   auto tampered = binding;
   tampered.participant_id[0] = tampered.participant_id[0] == 'a' ? 'b' : 'a';
-  checks.tampered_stop_rejected = IsIdentityMismatchUnsent(stop(RecoveryContainerTarget{PendingContainerTarget{tampered}}));
-  checks.original_still_running = IsRunning(inspect(pending));
+  auto stop_result = stop(RecoveryContainerTarget{PendingContainerTarget{tampered}});
+  checks.tampered_stop_rejected = IsIdentityMismatchUnsent(stop_result);
+  checks.status[2] = StopStatus(stop_result);
+  result = inspect(pending);
+  checks.original_still_running = IsRunning(result);
+  checks.status[3] = InspectStatus(result);
 
-  checks.stop_acknowledged = IsStopAck(stop(pending), stop_op, DockerStopAcknowledgement::Kind::Accepted);
+  stop_result = stop(pending);
+  checks.stop_acknowledged = IsStopAck(stop_result, stop_op, DockerStopAcknowledgement::Kind::Accepted);
+  checks.status[4] = StopStatus(stop_result);
   checks.observed_exit_proven = checks.stop_acknowledged &&
-      InspectObservedUntilExited(controller, clock, seen, cancel);
-  checks.pending_exit_proven = IsExited(inspect(pending), DockerExitEvidenceScope::RuntimeOnlyPendingTarget);
-  checks.repeat_stop_acknowledged = IsStopAck(stop(pending), stop_op, DockerStopAcknowledgement::Kind::AlreadyStopped);
+      InspectObservedUntilExited(controller, clock, seen, cancel, checks.status[5]);
+  if (!checks.stop_acknowledged) checks.status[5] = "skipped_stop_not_acknowledged";
+  result = inspect(pending);
+  checks.pending_exit_proven = IsExited(result, DockerExitEvidenceScope::RuntimeOnlyPendingTarget);
+  checks.status[6] = InspectStatus(result);
+  stop_result = stop(pending);
+  checks.repeat_stop_acknowledged = IsStopAck(stop_result, stop_op, DockerStopAcknowledgement::Kind::AlreadyStopped);
+  checks.status[7] = StopStatus(stop_result);
 
   api_text = api;
   clock_scope = "trusted expected CLOCK_MONOTONIC namespace; host placement is externally qualified";
   return true;
 }
 
-void Emit(const Checks& c, std::string_view api, std::string_view clock_scope, bool setup_ok) {
+void Emit(const Checks& c, std::string_view api, std::string_view clock_scope,
+          std::string_view setup_stage, bool setup_ok) {
   Json out = {
       {"schema_version", 1},
       {"passed", setup_ok && c.All()},
       {"selected_api_version", api},
       {"clock_scope", clock_scope},
+      {"setup_stage", setup_stage},
       {"checks", {
           {"pending_running", c.pending_running},
           {"observed_running", c.observed_running},
@@ -379,14 +448,17 @@ void Emit(const Checks& c, std::string_view api, std::string_view clock_scope, b
           {"one_stop_acknowledged", c.stop_acknowledged},
           {"observed_runtime_and_process_exit", c.observed_exit_proven},
           {"pending_runtime_exit", c.pending_exit_proven},
-          {"repeat_stop_already_stopped", c.repeat_stop_acknowledged}
+          {"repeat_stop_already_stopped", c.repeat_stop_acknowledged},
+          {"status", c.status}
       }}
   };
   std::cout << out.dump() << '\n';
 }
+#endif  // RATEGUARD_PROBE_PARSER_TEST
 
 }  // namespace
 
+#ifndef RATEGUARD_PROBE_PARSER_TEST
 int main(int argc, char** argv) {
   if (argc != 3 || std::string_view(argv[1]) != "--fixture") {
     std::cerr << "usage: docker_controller_linux_probe --fixture /absolute/path\n";
@@ -412,13 +484,15 @@ int main(int argc, char** argv) {
 
   Checks checks{};
   std::string api, scope;
+  std::string setup_stage = "fixture_parse";
   bool setup_ok = false;
-  try { setup_ok = ParseAndRun(root, checks, api, scope); }
+  try { setup_ok = ParseAndRun(root, checks, api, scope, setup_stage); }
   catch (...) { setup_ok = false; }
   if (!setup_ok) {
-    Emit(checks, api, scope, false);
+    Emit(checks, api, scope, setup_stage, false);
     return 2;
   }
-  Emit(checks, api, scope, true);
+  Emit(checks, api, scope, setup_stage, true);
   return checks.All() ? 0 : 1;
 }
+#endif  // RATEGUARD_PROBE_PARSER_TEST

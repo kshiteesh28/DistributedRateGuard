@@ -78,6 +78,20 @@ def version_http(body: bytes, headers: bytes = b"Content-Length: ") -> bytes:
 
 
 class PreflightDriverTests(unittest.TestCase):
+    def test_probe_diagnostics_preserve_only_fixed_status_enums(self):
+        result = {"setup_stage": "docker_controller_factory", "checks": {"status": [
+            "matched_running", "controller_error_6", "controller_error_7_possibly_sent",
+            "unknown_reason_15", "already_stopped", "not_run", "secret-value", {"secret": "value"}]}}
+        self.assertEqual(preflight._safe_probe_diagnostics(result), {
+            "probe_setup_stage": "docker_controller_factory", "probe_status_codes": [
+                "matched_running", "controller_error_6", "controller_error_7_possibly_sent",
+                "unknown_reason_15", "already_stopped", "not_run", "unrecognized", "unrecognized"]})
+
+    def test_probe_diagnostics_drop_untrusted_stage_and_oversized_status_list(self):
+        self.assertEqual(preflight._safe_probe_diagnostics({
+            "setup_stage": "private child output", "checks": {"status": ["matched_running"] * 9}}), {})
+        self.assertEqual(preflight._safe_probe_diagnostics({"setup_stage": [], "checks": None}), {})
+
     def _run_to_create_with_image_inspect(self, image_reply: bytes) -> list[tuple[str, ...]]:
         calls: list[tuple[str, ...]] = []
         def docker(_docker, _env, *args, timeout=30):

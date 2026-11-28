@@ -388,6 +388,30 @@ def _write_all(fd: int, data: bytes) -> None:
         view = view[count:]
 
 
+def _safe_probe_diagnostics(result: dict[str, Any]) -> dict[str, Any]:
+    """Export fixed stage/status enums, never arbitrary child output."""
+    stages = {"fixture_parse", "fixture_validation", "trusted_linux_clock_factory",
+              "docker_controller_factory", "runtime_checks"}
+    statuses = {"not_run", "matched_running", "matched_exited_runtime_and_process",
+                "matched_exited_runtime_only", "acknowledged", "already_stopped",
+                "reconciliation_deadline_unavailable", "reconciliation_clock_unhealthy",
+                "reconciliation_clock_read_failed", "reconciliation_deadline_expired",
+                "skipped_stop_not_acknowledged"}
+    statuses.update(f"controller_error_{n}{suffix}" for n in range(14)
+                    for suffix in ("", "_possibly_sent", "_unsent"))
+    statuses.update(f"unknown_reason_{n}" for n in range(16))
+    safe: dict[str, Any] = {}
+    stage = result.get("setup_stage")
+    if isinstance(stage, str) and stage in stages:
+        safe["probe_setup_stage"] = stage
+    checks = result.get("checks")
+    raw = checks.get("status") if isinstance(checks, dict) else None
+    if isinstance(raw, list) and len(raw) == 8:
+        safe["probe_status_codes"] = [value if isinstance(value, str) and value in statuses
+                                      else "unrecognized" for value in raw]
+    return safe
+
+
 def run(args: argparse.Namespace) -> dict[str, Any]:
     if not sys.platform.startswith("linux"):
         raise PreflightError("linux_only")
@@ -486,6 +510,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                 probe_result = json.loads(probe_out.decode("utf-8"), object_pairs_hook=_unique_object)
             except Exception:
                 raise PreflightError("probe_result_invalid") from None
+            if not isinstance(probe_result, dict):
+                raise PreflightError("probe_result_invalid")
             expected_checks = ("pending_running", "observed_running", "tampered_stop_rejected_unsent",
                                "original_still_running", "one_stop_acknowledged", "observed_runtime_and_process_exit",
                                "pending_runtime_exit", "repeat_stop_already_stopped")
@@ -496,6 +522,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
                     or any(checks.get(name) is not True for name in expected_checks)):
                 raise PreflightError("probe_assertions_failed", {
                     "probe_exit_code": int(code), "probe_checks": safe_checks,
+                    **_safe_probe_diagnostics(probe_result),
                 })
             terminal = _inspect(docker, env, cid)
             terminal_state = terminal.get("State", {})
