@@ -817,6 +817,8 @@ add_strict_sequence_oracle_test(rateguard_strict_sequence_oracle_independent_tes
 
 add_strict_sequence_oracle_test(rateguard_strict_sequence_oracle_resource_tests
   tests/replay/strict_sequence_oracle_resource_test.cpp strict_sequence_oracle_resource)
+target_sources(rateguard_strict_sequence_oracle_resource_tests PRIVATE
+  tests/replay/failing_allocator.cpp)
 
 # Every negative control is a generated test-only header. It must compile and
 # then be rejected by the independent fixture assertions.

@@ -1,6 +1,6 @@
 #include "replay/reference_model.h"
+#include "failing_allocator.h"
 
-#include <atomic>
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -12,28 +12,9 @@
 #include <variant>
 
 namespace {
-std::atomic<long long> allocation_countdown{-1};
-
-void ArmAllocationFailure(long long fail_after) noexcept {
-  allocation_countdown.store(fail_after, std::memory_order_relaxed);
-}
-void DisarmAllocationFailure() noexcept {
-  allocation_countdown.store(-1, std::memory_order_relaxed);
-}
-bool ShouldFailAllocation() noexcept {
-  long long value = allocation_countdown.load(std::memory_order_relaxed);
-  while (value >= 0) {
-    if (value == 0) {
-      if (allocation_countdown.compare_exchange_weak(
-              value, -1, std::memory_order_relaxed))
-        return true;
-    } else if (allocation_countdown.compare_exchange_weak(
-                   value, value - 1, std::memory_order_relaxed)) {
-      return false;
-    }
-  }
-  return false;
-}
+using rateguard::test_support::ArmAllocationFailure;
+using rateguard::test_support::DisarmAllocationFailure;
+using rateguard::test_support::AllocationFailureArmedAtZero;
 
 int failures = 0;
 std::size_t injected_allocation_failure_points = 0;
@@ -93,40 +74,6 @@ bool IsError(const rateguard::replay::RunResult& result,
   return error != nullptr && *error == expected;
 }
 }  // namespace
-
-// Test-only global allocation failpoint. All setup and assertions run disarmed.
-void* operator new(std::size_t size) {
-  if (ShouldFailAllocation()) throw std::bad_alloc();
-  if (void* p = std::malloc(size == 0 ? 1 : size)) return p;
-  throw std::bad_alloc();
-}
-void* operator new[](std::size_t size) {
-  if (ShouldFailAllocation()) throw std::bad_alloc();
-  if (void* p = std::malloc(size == 0 ? 1 : size)) return p;
-  throw std::bad_alloc();
-}
-void operator delete(void* p) noexcept { std::free(p); }
-void operator delete[](void* p) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t) noexcept { std::free(p); }
-void* operator new(std::size_t size, std::align_val_t alignment) {
-  if (ShouldFailAllocation()) throw std::bad_alloc();
-  void* p = nullptr;
-  if (posix_memalign(&p, static_cast<std::size_t>(alignment), size == 0 ? 1 : size) == 0)
-    return p;
-  throw std::bad_alloc();
-}
-void* operator new[](std::size_t size, std::align_val_t alignment) {
-  if (ShouldFailAllocation()) throw std::bad_alloc();
-  void* p = nullptr;
-  if (posix_memalign(&p, static_cast<std::size_t>(alignment), size == 0 ? 1 : size) == 0)
-    return p;
-  throw std::bad_alloc();
-}
-void operator delete(void* p, std::align_val_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::align_val_t) noexcept { std::free(p); }
-void operator delete(void* p, std::size_t, std::align_val_t) noexcept { std::free(p); }
-void operator delete[](void* p, std::size_t, std::align_val_t) noexcept { std::free(p); }
 
 int main() {
   using namespace rateguard::replay;
@@ -210,7 +157,7 @@ int main() {
     ArmAllocationFailure(0);
     const auto result = StrictSequenceOracle::Run(oversized);
     const bool allocation_not_attempted =
-        allocation_countdown.load(std::memory_order_relaxed) == 0;
+        AllocationFailureArmedAtZero();
     DisarmAllocationFailure();
     Check(allocation_not_attempted, "resource rejection leaves allocation failpoint armed");
     Check(IsError(result, ModelError::ResourceLimit),
