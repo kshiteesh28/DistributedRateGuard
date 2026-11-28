@@ -794,3 +794,67 @@ target_link_libraries(rateguard_docker_probe_fixture_parser_tests PRIVATE
 target_compile_options(rateguard_docker_probe_fixture_parser_tests PRIVATE -Wall -Wextra -Werror -pedantic)
 add_test(NAME rateguard.docker_probe_fixture_parser COMMAND rateguard_docker_probe_fixture_parser_tests)
 set_tests_properties(rateguard.docker_probe_fixture_parser PROPERTIES TIMEOUT 30)
+
+# RG-011A independent synthetic strict sequence model; no production dependencies.
+option(RATEGUARD_SANITIZE_STRICT_ORACLE "Instrument strict sequence oracle tests with ASan and UBSan" OFF)
+add_library(rateguard_strict_sequence_oracle INTERFACE)
+target_include_directories(rateguard_strict_sequence_oracle INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/tools")
+if(RATEGUARD_SANITIZE_STRICT_ORACLE)
+  target_compile_options(rateguard_strict_sequence_oracle INTERFACE -fsanitize=address,undefined -fno-omit-frame-pointer)
+  target_link_options(rateguard_strict_sequence_oracle INTERFACE -fsanitize=address,undefined)
+endif()
+function(add_strict_sequence_oracle_test target source name)
+  add_executable(${target} ${source})
+  target_link_libraries(${target} PRIVATE rateguard_strict_sequence_oracle)
+  target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -pedantic)
+  add_test(NAME rateguard.${name} COMMAND ${target})
+  set_tests_properties(rateguard.${name} PROPERTIES TIMEOUT 90)
+endfunction()
+add_strict_sequence_oracle_test(rateguard_strict_sequence_oracle_tests
+  tests/replay/strict_sequence_oracle_test.cpp strict_sequence_oracle)
+add_strict_sequence_oracle_test(rateguard_strict_sequence_oracle_independent_tests
+  tests/replay/strict_sequence_oracle_independent_test.cpp strict_sequence_oracle_independent)
+
+add_strict_sequence_oracle_test(rateguard_strict_sequence_oracle_resource_tests
+  tests/replay/strict_sequence_oracle_resource_test.cpp strict_sequence_oracle_resource)
+
+# Every negative control is a generated test-only header. It must compile and
+# then be rejected by the independent fixture assertions.
+set(RG_STRICT_ORACLE_MUTANT_NAMES
+  reject_all
+  always_allow
+  limited_does_not_advance_time
+  debit_on_limited
+  floor_retry_delay
+  uses_first_operation_cost
+  overcap_refill
+  cross_tenant_state_lookup
+  unknown_tenant_default_admission
+  reorders_equal_time_attempts
+  unchecked_uint64_refill_product)
+set(RG_STRICT_ORACLE_MUTANT_ROOT "${CMAKE_CURRENT_BINARY_DIR}/test-mutants/strict-sequence")
+set(RG_STRICT_ORACLE_MUTANT_OUTPUTS)
+foreach(name IN LISTS RG_STRICT_ORACLE_MUTANT_NAMES)
+  list(APPEND RG_STRICT_ORACLE_MUTANT_OUTPUTS
+    "${RG_STRICT_ORACLE_MUTANT_ROOT}/${name}/tools/replay/reference_model.h")
+endforeach()
+add_custom_command(
+  OUTPUT ${RG_STRICT_ORACLE_MUTANT_OUTPUTS}
+  COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests/generate_sequence_mutants.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tools/replay/reference_model.h"
+    "${RG_STRICT_ORACLE_MUTANT_ROOT}"
+  DEPENDS tools/replay/reference_model.h tools/tests/generate_sequence_mutants.py
+  VERBATIM)
+add_custom_target(rateguard_strict_oracle_mutants DEPENDS ${RG_STRICT_ORACLE_MUTANT_OUTPUTS})
+foreach(name IN LISTS RG_STRICT_ORACLE_MUTANT_NAMES)
+  set(target "rateguard_strict_oracle_mutant_${name}")
+  add_executable(${target} tests/replay/strict_sequence_oracle_independent_test.cpp)
+  add_dependencies(${target} rateguard_strict_oracle_mutants)
+  target_include_directories(${target} BEFORE PRIVATE
+    "${RG_STRICT_ORACLE_MUTANT_ROOT}/${name}/tools")
+  target_link_libraries(${target} PRIVATE rateguard_strict_sequence_oracle)
+  target_compile_options(${target} PRIVATE -Wall -Wextra -Werror -pedantic)
+  add_test(NAME rateguard.strict_oracle_mutant_${name} COMMAND ${target})
+  set_tests_properties(rateguard.strict_oracle_mutant_${name}
+    PROPERTIES WILL_FAIL TRUE TIMEOUT 90)
+endforeach()

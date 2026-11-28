@@ -110,6 +110,15 @@ jobs:
           cmake --build build-docker-transport-sanitized --parallel 2 --target rateguard_http1_parser_tests rateguard_http1_parser_independent_tests rateguard_http1_parser_allocation_independent_tests rateguard_unix_http_transport_linux_tests rateguard_unix_http_transport_independent_tests rateguard_unix_http_fault_independent_tests rateguard_linux_process_probe_tests rateguard_linux_process_probe_independent_tests rateguard_docker_process_controller_tests rateguard_docker_process_controller_independent_tests rateguard_docker_probe_fixture_parser_tests
           ctest --test-dir build-docker-transport-sanitized --output-on-failure -R '^rateguard[.](http1_parser(_(allocation_)?independent)?|unix_http_transport_(linux|independent)|unix_http_fault_independent|linux_process_probe(_independent)?|docker_process_controller(_independent)?|docker_probe_fixture_parser)$'
 
+      - name: Check independent strict sequence oracle under sanitizers
+        env:
+          ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
+          UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1
+        run: |
+          cmake -S . -B build-strict-oracle-sanitized -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo -DRATEGUARD_FETCH_GRPC=OFF -DRATEGUARD_REQUIRE_PRODUCT_CONTRACTS=ON -DRATEGUARD_SANITIZE_STRICT_ORACLE=ON
+          cmake --build build-strict-oracle-sanitized --parallel 2 --target rateguard_strict_sequence_oracle_tests rateguard_strict_sequence_oracle_independent_tests rateguard_strict_sequence_oracle_resource_tests
+          ctest --test-dir build-strict-oracle-sanitized --output-on-failure -R '^rateguard[.]strict_sequence_oracle(_independent|_resource)?$'
+
       - name: Check bootstrap inventory and persistence under sanitizers
         env:
           ASAN_OPTIONS: detect_leaks=1:strict_string_checks=1
@@ -221,6 +230,7 @@ jobs:
             build/Testing/Temporary/LastTest.log
             build-clean/Testing/Temporary/LastTest.log
             build-docker-transport-sanitized/Testing/Temporary/LastTest.log
+            build-strict-oracle-sanitized/Testing/Temporary/LastTest.log
             build-bootstrap-sanitized/Testing/Temporary/LastTest.log
             build-manifest-sanitized/Testing/Temporary/LastTest.log
             build-runtime-sanitized/Testing/Temporary/LastTest.log
